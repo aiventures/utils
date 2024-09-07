@@ -1,0 +1,13 @@
+{
+    "P_GIT":{"p":"C:\\<path_to>\\git-for-windows\\usr\\bin",
+             "d":"Binaries Path of Git Installation"},
+    "P_LAUFENDE_DOKUMENTE":{"p":"C:\\<path to>\\MyDocuments",
+                            "d":"Working Documents"},
+    "P_DEV":               {"p":"C:\\<DEV STUFF>",
+                            "d":"Development Stuff Folder"},                            
+    "P_ROOT":              {"p":"C:\\<DEV_STUFF>\\...\\root",
+                            "d":"Root Folder containing dev projects"},                                  
+    "CMD_CYGPATH":         {"p":"P_GIT",
+                            "f":"cygpath.exe",
+                            "d":"Path Conversion utility (Part of Git)"}
+}

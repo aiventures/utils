@@ -1,0 +1,23 @@
+[project]
+dynamic = ["dependencies", "optional-dependencies"]
+name = "hf_utils"
+requires-python = ">=3.11"
+description = "command line utils"
+version = "0.1.0"
+authors = [
+    { name = "John Doe", email = "xyz@abc.com" }
+]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["./requirements/requirements.txt"]}
+optional-dependencies = {dev = { file = ["./requirements/requirements-dev.txt"] }}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools >= 71.0.0" ]
+build-backend = "setuptools.build_meta"
+
+
+
