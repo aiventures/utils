@@ -57,6 +57,7 @@ class FileSysObjectInfo():
                 self._files[subpath]={C.FILES_ABSOLUTE:_files_absolute,C.FILES:files}
                 _paths.append(subpath)
             self._paths[_root_path]=_paths
+        logger.debug(f"Read [{self._files}] Files, [{self._paths }] Paths")
 
     @property
     def path_dict(self)->dict:
@@ -103,6 +104,14 @@ class FileAnalyzer():
         self._rule_dict = StringMatcher(apply_default=apply)
         self._by_rule = by_rule
 
+    @property
+    def rules(self,)->dict:
+        """ return as rules by rule matcher or as list """
+        _out = {}
+        for _,_matcher in self._rule_dicts.items():
+            _out.update(deepcopy(_matcher._rules))
+        return _out
+
     def add_rule(self,rule:dict)->None:
         """ Adding Filename Rule """
         _new_rule = deepcopy(C.RULEDICT_FILENAME)
@@ -112,6 +121,7 @@ class FileAnalyzer():
         # according to rule add rule to the appropriate matcher
         _rule_name = _new_rule.get(C.RULE_NAME)
         _rule_type = _new_rule.get(C.RULE_FILE)
+        logger.debug(f"Adding rule [{_rule_name}], type [{_rule_type}]")
         try:
             _rule_matcher = self._rule_dicts[_rule_type]
             _rule_matcher.add_rule(_new_rule)
@@ -133,16 +143,56 @@ class FileAnalyzer():
             filter_result_set ist a flag whether apply _all ffilters should be treated as one set
         """
         _file_object_matches = {}
-        logger.info(f"Matcher [{matcher}], check [{len(find_dict)}] objects")
         _rule_matcher = self._get_matcher(matcher)
         for _file_object_key, _file_object in find_dict.items():
             search_result = _rule_matcher.find_all(s=_file_object,by_rule=self._by_rule,filter_result_set=filter_result_set)
             # check if there are results ar all
             if len(search_result) > 0:
                 _file_object_matches[_file_object_key] = search_result
-        logger.info(f"Matcher [{matcher}], found [{len(_file_object_matches)}] objects")
+        logger.info(f"Matcher [{matcher}], found [{len(_file_object_matches)}/{len(find_dict)}] objects")
 
         return _file_object_matches
+
+    @staticmethod
+    def _add_path_matches(file_objects:dict,path_objects:dict):
+        """ adding the path matches to search result"""
+
+        for _path_object,_path_object_info in path_objects.items():
+            for _file, _file_info in file_objects.items():
+                if str(_path_object) in str(_file):
+                    logger.debug(f"Adding Path Matching Infos {list(_path_object_info.keys())} to [{_file}]")
+                    _file_info.update(_path_object_info)
+
+    @staticmethod
+    def _filter_result_set(file_objects:dict,all_rules:list)->None:
+        """ filters rule set: only items with all_rules will pass """
+
+        if len(all_rules)==0:
+            return file_objects
+
+        _num_all_rules = len(all_rules)
+        _num_file_objects = len(file_objects)
+
+        _delete_keys = []
+        for _fileobject_key,_file_object_info in file_objects.items():
+            # _found_all_keys
+            _object_keys = list(_file_object_info.keys())
+            _found_keys = list(filter(lambda k: k in all_rules, _object_keys))
+            if len(_found_keys) == _num_all_rules:
+                continue
+            _delete_keys.append(_fileobject_key)
+        # now delete the all_key in the set
+        # clean up
+        for _delete_key in _delete_keys:
+            _file_object_info = file_objects[_delete_key]
+            for _rule in all_rules:
+                _ = _file_object_info.pop(_rule,None)
+            # length of 1 since there is the all_rules info
+            if len(_file_object_info) <= 1:
+                _ = file_objects.pop(_delete_key,None)
+
+        logger.debug(f"File Objects after/before apply_all [{len(file_objects)}/{_num_file_objects}], deleted [{_delete_keys}] keys")
+        return file_objects
 
     def find_file_objects(self,filter_result_set:bool=True)->dict:
         """ get the file names
@@ -150,27 +200,40 @@ class FileAnalyzer():
         """
         _file_objects = {}
         _fi = self._file_info
+        _all_rules = []
+
+        # treat path objects separately
+        _rule_matcher_path = self._get_matcher(C.RULE_PATH)
+        _paths = _fi.paths
+        _find_dict_path = dict(zip(_paths,_paths))
+        _path_matches = self._match_files(_find_dict_path,C.RULE_PATH,filter_result_set=False)
+
         # iterate over all rule matchers
         for _rule in self._rule_dicts.keys():
             _rule_matcher = self._get_matcher(_rule)
             if not isinstance(_rule_matcher,StringMatcher):
                 continue
+            if _rule == C.RULE_FILE_CONTENT:
+                continue
+            _all_rules.extend(_rule_matcher._all_rules)
             if _rule == C.RULE_FILENAME:
                 _filenames = [Path(f).name for f in _fi.files]
                 _find_dict = dict(zip(_fi.files,_filenames))
             elif _rule == C.RULE_ABSOLUTE_PATH:
                 _find_dict = dict(zip(_fi.files,_fi.files))
             elif _rule == C.RULE_PATH:
+                continue
                 # TODO CHANGE TO PATHS
-                _paths = _fi.paths
-                _find_dict = dict(zip(_paths,_paths))
             else:
                 logger.warning(f"Invalid File Object Rule: [{_rule}]")
                 continue
-            _file_object_matches = self._match_files(_find_dict,_rule,filter_result_set=filter_result_set)
+            _file_object_matches = self._match_files(_find_dict,_rule,filter_result_set=False)
             if len(_file_object_matches) > 0:
+                FileAnalyzer._add_path_matches(_file_object_matches,_path_matches)
                 _file_objects.update(_file_object_matches)
-        # todo now blend all rules together
+        # Apply All Filters
+        if filter_result_set:
+            FileAnalyzer._filter_result_set(_file_objects,_all_rules)
         return _file_objects
 
 # todo also check for content with transformed yaml, json and csv
@@ -234,7 +297,7 @@ class FileContentAnalyzer(FileAnalyzer):
                     if _rule in _all_rules:
                         _all_rules_set = False
 
-        # do process the all rules set        
+        # do process the all rules set
         if filter_result_set is True and _all_rules_set is False:
             _drop_lines = []
             for line,_results_by_line in _results.items():
@@ -249,7 +312,7 @@ class FileContentAnalyzer(FileAnalyzer):
                 # if the dict is empty, clean itup later
                 if len(_results_by_line) == 0:
                     _drop_lines.append(line)
-            # clean up empty lines 
+            # clean up empty lines
             for _drop_line in _drop_lines:
                 _results.pop(_drop_line)
                 pass
@@ -263,36 +326,8 @@ class FileContentAnalyzer(FileAnalyzer):
         """
         # use the file content rule
         _results = self._find_file_content_txt(f,filter_result_set)
+        logger.info(f"File [{f}], found [{len(_results)}] hits")
         return _results
-
-
-def test_file_dict():
-    """  getting a test file from the sample path """
-    f_sample = (Path(__file__).parent.parent).joinpath("sample_path","lorem_doc_root.md")
-    text_lines_dict = Persistence.read_txt_file(f_sample,comment_marker=None,with_line_nums=True)
-    return text_lines_dict
-
-def test_file_objects():
-    """ gettimg file objects """
-    p_sample = (Path(__file__).parent.parent).joinpath("sample_path")
-    files_info = FileSysObjectInfo(p_sample)
-    file_dict = files_info.file_dict
-    files = files_info.files
-    return files_info.path_dict
-
-def test_file_matcher():
-    """ testing file matcher """
-    p_sample = (Path(__file__).parent.parent).joinpath("sample_path")
-    file_matcher = FileAnalyzer(p_sample)
-    file_rule = deepcopy(C.RULEDICT_FILENAME)
-    file_rule[C.RULE_RULE] = "test"
-    file_rule[C.RULE_NAME] = "testrule"
-    file_matcher.add_rule(file_rule)
-    #_paths = file_matcher._file_info.path_dict
-    #_files = file_matcher._file_info.files
-    # Path(_files[0]).name
-    # dict(zip(_files,_files))
-    pass
 
 
 def main():

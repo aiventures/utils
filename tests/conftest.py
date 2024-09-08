@@ -35,12 +35,43 @@ def fixture_testfile_dict(fixture_testpath):
     return text_lines_dict
 
 @pytest.fixture
+def fixture_ruledict_path():
+    """  getting a test file from the sample path """
+    file_rule = deepcopy(C.RULEDICT_FILENAME)
+    file_rule[C.RULE_RULE] = "path2"
+    file_rule[C.RULE_NAME] = "testrule_path_path2"
+    file_rule[C.RULE_FILE] = C.RULE_PATH
+    return file_rule
+
+@pytest.fixture
+def fixture_ruledict_filename_lorem():
+    """  getting a test file from the sample path """
+    file_rule = deepcopy(C.RULEDICT_FILENAME)    
+    file_rule[C.RULE_RULE] = "lorem"
+    file_rule[C.RULE_NAME] = "testrule_path_lorem"
+    file_rule[C.RULE_FILE] = C.RULE_FILENAME
+    return file_rule
+
+@pytest.fixture
 def fixture_ruledict_filename():
     """  getting a test file from the sample path """
     file_rule = deepcopy(C.RULEDICT_FILENAME)
     file_rule[C.RULE_RULE] = "test"
     file_rule[C.RULE_NAME] = "testrule_simple"
     return file_rule
+
+@pytest.fixture
+def fixture_ruledict_filename_all_rules():
+    """ check the apply rule for filename """
+    file_rule = deepcopy(C.RULEDICT_FILENAME)
+    file_rule[C.RULE_RULE] = "file"
+    file_rule[C.RULE_NAME] = "testrule_file"
+    file_rule[C.RULE_FILE] = C.RULE_FILENAME
+    file_rule[C.RULE_APPLY] = C.APPLY_ALL
+    file_rule2 = deepcopy(file_rule)
+    file_rule[C.RULE_RULE] = "_2"
+    file_rule[C.RULE_NAME] = "testrule_2"
+    return [file_rule,file_rule2]
 
 @pytest.fixture
 def fixture_ruledict_filename_absolute_path():
@@ -68,8 +99,9 @@ def fixture_ruledict_filename_path():
     file_rule = deepcopy(C.RULEDICT_FILENAME)
     file_rule[C.RULE_RULE] = "subpath2" # the search pattern, literal or regex
     file_rule[C.RULE_NAME] = "testrule_subpath2" # rule name
-    # the file rule type file_rule["RULE_FILE"] = RULE_[FILENAME|PATH|ABSOLUTE_PATH|FILE_CONTENT]
+    # the file rule type file_rule["RULE_FILE"] = RULE_[FILENAME|PATH|ABSOLUTE_PATH|FILE_CONTENT]    
     file_rule[C.RULE_FILE] = C.RULE_PATH
+    file_rule[C.RULE_APPLY] = C.APPLY_ALL
     return file_rule
 
 @pytest.fixture
@@ -84,7 +116,7 @@ def fixture_ruledict_file_content():
 
 @pytest.fixture
 def fixture_ruledict_file_content_all_rules(fixture_ruledict_file_content):
-    """  getting two rules linked with an all  """
+    """  getting two rules linked with an apply all rule """
     file_rule = deepcopy(fixture_ruledict_file_content)
     file_rule[C.RULE_RULE] = "sum" # the search pattern, literal or regex
     file_rule[C.RULE_NAME] = "testrule1_file_content_sum" # rule name
@@ -94,4 +126,5 @@ def fixture_ruledict_file_content_all_rules(fixture_ruledict_file_content):
     file_rule2[C.RULE_RULE] = "crescit" # the search pattern, literal or regex
     file_rule2[C.RULE_NAME] = "testrule2_file_content_sum" # rule name
     return [file_rule,file_rule2]
+
 
