@@ -36,13 +36,14 @@ RULE_FIND_BY_LINE = "find_by_line"
 # search in content
 RULE_FILE_CONTENT = "file_content"
 RULEDICT_FILENAME = deepcopy(RULEDICT)
-
 RULEDICT_FILENAME[RULE_FILE] = RULE_ABSOLUTE_PATH
 RULEDICT_FILENAME[RULE_FIND_BY_LINE] = True
 
-# Map File Rule to Field
-# FILE_RULE_MAP = {  RULE_FILENAME:
-#                 }
+# prefix and postfixes for search results
+RESULT_ANY_PREFIX_BEFORE = "#ANY1#"
+RESULT_ANY_PREFIX_AFTER = "#ANY0#"
+RESULT_ALL_PREFIX_BEFORE = "#ALL1#"
+RESULT_ALL_PREFIX_AFTER = "#ALL0#"
 
 # supported file types
 FILETYPE_XLS = "xlsx"

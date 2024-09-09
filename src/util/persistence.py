@@ -332,8 +332,8 @@ class Persistence():
                         lines[n] = line
                     else:
                         lines.append(line)
-        except:
-            logger.error(f"Exception reading file {filepath}",exc_info=True)
+        except Exception as e:
+            logger.error(f"Exception reading file {filepath}, [{e}]",exc_info=True)
         return lines
 
     @staticmethod

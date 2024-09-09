@@ -236,6 +236,40 @@ class FileAnalyzer():
             FileAnalyzer._filter_result_set(_file_objects,_all_rules)
         return _file_objects
 
+    def find(self,filter_result_set:bool=True,
+             any_before:str=C.RESULT_ANY_PREFIX_BEFORE,
+             any_after:str=C.RESULT_ANY_PREFIX_AFTER,
+             all_before:str=C.RESULT_ALL_PREFIX_BEFORE,
+             all_after:str=C.RESULT_ALL_PREFIX_AFTER,
+             skip_prefix_handling:bool=False
+             )->list:
+        """ returns the result occurence list as string, placeholders for
+            search results (also for any|all search types ) can be adapted
+            Can also be skippe
+        """
+        results = []
+        _results = self.find_file_objects(filter_result_set=filter_result_set)
+        for _out_result,_match_infos in _results.items():
+            if skip_prefix_handling:
+                results.append(_out_result)
+                continue
+            s_out = str(_out_result)
+            for _rule, _match_info in _match_infos.items():
+                _apply_rule = _match_info.get(C.RULE_APPLY,C.APPLY_ANY)
+                if _apply_rule == C.APPLY_ALL:
+                    _s_before = all_before
+                    _s_after = all_after
+                else:
+                    _s_before = any_before
+                    _s_after = any_after
+
+                for result in _match_info.get(C.RULE_RESULTS,[]):
+                    s_new =f"{_s_before}{result}{_s_after}"
+                    s_out = s_out.replace(result,s_new)
+            results.append(s_out)
+
+        return results
+
 # todo also check for content with transformed yaml, json and csv
 class FileContentAnalyzer(FileAnalyzer):
     """ Adding Features to read / filter file contents """
@@ -252,6 +286,7 @@ class FileContentAnalyzer(FileAnalyzer):
         self._skip_blank_lines=False
         self._strip_lines=True
         self._with_line_nums=False
+        self._content_lines = {}
 
     def _postprocess_file_content(self,content_dict:dict)->dict|list:
         """ reformat found file content according to settings """
@@ -271,6 +306,7 @@ class FileContentAnalyzer(FileAnalyzer):
                               skip_blank_lines=False,
                               strip_lines=False,
                               with_line_nums=True)
+        self._content_lines = _content_lines
         # content all in one for searching content in file instead of lines
         _content_file = "\n".join(list(_content_lines.values()))
 
@@ -319,7 +355,6 @@ class FileContentAnalyzer(FileAnalyzer):
 
         return _results
 
-
     def find_file_content(self,f:str,filter_result_set:bool=True)->dict:
         """ find occurences in file
             filter_result_set: Check the all rules
@@ -328,6 +363,43 @@ class FileContentAnalyzer(FileAnalyzer):
         _results = self._find_file_content_txt(f,filter_result_set)
         logger.info(f"File [{f}], found [{len(_results)}] hits")
         return _results
+
+    def find(self,f:str=None,filter_result_set:bool=True,             
+             any_before:str=C.RESULT_ANY_PREFIX_BEFORE,
+             any_after:str=C.RESULT_ANY_PREFIX_AFTER,
+             all_before:str=C.RESULT_ALL_PREFIX_BEFORE,
+             all_after:str=C.RESULT_ALL_PREFIX_AFTER,
+             skip_prefix_handling:bool=False,
+             )->dict:
+        """ returns the result occurence list as string, placeholders for
+            search results (also for any|all search types ) can be adapted
+            Can also be skipped
+        """
+        results = {}
+        _results = self.find_file_content(f=f,filter_result_set=filter_result_set)
+        for _line_num,_match_infos in _results.items():
+            s_out = self._content_lines.get(_line_num,"")
+            if skip_prefix_handling:
+                results[_line_num] = s_out
+                continue
+
+            for _rule, _match_infos in _match_infos.items():
+                # right now we do not have this in the text file search
+                _apply_rule = C.APPLY_ANY
+                if _apply_rule == C.APPLY_ALL:
+                    _s_before = all_before
+                    _s_after = all_after
+                else:
+                    _s_before = any_before
+                    _s_after = any_after
+
+                for _match in _match_infos:
+                    s_new =f"{_s_before}{_match}{_s_after}"
+                    s_out = s_out.replace(_match,s_new)
+
+            results[_line_num] = s_out
+
+        return results
 
 
 def main():
