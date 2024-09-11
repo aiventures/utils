@@ -77,7 +77,11 @@ def test_find_all_diifferent_rule_types(fixture_testpath,fixture_ruledict_filena
     file_objects = file_matcher.find()
     assert isinstance(file_objects,list) and len(file_objects) == 1
     # assert we have four occurences of the find markers
-    assert file_objects[0].count("#ALL") == 4
+    assert file_objects[0].count("#ALL") == 4    
+    # find object but as dictionary return
+    file_objects = file_matcher.find(as_dict=True)
+    assert isinstance(file_objects,dict) and len(file_objects) == 1
+
 
 def test_file_analyzer_filetext(fixture_testfile_md,fixture_ruledict_file_content):
     """ testing file analyzer with a simple rule """
@@ -120,7 +124,7 @@ def test_find_filetext_all_rules(fixture_testfile_md,fixture_ruledict_file_conte
     # 3 hits for sum but only 1 when using all
     assert isinstance(results,dict) and len(results) == 1
     # assert we have four occurences of the find markers
-    _result_line = results[6]
+    _result_line = results[6][C.FORMATTED]
     assert _result_line.count("#ANY") == 4
     assert "sum"  in _result_line and "crescit" in _result_line
 

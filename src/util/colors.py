@@ -207,12 +207,12 @@ def print_colors():
     for l in out:
         print("".join(l))
 
-def get_col_str(color, is_background:bool=False):
+def get_col_str(color, is_background:bool=False)->str:
     """ gets color string from Either Enums or default value.
         if color is an int, return the corresponding color code
         (optionally as background color)
     """
-    logger.debug("start")    
+    logger.debug("start")
     if color is None:
         return ""
     if isinstance(color, int):
@@ -243,7 +243,7 @@ def get_col_str(color, is_background:bool=False):
 
 def col(text:str,col=None,col_bg=None):
     """ colorize a string """
-    logger.debug("start")    
+    logger.debug("start")
     _cols = get_col_str(col)
     if isinstance(_cols,tuple):
         _col = _cols[0]
@@ -259,7 +259,7 @@ def col(text:str,col=None,col_bg=None):
 
 def print_color_tones():
     """ Display all colors in console  """
-    logger.debug("start")    
+    logger.debug("start")
     num0 = 16
     for c_type in ["38","48"]:
         hdr = col(f"\n COLOR CODE: ESC + [{c_type};5; (n)m", "C_YLL")
@@ -286,7 +286,7 @@ def print_color_tones():
 
 def print_custom_colors():
     """ prints custom colors defined in """
-    logger.debug("start")    
+    logger.debug("start")
     print(col("\n### CUSTOM COLORS IN ENUM COL\n", "C_T"))
     for cust_color in COL_DESC:
         cust_col_name = cust_color.name
@@ -295,7 +295,7 @@ def print_custom_colors():
 
 def print_color_constants():
     """ prints custom colors """
-    logger.debug("start")    
+    logger.debug("start")
     print(col("\n### CUSTOM COLOR CONSTANTS\n", "C_T"))
     # get all constant values
     col_list = [_col for _col in dir(sys.modules[__name__]) if (_col).startswith("COL_")]

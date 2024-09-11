@@ -280,30 +280,30 @@ if __name__ == "__main__":
         test_dict = json.loads(test_struc)
         dict_parser = DictParser(test_dict)
 
-    df = DictFilter()
+    dict_filter = DictFilter()
 
     test_dict = {"key":"this is my test_key","object":"this is my test_object","level":4}
     # straightforward: filter for filtering key
     verbose = True
-    df.add_value_filter("test",filter_level_min=2)
+    dict_filter.add_value_filter("test",filter_level_min=2)
     # passed = df.filter(test_dict,verbose=verbose)
-    df.clear_filters()
+    dict_filter.clear_filters()
     # test whether object contains "object"
-    df.add_regex_filter("object",filter_object=Filter.OBJECT,filter_level_min=0)
-    passed = df.filter(test_dict,verbose=verbose)
-    df.clear_filters()
+    dict_filter.add_regex_filter("object",filter_object=Filter.OBJECT,filter_level_min=0)
+    passed = dict_filter.filter(test_dict,verbose=verbose)
+    dict_filter.clear_filters()
     # test whether key contains "key"
-    df.add_regex_filter("key",filter_object=Filter.KEY,filter_level_min=0)
-    passed = df.filter(test_dict,verbose=verbose)
-    df.clear_filters()
+    dict_filter.add_regex_filter("key",filter_object=Filter.KEY,filter_level_min=0)
+    passed = dict_filter.filter(test_dict,verbose=verbose)
+    dict_filter.clear_filters()
     # same thing but with contains filter
-    df.add_filter(filter_value="key",filter_object=Filter.KEY,filter_type=Filter.CONTAINS)
-    passed = df.filter(test_dict,verbose=verbose)
-    df.clear_filters()
+    dict_filter.add_filter(filter_value="key",filter_object=Filter.KEY,filter_type=Filter.CONTAINS)
+    passed = dict_filter.filter(test_dict,verbose=verbose)
+    dict_filter.clear_filters()
     # Onyl EQUAL FILTER, TEST FOR DICT VALUE
-    df.add_filter(filter_value="this is my test_object",filter_object=Filter.VALUE,filter_type=Filter.EQUAL)
-    passed = df.filter(test_dict,verbose=verbose)
-    df.clear_filters()
+    dict_filter.add_filter(filter_value="this is my test_object",filter_object=Filter.VALUE,filter_type=Filter.EQUAL)
+    passed = dict_filter.filter(test_dict,verbose=verbose)
+    dict_filter.clear_filters()
 
     # a very simple line that could be part of a dictionary hierarchy
     #x = Filter.KEY in iter(Filter)

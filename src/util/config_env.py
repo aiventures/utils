@@ -3,32 +3,17 @@
 import os
 import sys
 import re
+from pathlib import Path
 # when doing tests add this to reference python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import logging
 from util.persistence import Persistence
 from util.colors import col
 from util.const_local import F_CONFIG_ENV
+from util import constants as C
+
 
 logger = logging.getLogger(__name__)
-# JSON keys
-PATH = "p"
-FILE = "f"
-DESCRIPTION = "d"
-GROUPS = "g"
-REFERENCE = "ref"
-CONFIG_KEYS = [PATH,FILE,DESCRIPTION,REFERENCE]
-# if this is set in path, then the current path is used
-PATH_CWD = "CWD"
-# Key Markers
-KEY_CMD = "CMD_"
-KEY_FILE = "F_"
-KEY_PATH = "P_"
-KEY_TYPES = [KEY_CMD,KEY_FILE,KEY_PATH]
-
-# REGEX EXPRESSIONS USED
-# regex to find all strings envlosed n brackets
-REGEX_BRACKETS = r"\[.+?\]"
 
 class ConfigEnv():
     """ Configuration of Command Line Environment  """
@@ -38,82 +23,170 @@ class ConfigEnv():
         self._f_config = f_config
         self._config = Persistence.read_json(self._f_config)
         self._config_keys = list(self._config.keys())
+        self._wrong_rule_keys = {}
         if not self._config:
             self._config = {}
         self._validate()
         pass
 
-    def _resolve_path_ref(self,p_ref:str,key:str):
-        """ resolves the path references """
-        _path_resolved = p_ref
-        if _path_resolved is None:
-            return _path_resolved
+    # todo get config groups
+    def get_env_by_groups(self,groups:list|str=None):
+        """ filter env entries by group. """
+        if isinstance(groups,str):
+            _groups = [groups]
+        else:
+            _groups = groups
+
+        out_config = {}
+
+        if len(_groups) == 0:
+            return out_config
+
+        for _config_key,_config_info in self._config.items():
+            _groups_env = _config_info.get(C.CONFIG_GROUPS,{})
+            if len(_groups_env) == 0:
+                continue
+            if any([g_env in _groups for g_env in _groups_env]):
+                logger.debug(f"Key [{_config_key}], found match in group {_groups_env}")
+                out_config[_config_key] = _config_info
+        logger.info(f"Get Config Env using groups {_groups}, returning [{len(out_config)}] entries")
+        return out_config
+
+    def _resolve_path(self,key):
+        _config = self._config.get(key)
+        _path_out = str(_config.get(C.CONFIG_PATH))
+        if _path_out is None:
+            logger.debug(f"No path was supplied in Config for key [{key}]")
+            return None
 
         # path is current directory
-        if _path_resolved == PATH_CWD: # use current path as directory
-            _path_resolved = os.getcwd()
-            return _path_resolved
+        if _path_out == C.CONFIG_PATH_CWD: # use current path as directory
+            return os.path.abspath(os.getcwd())
 
-        # plain and valid path
-        if os.path.isdir(_path_resolved):
-            return _path_resolved
+        # path can be resolved to a real path
+        if os.path.isdir(_path_out):
+            return os.path.abspath(_path_out)
 
-        path_key = None
-        # check if there are multiple replacements
-        regex_subpaths = re.findall(REGEX_BRACKETS,_path_resolved)
+        _path_key = None
+        _replace_str = None
+        # check if there is a PATHVAR replacements
+        # path = '[PATHVAR]/subpath/.../' => [PATHVAR] will be resolved
+        regex_subpaths = re.findall(C.REGEX_BRACKETS,_path_out)
         if len(regex_subpaths) == 1:
-            path_key = regex_subpaths[0][1:-1]
+            _path_key = regex_subpaths[0][1:-1]
+            _replace_str = regex_subpaths[0]
         # check if there is a single key reference
-        elif _path_resolved in self._config_keys:
-            path_key = _path_resolved
+        elif _path_out in self._config_keys:
+            _path_key = _path_out
+            _replace_str = _path_out
 
-        if path_key:
-            _path_ref = self._config.get(path_key,{}).get(REFERENCE)
-            if len(regex_subpaths) == 1:
-                _path_ref = p_ref.replace(regex_subpaths[0],_path_ref)
-            if os.path.isdir(_path_ref):
-                _path_resolved = _path_ref
+        logger.debug(f"Config Key [{key}], replacing Path by reference from [{_path_key}]")
+        if _path_key is None:
+            logger.debug(f"Config Key [{key}], no path reference found")
+            return None
 
+        # get the path from path ref or from path as fallback
+        _path_ref = _config.get(_path_key,{}).get(C.CONFIG_REFERENCE)
+        if _path_ref is None:
+            _path_ref = self._config.get(_path_key,{}).get(C.CONFIG_PATH)
+        
+        # resolve path from path refs in path variables
+        if _path_ref is None or _replace_str is None:
+            logger.info(f"Config [{key}], reference [{_path_key}], no information found")
+            return None
+        path_out = os.path.abspath(_path_out.replace(_replace_str,_path_ref))
+        path_exists = os.path.isdir(path_out)
+        s = f"Config Key [{key}], path [{_path_out}], calculated path [{path_out}], exists [{path_exists}]"
+        if path_exists:
+            logger.info(s)
+            return path_out
+        else:
+            logger.warning(s)
+            return None
 
+    def _resolve_file(self,key:str)->str:
+        """ validate a file reference in key"""
+        _config = self._config.get(key)
+        _fileref = _config.get(C.CONFIG_FILE,"")
+
+        # check if it is a file
+        if os.path.isfile(_fileref):
+            _fileref = os.path.abspath(_fileref)
+            logger.debug(f"Key [{key}]: absolute file path [{_fileref}]")
+            return _fileref
+
+        # validate pathref
+        _pathref = self._resolve_path(key)
+
+        # check if it is a valid path when using path_ref
+        if _pathref:
+            _fileref = os.path.abspath(os.path.join(_pathref,_fileref))
+            if os.path.isfile(_fileref):
+                logger.debug(f"Key [{key}]: combined path/file [{_fileref}]")
+                return _fileref
             else:
-                logger.warning(f"Resolved path [{_path_ref}] for key [{key}] is invalid")
-            return _path_resolved
+                return None
+    
+    def validate_rules(self) -> dict:
+        """ validate the env Vars that represent a rule 
+            returns dict of wrong rule keys
+        """
+        out_wrong_keys = {}
+        _config = self._config
+        _ruledict_keys = list(C.RULEDICT_FILENAME.keys())
+        for key, config in _config.items():
+            key_prefix = key.split("_")[0]+"_"
+            if not key_prefix == C.CONFIG_KEY_RULE:
+                continue
+            _rules = config.get(C.CONFIG_RULE)
+            if _rules is None:
+                logger.warning(f"Env Key [{key}] has no rule section")
+                continue
+
+            if not isinstance(_rules,list):
+                logger.warning(f"Env Key [{key}] is not a list in rule section")
+                continue
+
+            _wrong_keys_per_key = []
+
+            for _rule in _rules:
+                _rule_keys = list(_rule.keys())
+                _wrong_keys = [k for k in _rule_keys if not k in _ruledict_keys]
+                if len(_wrong_keys) > 0:
+                    logger.warning(f"Env Key [{key}], rules contain invalid keys {_wrong_keys}")                    
+                    _wrong_keys_per_key.extend(_wrong_keys)
+            _wrong_keys_per_key = list(set(_wrong_keys_per_key))
+            if len(_wrong_keys_per_key) > 0:
+                out_wrong_keys[key] = _wrong_keys_per_key
+        return out_wrong_keys
 
     def _validate(self) -> None:
-        """ validates the configuration and creates references """
+        """ validates the configuration and populates ref section """
         _config = self._config
         logger.debug(f"Configuration ({self._f_config}) contains [len({_config})] items")
         for key, config in _config.items():
-            config[REFERENCE] = None
-            # try to get a valid file directly
-            _file = config.get(FILE,"")
-            if os.path.isfile(_file):
-                config[REFERENCE] = _file
-                logger.debug(f"Config [{key}]: Valid File Reference")
+            config[C.CONFIG_REFERENCE] = None
+            key_prefix = key.split("_")[0]+"_"
+            if not key_prefix in C.CONFIG_KEY_TYPES:
+                logger.warning(f"Config Key [{key}] has invalid prefix, allowed {C.CONFIG_KEY_TYPES}")
                 continue
-
-            # try to get a path reference
-            _path = self._resolve_path_ref(config.get(PATH),key)
-
-            if not _path:
-                logger.warning(f"Path is not set for key [{key}]")
-                continue
-
-            # check wheteher we need to set a reference for a path or a file
-            if key.startswith(KEY_PATH):
-                config[REFERENCE] = _path
-                continue
-
-            # now check for a valid file
-            _fileref = os.path.join(_path,_file)
-            if not os.path.isfile(_fileref):
-                logger.warning(f"File Path [{_fileref}] is invalid for key [{key}]")
-            else:
-                config[REFERENCE] = _fileref
+            _file_ref = None
+            # validate file file type
+            if key_prefix == C.CONFIG_KEY_FILE or key_prefix == C.CONFIG_KEY_CMD:
+                _file_ref = self._resolve_file(key)
+            elif key_prefix == C.CONFIG_KEY_PATH:
+                _file_ref = self._resolve_path(key)
+            
+            if _file_ref is not None:
+                logger.debug(f"Resolved fileref for config key [{key}], value [{_file_ref}]")
+                config[C.CONFIG_REFERENCE] = _file_ref
+        
+        # validate rules
+        self._wrong_rule_keys = self.validate_rules()
 
     def get_ref(self,key:str)->str:
         """ returns the constructed reference from Configuration """
-        _ref = self._config.get(key,{}).get(REFERENCE)
+        _ref = self._config.get(key,{}).get(C.CONFIG_REFERENCE)
         if _ref is None:
             logger.warning(f"Key [{key}] is invalid")
         return _ref
@@ -126,9 +199,10 @@ class ConfigEnv():
         for key,config in self._config.items():
             _num = col(f"[{str(n).zfill(3)}] ","C_LN")
             _key = col(f"{key:<20} ","C_KY")
-            _description = col(f"[{config.get(DESCRIPTION,'NO DESCRIPTION')}]","C_TX")
+            _description = col(f"[{config.get(C.CONFIG_DESCRIPTION,'NO DESCRIPTION')}]","C_TX")
             _description = f"{_description:<60}"
-            _ref = config.get(REFERENCE)
+
+            _ref = config.get(C.CONFIG_REFERENCE)
             if _ref:
                 _ref = col("("+_ref+")","C_F")
             else:
@@ -140,6 +214,7 @@ if __name__ == "__main__":
     loglevel = logging.INFO
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=loglevel, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S")
-    config = ConfigEnv(F_CONFIG_ENV)
+    f = Path(__file__).parent.parent.parent.joinpath("test_config","config_env_sample.json")
+    config = ConfigEnv(f)
     config.show()
 

@@ -241,20 +241,30 @@ class FileAnalyzer():
              any_after:str=C.RESULT_ANY_PREFIX_AFTER,
              all_before:str=C.RESULT_ALL_PREFIX_BEFORE,
              all_after:str=C.RESULT_ALL_PREFIX_AFTER,
-             skip_prefix_handling:bool=False
-             )->list:
+             skip_prefix_handling:bool=False,
+             as_dict:bool=False
+             )->list|dict:
         """ returns the result occurence list as string, placeholders for
             search results (also for any|all search types ) can be adapted
-            Can also be skippe
+            Can also be skipped using skip_prefix_handling
+            as_dict determines whether a result dictionary will be returned
         """
-        results = []
+        if as_dict is True:
+            results = {}
+        else:
+            results = []
+
         _results = self.find_file_objects(filter_result_set=filter_result_set)
+        logger.debug(f"Find/format items for [{len(_results)}] search results")
         for _out_result,_match_infos in _results.items():
+            _rules = list(_match_infos.keys())
             if skip_prefix_handling:
                 results.append(_out_result)
                 continue
             s_out = str(_out_result)
-            for _rule, _match_info in _match_infos.items():
+
+            for _rule in _rules:
+                _match_info = _match_infos[_rule]                
                 _apply_rule = _match_info.get(C.RULE_APPLY,C.APPLY_ANY)
                 if _apply_rule == C.APPLY_ALL:
                     _s_before = all_before
@@ -266,7 +276,11 @@ class FileAnalyzer():
                 for result in _match_info.get(C.RULE_RESULTS,[]):
                     s_new =f"{_s_before}{result}{_s_after}"
                     s_out = s_out.replace(result,s_new)
-            results.append(s_out)
+            if as_dict:
+                results[_out_result]={C.PATH:_out_result,C.OUTPUT:_out_result,
+                                      C.FORMATTED:s_out,C.RULES:_rules}
+            else:
+                results.append(s_out)
 
         return results
 
@@ -364,26 +378,36 @@ class FileContentAnalyzer(FileAnalyzer):
         logger.info(f"File [{f}], found [{len(_results)}] hits")
         return _results
 
-    def find(self,f:str=None,filter_result_set:bool=True,             
-             any_before:str=C.RESULT_ANY_PREFIX_BEFORE,
-             any_after:str=C.RESULT_ANY_PREFIX_AFTER,
-             all_before:str=C.RESULT_ALL_PREFIX_BEFORE,
-             all_after:str=C.RESULT_ALL_PREFIX_AFTER,
-             skip_prefix_handling:bool=False,
+    def find(self,f:str=None,filter_result_set:bool=True,
+            any_before:str=C.RESULT_ANY_PREFIX_BEFORE,
+            any_after:str=C.RESULT_ANY_PREFIX_AFTER,
+            all_before:str=C.RESULT_ALL_PREFIX_BEFORE,
+            all_after:str=C.RESULT_ALL_PREFIX_AFTER,
+            skip_prefix_handling:bool=False,
              )->dict:
         """ returns the result occurence list as string, placeholders for
             search results (also for any|all search types ) can be adapted
-            Can also be skipped
+            Can also be skipped using skip_prefix_handling
+            as_dict determines whether a result dictionary will be returned
         """
+
         results = {}
         _results = self.find_file_content(f=f,filter_result_set=filter_result_set)
         for _line_num,_match_infos in _results.items():
+            _result = {}
+            _rules = list(_match_infos.keys())
+
+            _result[C.LINE] = _line_num
             s_out = self._content_lines.get(_line_num,"")
             if skip_prefix_handling:
                 results[_line_num] = s_out
                 continue
 
-            for _rule, _match_infos in _match_infos.items():
+            #for _rule in rules:, _match_infos in _match_infos.items():
+            for _rule in _rules:
+                #, _match_infos in _match_infos.items():
+                _match_list = _match_infos[_rule]
+
                 # right now we do not have this in the text file search
                 _apply_rule = C.APPLY_ANY
                 if _apply_rule == C.APPLY_ALL:
@@ -393,11 +417,16 @@ class FileContentAnalyzer(FileAnalyzer):
                     _s_before = any_before
                     _s_after = any_after
 
-                for _match in _match_infos:
+                for _match in _match_list:
                     s_new =f"{_s_before}{_match}{_s_after}"
-                    s_out = s_out.replace(_match,s_new)
+                    s_out = s_out.replace(_match,s_new)                
 
-            results[_line_num] = s_out
+            _result[C.PATH] = str(f)
+            _result[C.OUTPUT] = s_out
+            _result[C.FORMATTED] = s_out
+            _result[C.RULES] = _rules
+            _result[C.LINE] = _line_num
+            results[_line_num] = _result            
 
         return results
 
