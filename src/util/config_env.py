@@ -7,6 +7,7 @@ from pathlib import Path
 # when doing tests add this to reference python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import logging
+from copy import deepcopy
 from util.persistence import Persistence
 from util.colors import col
 from util.const_local import F_CONFIG_ENV
@@ -89,7 +90,7 @@ class ConfigEnv():
         _path_ref = _config.get(_path_key,{}).get(C.CONFIG_REFERENCE)
         if _path_ref is None:
             _path_ref = self._config.get(_path_key,{}).get(C.CONFIG_PATH)
-        
+
         # resolve path from path refs in path variables
         if _path_ref is None or _replace_str is None:
             logger.info(f"Config [{key}], reference [{_path_key}], no information found")
@@ -126,9 +127,174 @@ class ConfigEnv():
                 return _fileref
             else:
                 return None
-    
-    def validate_rules(self) -> dict:
-        """ validate the env Vars that represent a rule 
+
+    def _get_cmd(self,key,**kwargs)->str:
+        """ passed on params supplied, identify the correct command """
+        _config_cmds = self._config.get(key,{}).get(C.CONFIG_COMMAND,{})
+        _cmd_keys = [k.lower() for k in list(kwargs.keys())]
+        logger.debug(f"Find command rule for env key [{key}], params {_cmd_keys}")
+        _matching_rules = {}
+        for _cmd in _config_cmds.keys():
+            # match the signature in the configuration with
+            # the passed parameters
+            _rule_keys = _cmd.lower().split("_")
+            _rule_matches = {}
+            _matches_all_rules = True
+            for _rule_key in _rule_keys:
+                # ignore cmd, will be replaced by cmd in configuration
+                if _rule_key == "cmd":
+                    continue
+                _matches_rule = True if _rule_key in _cmd_keys else False
+                _rule_matches[_rule_key] = _matches_rule
+                if _matches_rule is False:
+                    _matches_all_rules = False
+            logger.debug(f"Env Key [{key}], rule [{_cmd}], keys {_cmd_keys}, overall match [{_matches_all_rules}]")
+            if _matches_all_rules:
+                _matching_rules[_cmd] = _rule_matches
+
+        num_matching_rules = len(_matching_rules)
+        # returns found rule
+        if num_matching_rules == 0:
+            logger.warning("No valid cmd rules found for Env Key [{key}], using keys {_cmd_keys}")
+            return None
+
+        # in case there is only one rule, return this one
+        if num_matching_rules == 1:
+            logger.info("Valid rule found for Env Key [{key}], using keys {_cmd_keys}")
+            return list(_matching_rules.keys())[0]
+
+        # try to match the one with the highest number of matching parameters
+        # do not return anything in case there are ambiguities
+        num_max_params = 0
+        rule_out = None
+        duplicate_rules = []
+        for _rule,_rule_info in _matching_rules.items():
+            num_params = len(_rule_info)
+            if num_params > num_max_params:
+                duplicate_rules = [_rule]
+                num_max_params = num_params
+                rule_out = _rule
+            elif num_params == num_max_params:
+                duplicate_rules.append(_rule)
+                rule_out = None
+
+        if rule_out is None:
+            logger.warning(f"Multiple rules {duplicate_rules} found for Env Key [{key}], using keys {_cmd_keys}, skipped")
+        else:
+            logger.info(f"Multiple rules for Env Key [{key}], using keys {_cmd_keys}, using rule [{rule_out}] (max num of params)")
+
+        return rule_out
+
+    def _parse_cmd(self,key:str,cmd_key:str,**kwargs)->dict:
+        """ parse the cmd command """
+
+        env_vars = {}
+        for k,v in kwargs.items():
+            env_vars[k.lower()] = v
+        # get the config items / should be checked before
+        _env_config = self._config.get(key)
+        _cmd_info = _env_config.get(C.CONFIG_COMMAND,{}).get(cmd_key)
+
+        # replace the cmd commands
+        if _cmd_info is None:
+            logger.warning(f"Key [{key}], cmd key [{cmd_key}] not found, please check")
+            return None
+
+        if isinstance(_cmd_info,str):
+            _cmd_info = {C.CONFIG_RULE:_cmd_info,
+                         C.CONFIG_DESCRIPTION:"No description"}
+
+        # parse the command line string
+        cmd_out = _cmd_info.get(C.CONFIG_RULE)
+        if cmd_out is None:
+            logger.warning(f"ENV Rule [{key}], no (r)ule found")
+            return None
+
+        # replace the cmd string
+        cmd = _env_config.get(C.CONFIG_REFERENCE)
+        if cmd is None:
+            logger.warning(f"ENV Rule [{key}], no executable was found, check file and path")
+            return None
+        env_vars[C.CMD] = cmd
+
+        # from the cmd template get all variables for replacement
+        _vars = re.findall(C.REGEX_BRACKETS,cmd_out)
+        for _var in _vars:
+            cmd_out = cmd_out.replace(_var,_var.lower())
+        _vars = [v.lower() for v in _vars]
+
+        # replace all occurences
+        for _var in _vars:
+            _key = _var[1:-1]
+            _value = str(env_vars.get(_key))
+            # TODO check if value contains space and can be interpreted as string or path
+            # if so, enclose it into parentheses / or us single quotes as marker to replace them due to json formatting
+            if _value is None:
+                logger.warning(f"ENV Rule [{key}], cmd_key [{cmd_key}], couldn't replace [{_var}], env_vars {env_vars}")
+                cmd_out = None
+                break
+            cmd_out = cmd_out.replace(_var,_value)
+        # replace single quotes by double quotes
+        cmd_out = cmd_out.replace("'",'"')
+        return cmd_out
+
+    def parse_cmd(self,key:str,**kwargs) -> str|None:
+        """ parses the a command line cmd for a configuration
+            returns None if now could be found
+        """
+        out = ""
+        key_prefix = key.split("_")[0]+"_"
+        if not key_prefix == C.CONFIG_KEY_CMD:
+            logger.debug(f"Key [{key}] is not matching to a command line command")
+            return None
+
+        _cmd_config = self._config.get(key)
+        if _cmd_config is None:
+            logger.warning(f"Key [{key}] is not in configured in environment")
+            return None
+
+        _commands = _cmd_config.get(C.CONFIG_COMMAND)
+        if _commands is None:
+            logger.warning(f"Key [{key}], no (c)ommands section")
+            return None
+
+        # find the correct command line parsing rule
+        _cmd = self._get_cmd(key,**kwargs)
+        if _cmd is None:
+            logger.warning(f"Key [{key}], Couldn't Parse CMD Rules with args {kwargs} ")
+            return None
+        
+        # do the parsing 
+        out = self._parse_cmd(key=key,cmd_key=_cmd,**kwargs)
+        return out
+
+    def _validate_commands(self)->dict:
+        """ validates the command line commands
+            returns dict of wrong commands
+        """
+        out_wrong_keys = {}
+        _config = self._config
+        _ruledict_keys = list(C.RULEDICT_FILENAME.keys())
+        for key, config in _config.items():
+            key_prefix = key.split("_")[0]+"_"
+            if not key_prefix == C.CONFIG_KEY_CMD:
+                continue
+            _commands = config.get(C.CONFIG_COMMAND)
+            if _commands is None:
+                logger.warning(f"Env Key [{key}] has no (c)ommand section")
+                continue
+            if not isinstance(_commands,dict):
+                logger.warning(f"Env Key [{key}], (c)ommand section is not a dict")
+                continue
+            #for _cmd,_cmd_info in _commands.items():
+            #     pass
+        # TODO 
+        return out_wrong_keys
+
+
+
+    def _validate_rules(self) -> dict:
+        """ validate the env Vars that represent a rule
             returns dict of wrong rule keys
         """
         out_wrong_keys = {}
@@ -140,7 +306,7 @@ class ConfigEnv():
                 continue
             _rules = config.get(C.CONFIG_RULE)
             if _rules is None:
-                logger.warning(f"Env Key [{key}] has no rule section")
+                logger.warning(f"Env Key [{key}] has no (r)ule section")
                 continue
 
             if not isinstance(_rules,list):
@@ -153,12 +319,13 @@ class ConfigEnv():
                 _rule_keys = list(_rule.keys())
                 _wrong_keys = [k for k in _rule_keys if not k in _ruledict_keys]
                 if len(_wrong_keys) > 0:
-                    logger.warning(f"Env Key [{key}], rules contain invalid keys {_wrong_keys}")                    
+                    logger.warning(f"Env Key [{key}], rules contain invalid keys {_wrong_keys}")
                     _wrong_keys_per_key.extend(_wrong_keys)
             _wrong_keys_per_key = list(set(_wrong_keys_per_key))
             if len(_wrong_keys_per_key) > 0:
                 out_wrong_keys[key] = _wrong_keys_per_key
         return out_wrong_keys
+
 
     def _validate(self) -> None:
         """ validates the configuration and populates ref section """
@@ -176,13 +343,16 @@ class ConfigEnv():
                 _file_ref = self._resolve_file(key)
             elif key_prefix == C.CONFIG_KEY_PATH:
                 _file_ref = self._resolve_path(key)
-            
+
             if _file_ref is not None:
                 logger.debug(f"Resolved fileref for config key [{key}], value [{_file_ref}]")
                 config[C.CONFIG_REFERENCE] = _file_ref
-        
+
         # validate rules
-        self._wrong_rule_keys = self.validate_rules()
+        self._wrong_rule_keys.update(self._validate_rules())
+        # validate commands
+
+
 
     def get_ref(self,key:str)->str:
         """ returns the constructed reference from Configuration """

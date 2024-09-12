@@ -10,6 +10,25 @@
     "CMD_CYGPATH":         {"p":"P_GIT",
                             "f":"cygpath.exe",
                             "d":"Path Conversion utility (Part of Git)"},
+    "CMD_EXAMPLE1":         {"p":"P_CONFIGTEST",
+                            "f":"cmd_dummy1.txt",
+                            "d":"Command line example 1 to show how it can be called with commands",
+                            "c":{"CMD_FILE":"'[CMD]' -f '[FILE]'",
+                                 "CMD_FILE_LINE":"'[CMD]' -f '[FILE]' -l [LINE]"
+                                }
+                            },
+    "CMD_EXAMPLE2":         {"p":"P_CONFIGTEST",
+                            "f":"cmd_dummy2.txt",
+                            "d":"Command line example 1 to show how it can be called with commands",
+                            "c":{"CMD_FILE_LINE":{"r":"'[CMD]' -f '[FILE]' -l [LINE]",
+                                                  "d":"Command Line Option with a description"}}
+                            },                            
+    "CMD_EXAMPLE_WRONG":    {"p":"P_CONFIGTEST",
+                            "f":"cmd_dummy2.txt",
+                            "d":"Command line example 1 to show how it can be called with commands",
+                            "c":{"CMD_FILE_LINE":{"r":"'[CMD]' -f '[WRONG]' -l [LINE]",
+                                                  "d":"Command Line Option with errors"}}
+                            },                             
     "P_CONFIGTEST":         {"p":"P_CONFIGTEST",
                             "d":"ConfigTest - will be populated by unittest as absolute path",
                             "g":["groupA"]},

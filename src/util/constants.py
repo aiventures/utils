@@ -8,6 +8,7 @@ OUTPUT = "output"
 FORMATTED = "formatted"
 LINE = "line"
 RULES = "rules"
+CMD = "cmd"
 
 # REGEX FIELD NAME DEFINITIONS 
 RULE_NAME="name"
@@ -74,8 +75,10 @@ CONFIG_GROUPS = "g"             # a list of group this item belongs to
 CONFIG_REFERENCE = "ref" # the resolved path or file path if it can be resolved
 CONFIG_REGEX = "x" # config should be treated as regex
 CONFIG_RULE = "r" # rule dictionary for file_anaylzer / check the json how to use it
+CONFIG_COMMAND = "c" # rule dictionary for command options
 
-CONFIG_KEYS = [CONFIG_PATH,CONFIG_FILE,CONFIG_DESCRIPTION,CONFIG_GROUPS,CONFIG_REFERENCE]
+CONFIG_KEYS = [CONFIG_PATH,CONFIG_FILE,CONFIG_DESCRIPTION,CONFIG_GROUPS,CONFIG_REFERENCE,
+               CONFIG_REGEX,CONFIG_RULE,CONFIG_COMMAND]
 # if this is set in path, then the current path is used
 CONFIG_PATH_CWD = "CWD"
 # Key Markers / Prefix may determine which type of file object is there 

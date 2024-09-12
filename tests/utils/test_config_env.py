@@ -27,3 +27,29 @@ def test_config_get_groups(fixture_sample_config_json):
     config_env = ConfigEnv(fixture_sample_config_json)
     _groups = config_env.get_env_by_groups("groupA")
     assert len(_groups) == 2
+
+def test_validate_commands(fixture_sample_config_json):
+    """ test the command pattern valiudations """
+    config_env = ConfigEnv(fixture_sample_config_json)
+    wrong_commands = config_env._validate_commands()
+    
+    # _groups = config_env.get_env_by_groups("groupA")
+    # assert len(_groups) == 2    
+
+def test_parse_commands(fixture_sample_config_json):
+    """ test the parsing of the command pattern options """
+    config_env = ConfigEnv(fixture_sample_config_json)
+    # check the CMD_EXAMPLE1 definition of variables    
+    cmd = "CMD_EXAMPLE1"
+    # parsing the command 
+    # cmd_params = {"file":"testfile.txt"}
+    # _cmd = config_env.parse_cmd(cmd,**cmd_params)
+    _cmd = config_env.parse_cmd(cmd,file="testfile.txt",line=5)
+    pass
+
+
+
+
+    #wrong_commands = config_env._validate_commands()
+    # _groups = config_env.get_env_by_groups("groupA")
+    # assert len(_groups) == 2        
