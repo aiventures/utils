@@ -29,14 +29,14 @@ class FileSysObjectInfo():
         self._filter_matcher = StringMatcher()
         if root_paths is None:
             _root_paths = [os.getcwd()]
-            logger.debug(f"No files addedAdding f{os.getcwd()} as root path")
+            logger.debug(f"[FileInfo] No files addedAdding f{os.getcwd()} as root path")
         elif isinstance(root_paths,str):
             _root_paths = [root_paths]
         elif isinstance(root_paths,Path):
             _root_paths = [str(root_paths)]
         for _root_path in _root_paths:
             if not os.path.isdir(_root_path):
-                logger.warning(f"[{_root_path}] is not a valid path, skipping root path")
+                logger.warning(f"[FileInfo] [{_root_path}] is not a valid path, skipping root path")
                 continue
             self._root_paths.append(_root_path)
         self._files = {}
@@ -50,14 +50,14 @@ class FileSysObjectInfo():
         self._paths = {}
         for _root_path in self._root_paths:
             _paths = []
-            logger.info(f"Adding file system objects from [{_root_path}]")
+            logger.info(f"[FileInfo] Adding file system objects from [{_root_path}]")
             for subpath,_,files in os.walk(_root_path):
                 _path = Path(subpath).absolute()
                 _files_absolute = [_path.joinpath(f) for f in files]
                 self._files[subpath]={C.FILES_ABSOLUTE:_files_absolute,C.FILES:files}
                 _paths.append(subpath)
             self._paths[_root_path]=_paths
-        logger.debug(f"Read [{self._files}] Files, [{self._paths }] Paths")
+        logger.debug(f"[FileInfo] Read [{self._files}] Files, [{self._paths }] Paths")
 
     @property
     def path_dict(self)->dict:
@@ -74,7 +74,7 @@ class FileSysObjectInfo():
     @property
     def file_dict(self)->dict:
         """ returns dict of files """
-        logger.debug(f"Returning files dict covering [{len(self._files)}] Directories")
+        logger.debug(f"[FileInfo] Returning files dict covering [{len(self._files)}] Directories")
         return self._files
 
     @property
@@ -84,7 +84,7 @@ class FileSysObjectInfo():
         for p,p_info in self._files.items():
             _files = p_info.get(C.FILES_ABSOLUTE,[])
             _ = [_file_list.append(str(f)) for f in _files]
-        logger.debug(f"Returning [{len(_file_list)}] Files")
+        logger.debug(f"[FileInfo] Returning [{len(_file_list)}] Files")
         return _file_list
 
 
@@ -121,12 +121,12 @@ class FileAnalyzer():
         # according to rule add rule to the appropriate matcher
         _rule_name = _new_rule.get(C.RULE_NAME)
         _rule_type = _new_rule.get(C.RULE_FILE)
-        logger.debug(f"Adding rule [{_rule_name}], type [{_rule_type}]")
+        logger.debug(f"[FileAnalyzer] Adding rule [{_rule_name}], type [{_rule_type}]")
         try:
             _rule_matcher = self._rule_dicts[_rule_type]
             _rule_matcher.add_rule(_new_rule)
         except KeyError:
-            logger.error(f"Can't Identify appropriate matcher, rule [{_rule_name}], got type [{_rule_type}]")
+            logger.error(f"[FileAnalyzer] Can't Identify appropriate matcher, rule [{_rule_name}], got type [{_rule_type}]")
         pass
 
     def _get_matcher(self,rule:str)->StringMatcher|FileMatcher:
@@ -149,7 +149,7 @@ class FileAnalyzer():
             # check if there are results ar all
             if len(search_result) > 0:
                 _file_object_matches[_file_object_key] = search_result
-        logger.info(f"Matcher [{matcher}], found [{len(_file_object_matches)}/{len(find_dict)}] objects")
+        logger.info(f"[FileAnalyzer] Matcher [{matcher}], found [{len(_file_object_matches)}/{len(find_dict)}] objects")
 
         return _file_object_matches
 
@@ -160,7 +160,7 @@ class FileAnalyzer():
         for _path_object,_path_object_info in path_objects.items():
             for _file, _file_info in file_objects.items():
                 if str(_path_object) in str(_file):
-                    logger.debug(f"Adding Path Matching Infos {list(_path_object_info.keys())} to [{_file}]")
+                    logger.debug(f"[FileAnalyzer] Adding Path Matching Infos {list(_path_object_info.keys())} to [{_file}]")
                     _file_info.update(_path_object_info)
 
     @staticmethod
@@ -191,7 +191,7 @@ class FileAnalyzer():
             if len(_file_object_info) <= 1:
                 _ = file_objects.pop(_delete_key,None)
 
-        logger.debug(f"File Objects after/before apply_all [{len(file_objects)}/{_num_file_objects}], deleted [{_delete_keys}] keys")
+        logger.debug(f"[FileAnalyzer] File Objects after/before apply_all [{len(file_objects)}/{_num_file_objects}], deleted [{_delete_keys}] keys")
         return file_objects
 
     def find_file_objects(self,filter_result_set:bool=True)->dict:
@@ -225,7 +225,7 @@ class FileAnalyzer():
                 continue
                 # TODO CHANGE TO PATHS
             else:
-                logger.warning(f"Invalid File Object Rule: [{_rule}]")
+                logger.warning(f"[FileAnalyzer] Invalid File Object Rule: [{_rule}]")
                 continue
             _file_object_matches = self._match_files(_find_dict,_rule,filter_result_set=False)
             if len(_file_object_matches) > 0:
@@ -255,7 +255,7 @@ class FileAnalyzer():
             results = []
 
         _results = self.find_file_objects(filter_result_set=filter_result_set)
-        logger.debug(f"Find/format items for [{len(_results)}] search results")
+        logger.debug(f"[FileAnalyzer] Find/format items for [{len(_results)}] search results")
         for _out_result,_match_infos in _results.items():
             _rules = list(_match_infos.keys())
             if skip_prefix_handling:
@@ -375,7 +375,7 @@ class FileContentAnalyzer(FileAnalyzer):
         """
         # use the file content rule
         _results = self._find_file_content_txt(f,filter_result_set)
-        logger.info(f"File [{f}], found [{len(_results)}] hits")
+        logger.info(f"[FileContentAnalyzer] File [{f}], found [{len(_results)}] hits")
         return _results
 
     def find(self,f:str=None,filter_result_set:bool=True,

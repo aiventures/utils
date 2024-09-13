@@ -39,7 +39,7 @@ class Filter(Enum):
         try:
             enum_value = Filter[key]
         except KeyError:
-            logger.warning(f"There is no key {key} in ENUM")
+            logger.warning(f"[Filter] There is no key {key} in ENUM")
             return None
         return enum_value
 
@@ -98,7 +98,7 @@ class DictFilter():
         filter_type = filter_dict[Filter.TYPE].value.replace("filter_","")
         filter_value = filter_dict[Filter.VALUE].replace("filter_","")
         filter_object = filter_dict[Filter.OBJECT].value.replace("filter_","")
-        logger.debug(f"Adding Filter for [{filter_object}][{filter_type}]:({filter_value}), [{len(filter_dict)-3}] additional params")
+        logger.debug(f"[DictFilter] Adding Filter for [{filter_object}][{filter_type}]:({filter_value}), [{len(filter_dict)-3}] additional params")
         self._filters.append(filter_dict)
 
     def add_value_filter(self,filter_value,**kwargs):
@@ -112,7 +112,7 @@ class DictFilter():
 
     def clear_filters(self):
         """ removes all filters """
-        logger.debug(f"Clear [{len(self._filters)}] Object Filters")
+        logger.debug(f"[DictFilter] Clear [{len(self._filters)}] Object Filters")
         self._filters = []
 
     def _filter_level(self,level,object_filter:dict)->bool:
@@ -141,7 +141,7 @@ class DictFilter():
         # validate input
         validated_properties = [l for l in list(info_dict.keys()) if l in self._allowed_dict_props]
         if not validated_properties:
-            logger.warning(f"passed dict has no proper keys ({list(info_dict.keys())})")
+            logger.warning(f"[DictFilter] passed dict has no proper keys ({list(info_dict.keys())})")
             return
         # get filterr object
         obj_key = info_dict.get(DictProps.KEY.value)
@@ -160,7 +160,7 @@ class DictFilter():
             else:
                 filtered_object = None
             if not filtered_object:
-                logger.warning(f"Object {filter_object} not found in {info_dict}")
+                logger.warning(f"[DictFilter] Object {filter_object} not found in {info_dict}")
                 continue
 
             # filter by type
@@ -173,7 +173,7 @@ class DictFilter():
                 regex_match = re.findall(filter_value,filtered_object)
                 filters_passed.append( True if len(regex_match) > 0 else False )
             else:
-                logger.warning(f"Filter {object_filter} has no valid Filter Type")
+                logger.warning(f"[DictFilter] Filter {object_filter} has no valid Filter Type")
                 continue
 
             # filter by level
@@ -183,12 +183,12 @@ class DictFilter():
                 filters_passed.append(level_passed)
 
             if verbose:
-                logger.debug(f"#### FILTERING {info_dict}")
-                logger.debug(f"FILTER       : {object_filter}")
-                logger.debug(f"FILTER OBJECT [{filter_object.name}] {filtered_object} {filter_type.name} {filter_value}, level pass: {level_passed}")
-                logger.debug(f"FILTER RESULT: {filters_passed} => {all(filters_passed)}")
+                logger.debug(f"[DictFilter] #### FILTERING {info_dict}")
+                logger.debug(f"[DictFilter] FILTER       : {object_filter}")
+                logger.debug(f"[DictFilter] FILTER OBJECT [{filter_object.name}] {filtered_object} {filter_type.name} {filter_value}, level pass: {level_passed}")
+                logger.debug(f"[DictFilter] FILTER RESULT: {filters_passed} => {all(filters_passed)}")
 
-        logger.debug(f"Filter {info_dict}, filters_passed: {filters_passed}")
+        logger.debug(f"[DictFilter] Filter {info_dict}, filters_passed: {filters_passed}")
         return all(filters_passed)
 
 class DictParser():
@@ -234,7 +234,7 @@ class DictParser():
         for k, v in d.copy().items():
             self._num_nodes += 1
             v_type = str(type(v).__name__)
-            logger.debug(f"{self._num_nodes}: Key {k} type {v_type}, parent {parent_id}")
+            logger.debug(f"[DictParser] {self._num_nodes}: Key {k} type {v_type}, parent {parent_id}")
             if parent_id:
                 obj_id = DictParser.get_hash(str(k)+str(self._num_nodes))
                 self._hierarchy[obj_id]={"parent":parent_id,"key":k,"object":v,
@@ -263,7 +263,7 @@ class DictParser():
             pred_ids=[hier_id,*predecessors][:-1]
             pred_ids.reverse()
             key_list=[ self._hierarchy[id]["key"] for id in pred_ids]
-            logger.debug(f"[{hier_id}], key [{hier_info['key']}], key list {key_list}")
+            logger.debug(f"[DictParser] [{hier_id}], key [{hier_info['key']}], key list {key_list}")
             hier_info["keylist"]=key_list
             hier_info["level"]=len(key_list)
 

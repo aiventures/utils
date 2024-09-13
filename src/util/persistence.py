@@ -37,20 +37,20 @@ class Persistence():
         if f_read:
             if os.path.isfile(f_read):
                 self._f_read = os.path.abspath(f_read)
-                logger.info(f"File read path: [{self._f_read}]")
+                logger.info(f"[Persistence] File read path: [{self._f_read}]")
             else:
                 self._f_read = None
-                logger.warning(f"File path {f_read} not found, check")
+                logger.warning(f"[Persistence] File path {f_read} not found, check")
         self._f_save = None
         if f_save:
-            logger.info(f"File save path: {f_save}")
+            logger.info(f"[Persistence] File save path: {f_save}")
             self._f_save = f_save
         # get more params form kwargs
         self._dec_sep = kwargs.get("dec_sep",",")
         self._csv_sep = kwargs.get("csv_sep",";")
         self._add_timestamp = kwargs.get("add_timestamp",False)
 
-        logger.debug(f"Decimal Separator: {self._dec_sep}, CSV Separator: {self._csv_sep}")
+        logger.debug(f"[Persistence] Decimal Separator: {self._dec_sep}, CSV Separator: {self._csv_sep}")
 
     @property
     def f_read(self)->Path:
@@ -99,7 +99,7 @@ class Persistence():
             p = Path(Persistence.posix2winpath(f))
             p_valid = any([p.is_dir(),p.is_file()])
             if not p_valid:
-                logger.warning(f"{f} is not a valid file or path (path)")
+                logger.warning(f"[Persistence] {f} is not a valid file or path (path)")
                 return
         p = p.absolute()
         if posix: # return as posix string (however it is not a valid path)
@@ -120,7 +120,7 @@ class Persistence():
         """ converts a dict with objects to stringified dict (for json) """
         for k, v in d.copy().items():
             v_type = str(type(v).__name__)
-            logger.debug(f"Key {k} type {v_type}")
+            logger.debug(f"[Persistence] Key {k} type {v_type}")
             if isinstance(v, dict): # For DICT
                 d[k]= Persistence.dict_stringify(v)
             elif isinstance(v, list): # itemize LIST as dict
@@ -139,7 +139,7 @@ class Persistence():
     def read_file(self,encoding='utf-8',comment_marker=None,skip_blank_lines=False,strip_lines=True,with_line_nums:bool=False)->list|dict:
         """ read file and return content"""
         if self._f_read is None:
-            logger.warning("No valid filee")
+            logger.warning(f"[Persistence] No valid file")
             return
         return Persistence.read_txt_file(self._f_read,encoding,comment_marker,skip_blank_lines,strip_lines,with_line_nums)
 
@@ -174,8 +174,8 @@ class Persistence():
             csv_data = Persistence.headerdict2list(template)
             Persistence.save_list(f,csv_data)
         else:
-            logger.error("File template creation only allowed for type yaml,json,csv")
-        logger.info(f"Created Template file {p_file}")
+            logger.error("[Persistence] File template creation only allowed for type yaml,json,csv")
+        logger.info(f"[Persistence] Created Template file {p_file}")
         return p_file
 
     @staticmethod
@@ -207,7 +207,7 @@ class Persistence():
                 if not value:
                     continue
                 if filter_value in value:
-                    logger.info(f"Item [{header}] will be filtered, Rule ({filter_field}:{filter_value}), value ({value})")
+                    logger.info(f"[Persistence] Item [{header}] will be filtered, Rule ({filter_field}:{filter_value}), value ({value})")
                     passed = False
                     break
             return passed
@@ -234,16 +234,16 @@ class Persistence():
                 line_dict[k]=str(value_dict[k])
             out_list.append(line_dict)
 
-        logger.debug(f"Created {len(out_list)} entries, columns {columns}")
+        logger.debug(f"[Persistence] Created {len(out_list)} entries, columns {columns}")
         if len(column_counts) > 1:
-            logger.debug("Different Columns present for each line, appending missing columns")
+            logger.debug("[Persistence] Different Columns present for each line, appending missing columns")
             out_list_new = []
             for line_dict in out_list:
                 out_dict_new={num_col_title:line_dict[num_col_title],header_name:line_dict[header_name]}
                 for column in sorted(columns):
                     v = line_dict.get(column)
                     if v is None:
-                        logger.debug(f"Adding empty value for line with key {line_dict[header_name]}")
+                        logger.debug(f"[Persistence] Adding empty value for line with key {line_dict[header_name]}")
                         v = ""
                     out_dict_new[column]=v
                 out_list_new.append(out_dict_new)
@@ -267,18 +267,18 @@ class Persistence():
         """ transform csv lines to dictionary """
         out_list = []
         if len(lines) <= 1:
-            logger.warning("Too few lines in CSV")
+            logger.warning("[Persistence] Too few lines in CSV")
             return {}
         keys = lines[0].split( self._csv_sep)
         num_keys = len(keys)
-        logger.debug(f"CSV COLUMNS ({num_keys}): {keys}")
+        logger.debug(f"[Persistence] CSV COLUMNS ({num_keys}): {keys}")
         for i,l in enumerate(lines[1:]):
             values = l.split( self._csv_sep)
             if len(values) != num_keys:
-                logger.warning(f"Entry [{i}]: Wrong number of entries, expected {num_keys} {l}")
+                logger.warning(f"[Persistence] Entry [{i}]: Wrong number of entries, expected {num_keys} {l}")
                 continue
             out_list.append(dict(zip(keys,values)))
-        logger.debug(f"Read {len(out_list)} lines from CSV")
+        logger.debug(f"[Persistence] Read {len(out_list)} lines from CSV")
         return out_list
 
     @staticmethod
@@ -286,11 +286,11 @@ class Persistence():
         """ try to convert a list of dictionaries into csv format """
         out = []
         if not data_list:
-            logger.warning("no data in list")
+            logger.warning("[Persistence] no data in list")
             return None
         key_row = data_list[0]
         if not isinstance(key_row,dict):
-            logger.warning("List data is ot a dictionary, nothing will be returned")
+            logger.warning("[Persistence] List data is ot a dictionary, nothing will be returned")
             return None
         keys = list(key_row.keys())
         out.append(csv_sep.join(keys))
@@ -299,7 +299,7 @@ class Persistence():
             for k in keys:
                 v=data.get(k,"")
                 if csv_sep in v:
-                    logger.warning(f"CSV Separator {v} found in {k}:{v}, will be replaced by _sep_")
+                    logger.warning(f"[Persistence] CSV Separator {v} found in {k}:{v}, will be replaced by _sep_")
                     v = v.replace(csv_sep,"_sep_")
                 data_row.append(v)
             out.append(csv_sep.join(data_row))
@@ -321,7 +321,7 @@ class Persistence():
                         bom_check = True
                         if line[0] == BOM:
                             line = line[1:]
-                            logger.warning("Line contains BOM Flag, file is special UTF-8 format with BOM")
+                            logger.warning("[Persistence] Line contains BOM Flag, file is special UTF-8 format with BOM")
                     if len(line.strip())==0 and skip_blank_lines:
                         continue
                     if comment_marker is not None and line.startswith(comment_marker):
@@ -333,7 +333,7 @@ class Persistence():
                     else:
                         lines.append(line)
         except Exception as e:
-            logger.error(f"Exception reading file {filepath}, [{e}]",exc_info=True)
+            logger.error(f"[Persistence] Exception reading file {filepath}, [{e}]",exc_info=True)
         return lines
 
     @staticmethod
@@ -343,7 +343,7 @@ class Persistence():
             with open(filepath,encoding=encoding,mode="+wt") as fp:
                 fp.write(data)
         except:
-            logger.error(f"Exception writing file {filepath}",exc_info=True)
+            logger.error(f"[Persistence] Exception writing file {filepath}",exc_info=True)
         return
 
     @staticmethod
@@ -352,13 +352,13 @@ class Persistence():
         data = None
 
         if not os.path.isfile(filepath):
-            logger.warning(f"File path {filepath} does not exist. Exiting...")
+            logger.warning(f"[Persistence] File path {filepath} does not exist. Exiting...")
             return None
         try:
             with open(filepath,encoding='utf-8') as json_file:
                 data = json.load(json_file)
         except:
-            logger.error(f"Error opening {filepath} ****",exc_info=True)
+            logger.error(f"[Persistence] Error opening {filepath} ****",exc_info=True)
 
         return data
 
@@ -372,7 +372,7 @@ class Persistence():
             try:
                 json.dump(data, json_file, indent=4,ensure_ascii=False)
             except:
-                logger.error("Exception writing file {filepath}",exc_info=True)
+                logger.error("[Persistence] Exception writing file {filepath}",exc_info=True)
 
             return None
 
@@ -381,7 +381,7 @@ class Persistence():
             for yaml, lines in in filecan be read
         """
         if not self._f_read:
-            logger.error("No file found")
+            logger.error("[Persistence] No file found")
             return
         out = None
         p = Path(self._f_read)
@@ -395,10 +395,10 @@ class Persistence():
         elif suffix == "json":
             out = Persistence.read_json(self._f_read)
         else:
-            logger.warning(f"File {self._f_read}, no supported suffix {suffix}, skip read")
+            logger.warning(f"[Persistence] File {self._f_read}, no supported suffix {suffix}, skip read")
             out = None
 
-        logger.info(f"Reading {self._f_read}")
+        logger.info(f"[Persistence] Reading {self._f_read}")
 
         return out
 
@@ -427,7 +427,7 @@ class Persistence():
             f_save = self._f_save
 
         if not f_save:
-            logger.warning("No file name for saving data was found")
+            logger.warning("[Persistence] No file name for saving data was found")
             return None
 
         f_save = self.get_adjusted_filename(f_save,self._add_timestamp)
@@ -438,12 +438,12 @@ class Persistence():
         """ save data in a list as string data, returns saved file name """
         data = None
         if not f_save or not isinstance(data,list):
-            logger.error(f"Can't Save file {f_save}")
+            logger.error(f"[Persistence] Can't Save file {f_save}")
             return
         try:
             data = "\n".join(data)
         except TypeError:
-            logger.error(f"Data to save to {f_save} is not a list of strings")
+            logger.error(f"[Persistence] Data to save to {f_save} is not a list of strings")
         Persistence.save_txt_file(f_save,data)            
         return f_save
         

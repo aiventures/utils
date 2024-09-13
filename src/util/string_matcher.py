@@ -41,7 +41,7 @@ class StringMatcher():
         """ add list of rules """
         _rules = rules
         if not isinstance(_rules,list):
-            logger.debug("No list of rules was supplied, skip")
+            logger.debug("[StringMatcher] No list of rules was supplied, skip")
             return
         for _rule in rules:
             self.add_rule(_rule)
@@ -61,13 +61,13 @@ class StringMatcher():
         for _rule,_rule_info in self._rules.items():
             if _rule_info.get(C.RULE_APPLY,self._apply_default) == C.APPLY_ALL:
                 self._all_rules.append(_rule)
-        logger.debug(f"ALL_RULES: {self._all_rules}")
+        logger.debug(f"[StringMatcher] ALL_RULES: {self._all_rules}")
 
     def add_rule(self,rule:dict)->None:
         """ validates and adds rule """
         _rule = rule
         if not isinstance(_rule,dict):
-            logger.warning(f"Trying to add rule [{rule}], which is not a rule")
+            logger.warning(f"[StringMatcher] Trying to add rule [{rule}], which is not a rule")
             return
 
         try:
@@ -78,7 +78,7 @@ class StringMatcher():
         if rule[RULE_NAME] is None:
             _name = str(uuid.uuid4())[-8:]
             rule[RULE_NAME] = _name
-            logger.info(f"No name was given, using {rule[RULE_NAME]} a s rule name")
+            logger.info(f"[StringMatcher] No name was given, using {rule[RULE_NAME]} a s rule name")
 
         # step 1 copy default values
         _rule = deepcopy(RULEDICT)
@@ -92,10 +92,10 @@ class StringMatcher():
                     _rule[RULE_REGEX] = re.compile(rule[RULE_RULE],re.IGNORECASE)
                 else:
                     _rule[RULE_REGEX] = re.compile(rule[RULE_RULE])
-            logger.debug(f"Adding Rule [{_name}]: {_rule}")
+            logger.debug(f"[StringMatcher] Adding Rule [{_name}]: {_rule}")
             self._rules[_name] = _rule
         except (TypeError,KeyError) as e:
-            logger.warning(f"Rule [{rule[RULE_NAME]}], no regex expression [{rule[RULE_RULE]}] was supplied, {e}")
+            logger.warning(f"[StringMatcher] Rule [{rule[RULE_NAME]}], no regex expression [{rule[RULE_RULE]}] was supplied, {e}")
 
         self._add_all_rules()
 
@@ -105,7 +105,7 @@ class StringMatcher():
         _result = []
         _rule_dict = self._rules.get(rule)
         if _rule_dict is None:
-            logger.warning(f"There is no matching rule named [{rule}]")
+            logger.warning(f"[StringMatcher] There is no matching rule named [{rule}]")
             return False
 
         _regex = _rule_dict[RULE_REGEX]
@@ -132,7 +132,7 @@ class StringMatcher():
                 # excluded, not found => _rule applies
                 else:
                     _result = [_rule]
-            logger.debug(f"Non Regex Find using rule [{rule}] (include: [{_include_results}]), string [{s}], result {_result}")
+            logger.debug(f"[StringMatcher] Non Regex Find using rule [{rule}] (include: [{_include_results}]), string [{s}], result {_result}")
             # todo add apply_alll logic
             return _result
         else:
@@ -148,7 +148,7 @@ class StringMatcher():
                 # there were matching results, exclude this
                 else:
                     _result = []
-            logger.debug(f"Regex Find using rule [{rule}] (include: [{_include_results}]), string [{s}], result {_result}")
+            logger.debug(f"[StringMatcher] Regex Find using rule [{rule}] (include: [{_include_results}]), string [{s}], result {_result}")
             # todo add apply_alll logic
             return _result
 
@@ -175,7 +175,7 @@ class StringMatcher():
                 _ = result_set.pop(_all_rule,None)
 
         _num_filtered = len(result_set)
-        logger.debug(f"Got [{_num_all_rules}] apply_all rules, original/filtered num matches [{_num_filtered}/{_num_results}]")
+        logger.debug(f"[StringMatcher] Got [{_num_all_rules}] apply_all rules, original/filtered num matches [{_num_filtered}/{_num_results}]")
 
         return result_set
 
@@ -189,7 +189,7 @@ class StringMatcher():
         _found_results = {}
         _rules = []
         _rule_names = self._rules.keys()
-        logger.debug(f"Find in [{s}] using rules {_rule_names}")
+        logger.debug(f"[StringMatcher] Find in [{s}] using rules {_rule_names}")
 
         for _rule_name in _rule_names:
             # get the apply mode from rules or from default
@@ -208,7 +208,7 @@ class StringMatcher():
             _ = [_found_results.extend(_result) for _result in _results]
             _found_results = list(set(_found_results))
 
-        logger.debug(f"Applied rules {_rules} on [{s}], found [{len(_found_results)}] matches")
+        logger.debug(f"[StringMatcher] Applied rules {_rules} on [{s}], found [{len(_found_results)}] matches")
         return _found_results
 
     def matches_rule(self,s:str,rule:str)->bool:
@@ -219,7 +219,7 @@ class StringMatcher():
         """ checks against the list of rules """
         # get all matches
         _rule_matches = {key: self.matches_rule(s,key) for key in self._rules.keys()}
-        logger.debug(f"[{s}] rule matches [{_rule_matches}]")
+        logger.debug(f"[StringMatcher] [{s}] rule matches [{_rule_matches}]")
         # depending on matching mode, set the resulting overall match
         if len(_rule_matches) == 0:
             return False

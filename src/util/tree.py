@@ -17,7 +17,7 @@ class Tree():
     ROOT="root"
 
     def __init__(self) -> None:
-        logger.debug("Tree Constructor")
+        logger.debug("[Tree] Tree Constructor")
         self._nodes_dict = None
         self._hierarchy_nodes_dict = None
         self._root=None
@@ -44,7 +44,7 @@ class Tree():
         """ creates tree from passed dict root node is when there is a Non field
             returns tree structure
         """
-        logger.debug("Create Tree")
+        logger.debug("[Tree] Create Tree")
         self._nodes_dict = {}
         if name_field:
             self._name_field = name_field
@@ -74,13 +74,13 @@ class Tree():
 
     def _get_hierarchy(self):
         """ creates children hierarchy """
-        logger.debug("Tree Get Node Hierarchy")
+        logger.debug("[Tree] Get Node Hierarchy")
 
         all_nodes=[]
 
         def get_children_recursive(nodes):
             """ build up hierarchy """
-            logger.debug(f"get children for nodes {nodes}")
+            logger.debug(f"[Tree] get children for nodes {nodes}")
             children=[]
             if len(nodes)>0:
                 for parent_node in nodes:
@@ -132,17 +132,17 @@ class Tree():
 
     def get_children(self,node_id,only_leaves=False)->list:
         """ gets children nodes as list (option to select only leaves) """
-        logger.debug("Get Children Nodes")
+        logger.debug("[Tree] Get Children Nodes")
         children_nodes = []
         parent_node=self._hierarchy_nodes_dict.get(node_id)
 
         if not parent_node:
-            logger.warning(f"Parent node with node id {node_id} was not found")
+            logger.warning(f"[Tree] Parent node with node id {node_id} was not found")
             return
 
 
         def get_children_recursive(child_list):
-            logger.debug(f"get children recursive {child_list}")
+            logger.debug(f"[Tree] get children recursive {child_list}")
             new_children=[]
             if len(child_list) > 0:
                 for child in child_list:
@@ -193,7 +193,7 @@ class Tree():
         siblings=[]
         current_node=self._hierarchy_nodes_dict.get(node_id)
         if not current_node:
-            logger.warning(f"Node with ID {node_id} not found")
+            logger.warning(f"[Tree] Node with ID {node_id} not found")
             return
         parent_id=current_node.get(self._parent_field)
         if parent_id:
@@ -250,7 +250,7 @@ class Tree():
 
     def get_nested_tree(self)->dict:
         """ gets the tree as nested dict """
-        logger.info("Get nested Tree")
+        logger.info("[Tree] Get nested Tree")
         node_hierarchy = self._hierarchy_nodes_dict
         # current_nodes = [self.root_id]
         nested_tree={self.root_id:{}}
@@ -272,7 +272,7 @@ class Tree():
 
     def get_reverse_tree_elements(self)->dict:
         """ gets the elements dict of nested tree elements """
-        logger.info("Get reverse nested Tree")
+        logger.info("[Tree] Get reverse nested Tree")
         nested_tree = self.get_nested_tree()
         root_key=list(nested_tree.keys())[0]
         reverse_tree={root_key:nested_tree[root_key]}
@@ -294,19 +294,19 @@ class Tree():
         """ returns the element for given node id"""
         element = self._nodes_dict.get(node_id)
         if not element:
-            logger.warning(f"Element with node id {node_id} not found in tree")
+            logger.warning(f"[Tree] Element with node id {node_id} not found in tree")
             return
         return element
 
     def json(self)->str:
         """ returns json string """
-        logger.debug("json()")
+        logger.debug("[Tree] json()")
         nested_tree=self.get_nested_tree()
         return json.dumps(nested_tree,indent=3)
 
     def yaml(self)->str:
         """ returns yaml string """
-        logger.debug("yaml()")
+        logger.debug("[Tree] yaml()")
         nested_tree=self.get_nested_tree()
         return yaml.dump(nested_tree)
 
