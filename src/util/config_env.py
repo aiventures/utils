@@ -263,10 +263,42 @@ class ConfigEnv():
         if _cmd is None:
             logger.warning(f"Key [{key}], Couldn't Parse CMD Rules with args {kwargs} ")
             return None
-        
-        # do the parsing 
+
+        # do the parsing
         out = self._parse_cmd(key=key,cmd_key=_cmd,**kwargs)
         return out
+
+    def _validate_command(self,key:str,command:str)->list:
+        """ validates the command for formal correctness,
+            will return an error message
+        """
+        msg_out = []
+        # get the vars from the command key
+        _cmd_keys = command.split("_")
+        _cmd_keys = [k.lower() for k in _cmd_keys]
+
+        # get the variables from the command string        
+        _cmd_info = self._config.get(key,{}).get(C.CONFIG_COMMAND,{}).get(command)
+        # command can either be a string or dict
+        if isinstance(_cmd_info,str):
+            _cmd_info = {C.CONFIG_RULE:_cmd_info,C.CONFIG_DESCRIPTION:"No description"}
+        _cmd_vars = re.findall(C.REGEX_BRACKETS,_cmd_info.get(C.CONFIG_RULE,"")) # from the cmd template get all variables for replacement
+        _cmd_vars = [c.lower()[1:-1] for c in _cmd_vars]
+
+        # now at least all vars from command string should be present
+        for _cmd_var in _cmd_vars:
+            if not _cmd_var in _cmd_keys:
+                _msg = f"Env key [{key}], command [{_cmd_var}] missing in Command key [{command}]"
+                logger.warning(_msg)
+                msg_out.append(_msg)
+
+        # if a param is present in command key but not in command string, this is worth an information
+        for _cmd_key in _cmd_keys:
+            if not _cmd_key in _cmd_vars:
+                logger.info(f"Env key [{key}], parameter [{_cmd_key}] missing in Command key [{command}]")
+
+        return msg_out
+
 
     def _validate_commands(self)->dict:
         """ validates the command line commands
@@ -274,24 +306,33 @@ class ConfigEnv():
         """
         out_wrong_keys = {}
         _config = self._config
-        _ruledict_keys = list(C.RULEDICT_FILENAME.keys())
+
         for key, config in _config.items():
             key_prefix = key.split("_")[0]+"_"
             if not key_prefix == C.CONFIG_KEY_CMD:
                 continue
+
             _commands = config.get(C.CONFIG_COMMAND)
             if _commands is None:
-                logger.warning(f"Env Key [{key}] has no (c)ommand section")
+                _msg = f"Env Key [{key}] has no (c)ommand section"
+                logger.warning(_msg)
+                out_wrong_keys[key] = [_msg]
                 continue
+
             if not isinstance(_commands,dict):
-                logger.warning(f"Env Key [{key}], (c)ommand section is not a dict")
+                _msg = f"Env Key [{key}], (c)ommand section is not a dict"
+                logger.warning(_msg)
+                out_wrong_keys[key] = [_msg]
                 continue
-            #for _cmd,_cmd_info in _commands.items():
-            #     pass
-        # TODO 
+            _msg_list = []
+            for _cmd in _commands.keys():
+                _msgs = self._validate_command(key,_cmd)
+                if len(_msgs) > 0:
+                    _msg_list.append(_msgs)
+            if len(_msg_list) > 0:
+                out_wrong_keys[key] = _msg_list
+
         return out_wrong_keys
-
-
 
     def _validate_rules(self) -> dict:
         """ validate the env Vars that represent a rule
@@ -351,6 +392,8 @@ class ConfigEnv():
         # validate rules
         self._wrong_rule_keys.update(self._validate_rules())
         # validate commands
+        # rule name list of wrong config keys
+        self._wrong_rule_keys.update(self._validate_commands())
 
 
 

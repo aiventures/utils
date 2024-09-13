@@ -32,24 +32,17 @@ def test_validate_commands(fixture_sample_config_json):
     """ test the command pattern valiudations """
     config_env = ConfigEnv(fixture_sample_config_json)
     wrong_commands = config_env._validate_commands()
-    
-    # _groups = config_env.get_env_by_groups("groupA")
-    # assert len(_groups) == 2    
+    assert isinstance(wrong_commands,dict) and len(wrong_commands) > 0
 
 def test_parse_commands(fixture_sample_config_json):
     """ test the parsing of the command pattern options """
     config_env = ConfigEnv(fixture_sample_config_json)
-    # check the CMD_EXAMPLE1 definition of variables    
+    # check the CMD_EXAMPLE1 definition of variables
     cmd = "CMD_EXAMPLE1"
-    # parsing the command 
-    # cmd_params = {"file":"testfile.txt"}
-    # _cmd = config_env.parse_cmd(cmd,**cmd_params)
-    _cmd = config_env.parse_cmd(cmd,file="testfile.txt",line=5)
-    pass
-
-
-
-
-    #wrong_commands = config_env._validate_commands()
-    # _groups = config_env.get_env_by_groups("groupA")
-    # assert len(_groups) == 2        
+    # parsing the commands as dict
+    cmd_params = {"file":"testfile.txt","line":5}
+    _cmd_dict = config_env.parse_cmd(cmd,**cmd_params)
+    assert isinstance(_cmd_dict,str) and len(_cmd_dict) > 0
+    # same but using kwargs
+    _cmd_kwargs = config_env.parse_cmd(cmd,file="testfile.txt",line=5)
+    assert _cmd_dict == _cmd_kwargs
