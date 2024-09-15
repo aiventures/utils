@@ -4,12 +4,13 @@ import os
 from pathlib import Path
 import logging
 from datetime import datetime as DateTime
+from util import constants as C
+
 import json
 
 # when doing tests add this to reference python path
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from util import constants as C    
 
 # exclude yaml handling here to avoid import of required libs
 # import yaml
@@ -116,21 +117,22 @@ class Persistence():
                 return str(p)
 
     @staticmethod
-    def dict_stringify(d:dict)->dict:
+    def dict_stringify(d:dict,dateformat:str=C.DATEFORMAT_DD_MM_JJJJ_HH_MM_SS)->dict:
         """ converts a dict with objects to stringified dict (for json) """
+        
         for k, v in d.copy().items():
             v_type = str(type(v).__name__)
             logger.debug(f"[Persistence] Key {k} type {v_type}")
             if isinstance(v, dict): # For DICT
-                d[k]= Persistence.dict_stringify(v)
+                d[k]= Persistence.dict_stringify(v,dateformat)
             elif isinstance(v, list): # itemize LIST as dict
-                d[k] = [Persistence.dict_stringify(i) for i in v]
+                d[k] = [Persistence.dict_stringify(i,dateformat) for i in v]
             elif isinstance(v, str): # Update Key-Value
                 d.pop(k)
                 d[k] = v
             elif isinstance(v,DateTime): # stringify date
                 d.pop(k)
-                d[k]=v.strftime('%Y-%m-%d %H:%M:%S')
+                d[k]=v.strftime(dateformat)
             else:
                 d.pop(k)
                 d[k] = v
@@ -139,7 +141,7 @@ class Persistence():
     def read_file(self,encoding='utf-8',comment_marker=None,skip_blank_lines=False,strip_lines=True,with_line_nums:bool=False)->list|dict:
         """ read file and return content"""
         if self._f_read is None:
-            logger.warning(f"[Persistence] No valid file")
+            logger.warning("[Persistence] No valid file in Object")
             return
         return Persistence.read_txt_file(self._f_read,encoding,comment_marker,skip_blank_lines,strip_lines,with_line_nums)
 
@@ -282,8 +284,13 @@ class Persistence():
         return out_list
 
     @staticmethod
-    def dicts2csv(data_list:list,csv_sep:str=",")->list:
-        """ try to convert a list of dictionaries into csv format """
+    def dicts2csv(data_list:list,csv_sep:str=",",wrap_char:str=None)->list:
+        """ try to convert a list of dictionaries into csv format
+            separator is given and optionally value can be enclosed in wrap_char
+        """
+        if isinstance(wrap_char,str) and len(wrap_char) == 0:
+            wrap_char = None
+
         out = []
         if not data_list:
             logger.warning("[Persistence] no data in list")
@@ -293,14 +300,20 @@ class Persistence():
             logger.warning("[Persistence] List data is ot a dictionary, nothing will be returned")
             return None
         keys = list(key_row.keys())
-        out.append(csv_sep.join(keys))
+        if wrap_char is not None:
+            keys_out = [f"{wrap_char}{str(k)}{wrap_char}" for k in keys]
+        else:
+            keys_out = keys
+        out.append(csv_sep.join(keys_out))
         for data in data_list:
             data_row = []
             for k in keys:
                 v=data.get(k,"")
-                if csv_sep in v:
+                if csv_sep in v and wrap_char is None:
                     logger.warning(f"[Persistence] CSV Separator {v} found in {k}:{v}, will be replaced by _sep_")
                     v = v.replace(csv_sep,"_sep_")
+                if wrap_char is not None:
+                    v = f"{wrap_char}{str(v)}{wrap_char}"
                 data_row.append(v)
             out.append(csv_sep.join(data_row))
         return out
@@ -328,7 +341,7 @@ class Persistence():
                         continue
                     if strip_lines:
                         line = line.strip()
-                    if with_line_nums: 
+                    if with_line_nums:
                         lines[n] = line
                     else:
                         lines.append(line)
@@ -365,7 +378,7 @@ class Persistence():
     @staticmethod
     def save_json(filepath,data:dict)->None:
         """ Saves dictionary data as UTF8 json """
-        # TODO encode date time see
+        # TODO ENCODE DATETIME
         # https://stackoverflow.com/questions/11875770/how-to-overcome-datetime-datetime-not-json-serializable
 
         with open(filepath, 'w', encoding='utf-8') as json_file:
@@ -444,9 +457,11 @@ class Persistence():
             data = "\n".join(data)
         except TypeError:
             logger.error(f"[Persistence] Data to save to {f_save} is not a list of strings")
-        Persistence.save_txt_file(f_save,data)            
+        Persistence.save_txt_file(f_save,data)
         return f_save
-        
+
+
+
 
     # make it static
     # def save(self,data,f_save:str=None)->str:

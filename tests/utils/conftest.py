@@ -144,6 +144,11 @@ def fixture_config_env_testconfig_template(fixture_config_env_testpath)->Path:
     return str(fixture_config_env_testpath.joinpath("config_env_template.json"))
 
 @pytest.fixture
+def fixture_sample_stocks_data(fixture_config_env_testpath)->Path:
+    """ Sample Path to configuration file """
+    return str(fixture_config_env_testpath.joinpath("sample_stocks_data.txt"))
+
+@pytest.fixture
 def fixture_sample_config_json(fixture_config_env_testpath,fixture_config_env_testconfig_template):
     """ creates a sample json config file from existing one in test folder
         replacing absolute test paths, returns path to sample config json

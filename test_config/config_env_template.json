@@ -22,13 +22,13 @@
                             "d":"Command line example 1 to show how it can be called with commands",
                             "c":{"CMD_FILE_LINE":{"r":"'[CMD]' -f '[FILE]' -l [LINE]",
                                                   "d":"Command Line Option with a description"}}
-                            },                            
+                            },
     "CMD_EXAMPLE_WRONG":    {"p":"P_CONFIGTEST",
                             "f":"cmd_dummy2.txt",
                             "d":"Command line example 1 to show how it can be called with commands",
                             "c":{"CMD_FILE_LINE":{"r":"'[CMD]' -f '[WRONG]' -l [LINE]",
                                                   "d":"Command Line Option with errors"}}
-                            },                             
+                            },
     "P_CONFIGTEST":         {"p":"P_CONFIGTEST",
                             "d":"ConfigTest - will be populated by unittest as absolute path",
                             "g":["groupA"]},
@@ -48,5 +48,15 @@
                                     "rule_file":"files_absolute","find_by_line":true}]},
     "R_RULETEST_WRONG":     { "p":"P_CONFIGTEST",
                               "d":"Sample for wrong rules",
-                              "r":[{"wrong_name":"rule_name","rule_file":"files_absolute","find_by_line":true}]}                                    
+                              "r":[{"wrong_name":"rule_name","rule_file":"files_absolute","find_by_line":true}]},
+    "D_EXAMPLE":             {"d":"Example for parsing data from txt to tabular dict data ",
+                              "x":"^(\\d+\\.\\d+\\.\\d+)(\\D+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S*)",
+                              "s":"02.09.2024Kauf1,1111 Stück333,33 EUR444,44 EUR",
+                              "k":{"isin":"ISIN_NUMMER"},
+                              "dd":{"0":"DATUM","1":"UMSATZART","2":"STÜCK","3":"EINHEIT",
+                                    "4":"KAUFKURS","5":"WÄHRUNG1","6":"KURS_AKTUELL","7":"WÄHRUNG2"},
+                              "e":[{"k":"DATUM","t":"date"},"DATUM_N","ISIN_NUMMER",{"k":"KAUFKURS","t":"float"},
+                              {"k":"KURS_AKTUELL","t":"float"},{"k":"STÜCK","t":"float"}],
+                              "env":{"DEC_SEPARATOR":",","DATE_FORMAT":"%d.%m.%Y","CSV_WRAP_CHAR":"\""}
+                             }
 }

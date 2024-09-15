@@ -1,0 +1,28 @@
+# a sample for parsing stocks data (copy & paste from website)
+
+this is the section for parsing rest will be ignored
+
+ISIN IEABSDEF12345 / WKN ABCDEF
+
+# items with pattern header:COLUMN=VALUE will be copied as fixed colums
+# regex key:(\S+)=(\S+) or key:(.+)=(.+)
+
+key:ISIN=IEABSDEF12345
+Datum,Umsatzart,Stück,Kurs,Gegenwert
+02.09.2024Kauf1,1111 Stück333,33 EUR444,44 EUR
+01.08.2024XYZf2,2222 Stück555,55 EUR666,00 EUR
+
+# regex for identifying parts of the string 
+# ^(\d.+?)\.(\d.+?)\.(\d.+?)(\D.+?)([0-9,\s]{1,})(\S.+?)([0-9,\s]{1,})(\S.+?)([0-9,\s]{1,})(\S.*)
+# ^(\d.+?)\.(\d.+?)\.(\d.+?)(\D.+?)([0-9,\s]+)(\S.+?)([0-9,\s]+)(\S.+?)([0-9,\s]+)(\S.*)
+# ^(\d+\.\d+\.\d+)(\D+?)([0-9,\s]+)(\S+?)([0-9,\s]+)(\S+?)([0-9,\s]+)(\S*)
+# Parse the Date as one param
+(01).(08).(2024)(XYZf)(2,2222)(Stück)(555,55 )(EUR)(666,00 )(EUR)
+[0]              [1]   [2]      [3]    [4]     [5]    [6]    [7] 
+
+01.08.2024XYZf2,2222 Stück555,55 EUR666,00 EUR
+
+a = """Lorem ipsum dolor sit amet,
+consectetur adipiscing elit,
+sed do eiusmod tempor incididunt
+ut labore et dolore magna aliqua."""

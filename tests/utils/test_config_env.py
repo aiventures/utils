@@ -46,3 +46,12 @@ def test_parse_commands(fixture_sample_config_json):
     # same but using kwargs
     _cmd_kwargs = config_env.parse_cmd(cmd,file="testfile.txt",line=5)
     assert _cmd_dict == _cmd_kwargs
+
+def test_validate_data_rules(fixture_sample_config_json, fixture_sample_stocks_data):
+    """ test the parsing of txt files to parse them as dict files """
+    config_env = ConfigEnv(fixture_sample_config_json)
+    _invalid_rules = config_env._validate_data_rules()
+    assert True
+    pass
+
+

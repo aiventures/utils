@@ -170,7 +170,7 @@ class DictFilter():
             elif filter_type == Filter.EQUAL:
                 filters_passed.append( True if filter_value == filtered_object else False )
             elif filter_type == Filter.REGEX:
-                regex_match = re.findall(filter_value,filtered_object)
+                regex_match = re.findall(filter_value,filtered_object,re.IGNORECASE)
                 filters_passed.append( True if len(regex_match) > 0 else False )
             else:
                 logger.warning(f"[DictFilter] Filter {object_filter} has no valid Filter Type")

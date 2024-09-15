@@ -3,14 +3,13 @@
 import os
 import sys
 import re
+import logging
 from pathlib import Path
+# TODO REPLACE BY UNIT TESTS
 # when doing tests add this to reference python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-import logging
-from copy import deepcopy
 from util.persistence import Persistence
 from util.colors import col
-from util.const_local import F_CONFIG_ENV
 from util import constants as C
 
 
@@ -28,9 +27,28 @@ class ConfigEnv():
         if not self._config:
             self._config = {}
         self._validate()
-        pass
 
-    # todo get config groups
+    def get_config(self,key:str=None)->dict:
+        """ returns a configuration """
+        if not isinstance(key,str):
+            _msg = "[CONFIG] No valid key was passed"
+            logger.warning(_msg)
+            return {}
+
+        if not isinstance(self._config,dict):
+            _msg = "[CONFIG] There is no valid configuration"
+            logger.warning(_msg)
+            return {}
+
+        config = self._config.get(key)
+        if config is None:
+            _msg = f"[CONFIG] There is no configuration with key [{key}]"
+            logger.warning(_msg)
+            return {}
+
+        return config
+
+    # TODO GET CONFIG GROUPS
     def get_env_by_groups(self,groups:list|str=None):
         """ filter env entries by group. """
         if isinstance(groups,str):
@@ -218,7 +236,7 @@ class ConfigEnv():
         env_vars[C.CMD] = cmd
 
         # from the cmd template get all variables for replacement
-        _vars = re.findall(C.REGEX_BRACKETS,cmd_out)
+        _vars = re.findall(C.REGEX_BRACKETS,cmd_out,re.IGNORECASE)
         for _var in _vars:
             cmd_out = cmd_out.replace(_var,_var.lower())
         _vars = [v.lower() for v in _vars]
@@ -277,12 +295,12 @@ class ConfigEnv():
         _cmd_keys = command.split("_")
         _cmd_keys = [k.lower() for k in _cmd_keys]
 
-        # get the variables from the command string        
+        # get the variables from the command string
         _cmd_info = self._config.get(key,{}).get(C.CONFIG_COMMAND,{}).get(command)
         # command can either be a string or dict
         if isinstance(_cmd_info,str):
             _cmd_info = {C.CONFIG_RULE:_cmd_info,C.CONFIG_DESCRIPTION:"No description"}
-        _cmd_vars = re.findall(C.REGEX_BRACKETS,_cmd_info.get(C.CONFIG_RULE,"")) # from the cmd template get all variables for replacement
+        _cmd_vars = re.findall(C.REGEX_BRACKETS,_cmd_info.get(C.CONFIG_RULE,""),re.IGNORECASE) # from the cmd template get all variables for replacement
         _cmd_vars = [c.lower()[1:-1] for c in _cmd_vars]
 
         # now at least all vars from command string should be present
@@ -367,6 +385,17 @@ class ConfigEnv():
                 out_wrong_keys[key] = _wrong_keys_per_key
         return out_wrong_keys
 
+    def _validate_data_rules(self) -> dict:
+        """ validates data rules
+        """
+        out_wrong_keys = {}
+        _config = self._config
+        _ruledict_keys = list(C.RULEDICT_FILENAME.keys())
+        for key, _ in _config.items():
+            key_prefix = key.split("_")[0]+"_"
+            if not key_prefix == C.CONFIG_KEY_RULE:
+                continue
+        return out_wrong_keys
 
     def _validate(self) -> None:
         """ validates the configuration and populates ref section """
@@ -377,6 +406,9 @@ class ConfigEnv():
             key_prefix = key.split("_")[0]+"_"
             if not key_prefix in C.CONFIG_KEY_TYPES:
                 logger.warning(f"[CONFIG] Key [{key}] has invalid prefix, allowed {C.CONFIG_KEY_TYPES}")
+                continue
+            # check for data definition type
+            if key_prefix == C.CONFIG_KEY_DATA:
                 continue
             _file_ref = None
             # validate file file type
