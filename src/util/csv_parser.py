@@ -51,12 +51,14 @@ class CsvParser(Persistence):
                     _msg = f"[CsvParser] (E)xport Item [{_export_item}] has no (k)ey element in dict"
                     logger.warning(_msg)
                     _out.append(_msg)
+                    continue
             elif isinstance(_export_item,str):
                 _import_key = _export_item
             else:
                 _msg = f"[CsvParser] (E)xport Item [{_export_item}] is not a dict or string"
                 logger.warning(_msg)
                 _out.append(_msg)
+                continue
 
             if _import_key.endswith(C.DATEXLS):
                 _import_key = _export_item[:-len(C.DATEXLS)]
@@ -83,14 +85,15 @@ class CsvParser(Persistence):
         # cross check export fields to parse fields
         _column_data = config.get(C.CONFIG_DATA)
 
-        if not _column_data and not isinstance(_column_data,dict):
+        if not _column_data or not isinstance(_column_data,dict):
             _msg = "[CsvParser] No valid Column Config Data (dd) could be found / is not a dict"
             logger.warning(_msg)
             out.append(_msg)
+            _column_data = {}
 
         # do a smoke test in case regex example is supplied
         _sample = config.get(C.CONFIG_SAMPLE)
-        if _sample:
+        if _sample and _regex:
             _results = re.findall(_regex,_sample,re.IGNORECASE)
             if len(_results) == 0:
                 _msg = f"[CsvParser] Regex [{_regex}] doesn't match sample expression [{_sample}]"
@@ -127,11 +130,11 @@ class CsvParser(Persistence):
         # validate environment items
         _env = config.get(C.CONFIG_ENV,{})
         if isinstance(_env,dict):
-            _allowed_env_keys = list(_env.keys())
+            _allowed_env_keys = C.CSV_PARSER_ENV_VARS
             for _env_key in list(_env.keys()):
                 if not _env_key in _allowed_env_keys:
                     _msg = f"[CsvParser] Environment key [{_env_key}] invalid, allowed {_allowed_env_keys}"
-                    out.extend(_msg)
+                    out.append(_msg)
         return out
 
     def _create_env(self,config:dict)->None:
