@@ -119,7 +119,7 @@ class Persistence():
     @staticmethod
     def dict_stringify(d:dict,dateformat:str=C.DATEFORMAT_DD_MM_JJJJ_HH_MM_SS)->dict:
         """ converts a dict with objects to stringified dict (for json) """
-        
+
         for k, v in d.copy().items():
             v_type = str(type(v).__name__)
             logger.debug(f"[Persistence] Key {k} type {v_type}")
@@ -308,7 +308,7 @@ class Persistence():
         # TODO Output In Order
         for data in data_list:
             data_row = []
-            for k in keys:                
+            for k in keys:
                 v = data.get(k,"")
                 if v is None:
                     v = "None"

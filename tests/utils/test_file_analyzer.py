@@ -77,7 +77,7 @@ def test_find_all_diifferent_rule_types(fixture_testpath,fixture_ruledict_filena
     file_objects = file_matcher.find()
     assert isinstance(file_objects,list) and len(file_objects) == 1
     # assert we have four occurences of the find markers
-    assert file_objects[0].count("#ALL") == 4    
+    assert file_objects[0].count("#ALL") == 4
     # find object but as dictionary return
     file_objects = file_matcher.find(as_dict=True)
     assert isinstance(file_objects,dict) and len(file_objects) == 1

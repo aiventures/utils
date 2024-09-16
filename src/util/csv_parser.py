@@ -136,7 +136,7 @@ class CsvParser(Persistence):
             for _env_key in list(_env.keys()):
                 if not _env_key in _allowed_env_keys:
                     _msg = f"[CsvParser] Environment key [{_env_key}] invalid, allowed {_allowed_env_keys}"
-                    out.append(_msg)        
+                    out.append(_msg)
 
         return out
 
@@ -288,7 +288,7 @@ class CsvParser(Persistence):
         """
         if isinstance(value,float):
             return value
-        
+
         _sep = self._env.get(C.ENV_DEC_SEPARATOR,C.ENV_DEC_SEPARATOR_DEFAULT)
         if _sep == ",":
             value = value.replace(".","")
@@ -328,8 +328,8 @@ class CsvParser(Persistence):
 
     def _parse_value(self,value:str,export_info:dict):
         """ parse  value to a target format """
-        try:            
-            _type = export_info.get(C.CONFIG_TYPE,"no_config")            
+        try:
+            _type = export_info.get(C.CONFIG_TYPE,"no_config")
             if _type == C.TYPE_FLOAT:
                 value = self._parse_float(value)
             elif _type == C.TYPE_INT:
@@ -413,12 +413,12 @@ class CsvParser(Persistence):
             elif isinstance(ext_column,dict):
                 _key = ext_column.get(C.CONFIG_KEY)
             logger.debug(f"Parsing external Column Info [{ext_column}]")
-            if _key is None:                
+            if _key is None:
                 _msg = f"No key found for external column [{ext_column}], must be str or dict wiith (k)ey element"
                 logger.warning(_msg)
                 self._errors.append(_msg)
                 continue
-        
+
             _export_info = self._transform_export_info(_key,ext_column)
             if _export_info:
                 # if there is no value, a dummy value will be added
