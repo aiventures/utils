@@ -8,7 +8,9 @@ import logging
 
 from util import constants as C
 from util.config_env import ConfigEnv
+
 import logging
+
 logger = logging.getLogger(__name__)
 
 def test_config_setup(fixture_sample_config_json):

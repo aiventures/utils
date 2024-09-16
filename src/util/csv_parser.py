@@ -72,7 +72,7 @@ class CsvParser(Persistence):
 
         return _out
 
-
+    
     @staticmethod
     def validate_config(config:dict)->list:
         """ validates a config dict, returns string of errors in case errors are found """
@@ -139,7 +139,12 @@ class CsvParser(Persistence):
                     out.append(_msg)
 
         return out
-
+    
+    @property
+    def config(self):
+        """ returns the config """
+        return self._config._config[self._config_key]
+        
     def _create_env(self,config:dict)->None:
         """ set up default environment """
         _env_config = config.get(C.CONFIG_ENV,{})
@@ -161,7 +166,7 @@ class CsvParser(Persistence):
         if len(_export_columns) == 0:
             _export_columns = list(self._import_columns.values())
         self._export_colums = _export_columns
-        self._export_info = self._get_export_info()
+        self._export_info = self.get_export_info()
         self._create_env(config)
 
     def _reset_config(self)->None:
@@ -231,7 +236,7 @@ class CsvParser(Persistence):
 
         return _info
 
-    def _get_export_info(self)->dict:
+    def get_export_info(self)->dict:
         """ builds up info dict for export """
         _export_columns = self._export_colums
         _export_info = {}
@@ -403,9 +408,12 @@ class CsvParser(Persistence):
                 self._warnings.append(_msg)
             _export_info[C.CONFIG_VALUE] = g_value
 
-    def add_ext_columns(self,ext_columns:list)->None:
+    def add_ext_columns(self,ext_columns:list|str)->None:
         """ Adding external columns """
         # for ext_col_key,ext_col_info in ext_columns.items():
+        if isinstance(ext_columns,str):
+            ext_columns = [ext_columns]
+
         for ext_column in ext_columns:
             _key = None
             if isinstance(ext_column,str):

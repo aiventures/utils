@@ -58,5 +58,24 @@
                               "e":[{"k":"DATUM","t":"date"},"DATUM_N","ISIN_NUMMER",{"k":"KAUFKURS","t":"float"},
                               {"k":"KURS_AKTUELL","t":"float"},{"k":"STÜCK","t":"float"}],
                               "env":{"DEC_SEPARATOR":",","DATE_FORMAT":"%d.%m.%Y","CSV_WRAP_CHAR":"\""}
-                             }
+                             },
+      "D_DEPOTHISTORIE": {
+                              "d": "Parsing Share History",
+                              "x": "^(\\d+\\.\\d+\\.\\d+)(\\D+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S*)",
+                              "s": "02.09.2024Kauf1,1111 Stück333,33 EUR444,44 EUR",
+                              "k": {"isin": "ISIN_NUMMER"},
+                              "dd": {"0": "DATUM","1": "UMSATZART","2": "STUECK","3": "EINHEIT","4": "KAUFKURS","5": "WÄHRUNG1",
+                                          "6": "KURS_AKTUELL","7": "WÄHRUNG2"},
+                              "e": [{"k": "DATUM","t": "date"},"DATUM_N","ISIN_NUMMER",{"k": "KAUFKURS","t": "float"},
+                                    {"k": "KURS_AKTUELL","t": "float"},{"k": "STUECK","t": "float"}],
+                              "env": {"DEC_SEPARATOR": ",","DATE_FORMAT": "%d.%m.%Y","CSV_WRAP_CHAR": "\""}
+                              },
+      "D_DEPOTSTAMM":         {
+                              "d": "Share Master Data",
+                              "x": "Wertpapier(.+?)ISIN(.*)\\/.+WKN(.*?)Bestand([0-9,]+)",
+                              "s": "DetailsWertpapierAIS AM ST E600 ETF AISIN AB123456 / WKN AB1234Bestand1,47851 StückAltbestand0 Stück×",
+                              "dd": {"0": "AKTIE_NAME","1": "ISIN","2": "WKN","3": "ANZAHL"},
+                              "e": ["AKTIE_NAME","ISIN","WKN",{"k":"ANZAHL","t":"float"}],
+                              "env": {"DEC_SEPARATOR": ",","DATE_FORMAT": "%d.%m.%Y","CSV_WRAP_CHAR": "\""}
+                          }                                
 }

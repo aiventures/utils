@@ -149,6 +149,8 @@ REGEX_GLOBAL_KEY = r"key:(.+)=(.+)"
 # Default Dateformat for parsing DateTime from/to String
 ENV_DATE_FORMAT = "DATE_FORMAT"
 DATEFORMAT_DD_MM_JJJJ= "%d.%m.%Y"
+DATEFORMAT_JJJJMMDD= "%Y%m%d"
+
 DATEFORMAT_DD_MM_JJJJ_HH_MM_SS= "%Y-%m-%d %H:%M:%S"
 # Separator used for CSV export
 ENV_DEC_SEPARATOR = "DEC_SEPARATOR"

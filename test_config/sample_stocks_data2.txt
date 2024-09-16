@@ -2,21 +2,21 @@
 
 this is the section for parsing rest will be ignored
 
-Einstandskurs / Einstandswert111,1111 EUR / 1.233,38 EUR
-Kurs / Kurswert200,85 EUR / 1.127,38 EUR
+Einstandskurs / Einstandswert211,1111 EUR / 2.233,38 EUR
+Kurs / Kurswert200,85 EUR / 2.127,38 EUR
 Letzter Kurs Direkthandel - 13.09.2024
-Gewinn / Verlust+14,00 EUR (+7,13 %)
+Gewinn / Verlust+24,00 EUR (+17,13 %)
 
-ISIN IEABSDEF12345 / WKN ABCDEF
+ISIN LUABSDEF12345 / WKN ZZCDEF
 
 # items with pattern header:COLUMN=VALUE will be copied as fixed colums
 # regex key:(\S+)=(\S+) or key:(.+)=(.+)
 
-key:ISIN=IEABSDEF12345
+key:ISIN=IEABSDEF92345
 Datum,Umsatzart,Stück,Kurs,Gegenwert
-02.09.2024Kauf1,1111 Stück333,33 EUR444,44 EUR
-01.08.2024XYZf2,2222 Stück555,55 EUR666,00 EUR
-01.07.2024Kauf1,2911 Stück111,40 EUR100,00 EUR
+02.10.2024Kauf4,1111 Stück633,33 EUR644,44 EUR
+01.09.2024XYZf6,2222 Stück755,55 EUR766,00 EUR
+01.04.2024Kauf7,2911 Stück811,40 EUR800,00 EUR
 
 # regex for identifying parts of the string 
 # ^(\d.+?)\.(\d.+?)\.(\d.+?)(\D.+?)([0-9,\s]{1,})(\S.+?)([0-9,\s]{1,})(\S.+?)([0-9,\s]{1,})(\S.*)

@@ -284,9 +284,12 @@ class Persistence():
         return out_list
 
     @staticmethod
-    def dicts2csv(data_list:list,csv_sep:str=",",wrap_char:str=None)->list:
+    def dicts2csv(data_list:list,csv_sep:str=",",dec_separator:str=",",wrap_char:str=None,keys:list=None)->list:
         """ try to convert a list of dictionaries into csv format
-            separator is given and optionally value can be enclosed in wrap_char
+            - separator is given and 
+            - value can be enclosed in wrap_char
+            - keys to be transferred can also be controlled externally (to make sure a csv is 
+              exported in case not all lines contain the same keys)
         """
         if isinstance(wrap_char,str) and len(wrap_char) == 0:
             wrap_char = None
@@ -299,7 +302,9 @@ class Persistence():
         if not isinstance(key_row,dict):
             logger.warning("[Persistence] List data is ot a dictionary, nothing will be returned")
             return None
-        keys = list(key_row.keys())
+
+        if keys is None:
+            keys = list(key_row.keys())
         if wrap_char is not None:
             keys_out = [f"{wrap_char}{str(k)}{wrap_char}" for k in keys]
         else:
@@ -309,9 +314,17 @@ class Persistence():
         for data in data_list:
             data_row = []
             for k in keys:
-                v = data.get(k,"")
+                v = data.get(k,"None")
+
+                # centralize conversion routine
                 if v is None:
                     v = "None"
+                elif isinstance(v,float):
+                    v = str(v).replace(",","")
+                    v = v.replace(".",dec_separator)
+                else:
+                    v = str(v)
+                
                 if csv_sep in v and wrap_char is None:
                     logger.warning(f"[Persistence] CSV Separator {v} found in {k}:{v}, will be replaced by _sep_")
                     v = v.replace(csv_sep,"_sep_")
@@ -452,7 +465,6 @@ class Persistence():
     @staticmethod
     def save_list(f_save:str,data:list)->str:
         """ save data in a list as string data, returns saved file name """
-        data = None
         if not f_save or not isinstance(data,list):
             logger.error(f"[Persistence] Can't Save file {f_save}")
             return
