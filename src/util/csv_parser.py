@@ -4,6 +4,7 @@ import os
 import re
 import logging
 from datetime import datetime as DateTime
+from datetime import timedelta
 import json
 from copy import deepcopy
 from util import constants as C
@@ -32,6 +33,7 @@ class CsvParser(Persistence):
         self._env = {}
         self._parsed_items = []
         self._warnings = []
+        self._ext_columns = []
 
     @staticmethod
     def _validate_export_items(config)->list:
@@ -134,7 +136,8 @@ class CsvParser(Persistence):
             for _env_key in list(_env.keys()):
                 if not _env_key in _allowed_env_keys:
                     _msg = f"[CsvParser] Environment key [{_env_key}] invalid, allowed {_allowed_env_keys}"
-                    out.append(_msg)
+                    out.append(_msg)        
+
         return out
 
     def _create_env(self,config:dict)->None:
@@ -171,6 +174,7 @@ class CsvParser(Persistence):
         self._export_colums = []
         self._export_info = {}
         self._parsed_items = []
+        # self._ext_columns = []
 
     @staticmethod
     def get_key_value(s:str,regex:str=C.REGEX_GLOBAL_KEY)->dict:
@@ -181,33 +185,74 @@ class CsvParser(Persistence):
         else:
             return {_results[0][0]:_results[0][1]}
 
+    def _transform_export_info(self,key:str,info=None)->dict:
+        """ Checks and transforms export info """
+        if key is None:
+            _msg = "[CsvParser] No export Info Key was supplied"
+            logger.warning(_msg)
+            self._warnings.append(_msg)
+            return None
+
+        _info = {C.CONFIG_KEY:key,C.CONFIG_TYPE:C.TYPE_STR}
+
+        if key.endswith(C.DATEXLS):
+            _info[C.CONFIG_TYPE] = C.TYPE_DATEXLS
+
+        if info is None:
+            return _info
+
+        if not ( isinstance(info,dict) or isinstance(info,str)) :
+            _msg = f"[CsvParser] export info for Key [{key}] is not a dict or str"
+            logger.warning(_msg)
+            self._warnings.append(_msg)
+            return None
+
+        # process dict
+        if isinstance(info,dict):
+            _info = deepcopy(info)
+            # convert unknown types to str
+            if not _info.get(C.CONFIG_TYPE,"UNKNOWN") in C.TYPES:
+                _msg = f"[CsvParser] export info [{key}], unknown data (t)ype, allowed {C.TYPES}"
+                logger.warning(_msg)
+                self._warnings.append(_msg)
+                _info[C.CONFIG_TYPE] = C.TYPE_STR
+                if key.endswith(C.DATEXLS):
+                    _info[C.CONFIG_TYPE] = C.TYPE_DATEXLS
+
+        # supply info with a fixed value if supplied
+        _value = _info.get(C.CONFIG_VALUE)
+        if _value:
+            if _info[C.CONFIG_TYPE] == C.TYPE_DATEXLS:
+                pass
+            elif isinstance(_value,int):
+                _info[C.CONFIG_TYPE] = C.TYPE_INT
+            elif isinstance(_value,float):
+                _info[C.CONFIG_TYPE] = C.TYPE_FLOAT
+
+        return _info
+
     def _get_export_info(self)->dict:
         """ builds up info dict for export """
         _export_columns = self._export_colums
         _export_info = {}
+        # adding export info from configuration
         for _export_column in _export_columns:
-            _column_info = _export_column
-            if isinstance(_export_column,str):
-                _column_info = {C.CONFIG_KEY:_export_column,C.CONFIG_TYPE:C.TYPE_STR}
+            _field_info = None
+            _key = None
+            if isinstance(_export_column,dict):
+                _key = _export_column.get(C.CONFIG_KEY)
+                _field_info = _export_column
+            elif isinstance(_export_column,str):
+                _key = _export_column
 
-            if not ( isinstance(_export_column,dict) or isinstance(_export_column,str)) :
-                _msg = f"[CsvParser] Configuration [{self._config_key}], {_export_column} is not a dict or str"
-                logger.warning(_msg)
-                self._warnings.append(_msg)
-                continue
+            _key_info = self._transform_export_info(_key,_field_info)
+            if _key_info:
+                _export_info[_key] = _key_info
 
-            # convert unknown types to str
-            if not _column_info.get(C.CONFIG_TYPE,"UNKNOWN") in C.TYPES:
-                _msg = f"[CsvParser] Configuration [{self._config_key}], {_export_column} unknown data (t)ype, allowed {C.TYPES}"
-                logger.warning(_msg)
-                self._warnings.append(_msg)
-                _column_info[C.CONFIG_TYPE] = C.TYPE_STR
-
-            _key = _column_info[C.CONFIG_KEY]
-            if _key.endswith(C.DATEXLS):
-                _column_info[C.CONFIG_KEY] = _key
-                _column_info[C.CONFIG_TYPE] = C.TYPE_DATEXLS
-            _export_info[_key] = _column_info
+        # adding external columns / as its validated we only need to add it
+        _ext_columns = self._ext_columns
+        for _ext_column in _ext_columns:
+            _export_info[_ext_column.get(C.CONFIG_KEY)]=_ext_column
 
         return _export_info
 
@@ -236,11 +281,14 @@ class CsvParser(Persistence):
             out.append(_item_out)
         return out
 
-    def _parse_float(self,value:str)->float:
+    def _parse_float(self,value)->float:
         """ try to parse float. as we may have comma or dot, instead of
             trying to convert it with atof , set it up with a global env param
             set in the file
         """
+        if isinstance(value,float):
+            return value
+        
         _sep = self._env.get(C.ENV_DEC_SEPARATOR,C.ENV_DEC_SEPARATOR_DEFAULT)
         if _sep == ",":
             value = value.replace(".","")
@@ -253,7 +301,7 @@ class CsvParser(Persistence):
         except ValueError:
             return None
 
-    def _parse_date(self,value:str,format_str:str=None):
+    def _parse_date(self,value,format_str:str=None)->DateTime|int:
         """ parse to a date """
         _date_format = self._env.get(C.ENV_DATE_FORMAT,C.DATEFORMAT_DD_MM_JJJJ)
         if len(_date_format) == 0:
@@ -261,19 +309,27 @@ class CsvParser(Persistence):
             logger.warning(_msg)
             self._warnings.append(_msg)
 
+        if isinstance(value,int):
+            """ a int value was supplied, assume it is an XLS Date """
+            num_days = value - C.DATE_INT_19700101
+            _dt = self._env.get(C.ENV_DATE_REF) + timedelta(days=num_days)
+            logger.info(f"[CsVParser] Parsing an int to XLS format: [{value}]->[{_dt}]")
+            return _dt
+
         try:
             _dt = DateTime.strptime(value,_date_format)
-            # convert to XLS Format: get days since 1970
+            # convert to XLS int Format: get days since 1970
             if format_str == C.TYPE_DATEXLS:
                 _dt = C.DATE_INT_19700101 + (_dt- self._env.get(C.ENV_DATE_REF)).days
             return _dt
         except ValueError:
+            logger.warning(f"[CsVParser] There was a Date conversion error using input [{value}]")
             return None
 
     def _parse_value(self,value:str,export_info:dict):
         """ parse  value to a target format """
-        try:
-            _type = export_info.get(C.CONFIG_TYPE,"no_config")
+        try:            
+            _type = export_info.get(C.CONFIG_TYPE,"no_config")            
             if _type == C.TYPE_FLOAT:
                 value = self._parse_float(value)
             elif _type == C.TYPE_INT:
@@ -307,8 +363,10 @@ class CsvParser(Persistence):
             if export_info.get(C.CONFIG_TYPE,"unknown") == C.TYPE_DATEXLS:
                 data_key = export_key[:-len(C.DATEXLS)]
             _value = _result_dict.get(data_key)
+            # key is not in result dict, so it is either fixed value from configuration or external constant
             if not _value:
                 _value = export_info.get(C.CONFIG_VALUE)
+
             if _value is None:
                 _msg = f"[CsvParser] Configuration [{self._config_key}], column [{data_key}], no value found in {_result_dict}"
                 logger.warning(_msg)
@@ -345,6 +403,29 @@ class CsvParser(Persistence):
                 self._warnings.append(_msg)
             _export_info[C.CONFIG_VALUE] = g_value
 
+    def add_ext_columns(self,ext_columns:list)->None:
+        """ Adding external columns """
+        # for ext_col_key,ext_col_info in ext_columns.items():
+        for ext_column in ext_columns:
+            _key = None
+            if isinstance(ext_column,str):
+                _key = ext_column
+            elif isinstance(ext_column,dict):
+                _key = ext_column.get(C.CONFIG_KEY)
+            logger.debug(f"Parsing external Column Info [{ext_column}]")
+            if _key is None:                
+                _msg = f"No key found for external column [{ext_column}], must be str or dict wiith (k)ey element"
+                logger.warning(_msg)
+                self._errors.append(_msg)
+                continue
+        
+            _export_info = self._transform_export_info(_key,ext_column)
+            if _export_info:
+                # if there is no value, a dummy value will be added
+                if _export_info.get(C.CONFIG_VALUE) is None:
+                    _export_info[C.CONFIG_VALUE] = None
+                self._ext_columns.append(_export_info)
+
     def content(self,export_format:str=C.EXPORT_DICT)->list|str:
         """ returns the content from the last read result """
         out = self._parsed_items
@@ -352,6 +433,7 @@ class CsvParser(Persistence):
         if export_format == C.EXPORT_CSV:
             _wrap_char = self._env.get(C.ENV_CSV_WRAP_CHAR)
             _string_dict = self._as_string_dict()
+            # TODO ADD ORDER LIST
             out = Persistence.dicts2csv(_string_dict,wrap_char=_wrap_char)
         elif export_format == C.EXPORT_JSON or export_format == C.EXPORT_JSON_DICT:
             _dateformat = self._env.get(C.ENV_DATE_FORMAT)

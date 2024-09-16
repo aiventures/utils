@@ -9,7 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def test_data_parsing(fixture_sample_config_json, fixture_sample_stocks_data):
+def test_csv_parser(fixture_sample_config_json, fixture_sample_stocks_data):
     """ test the parsing of txt files to parse them as dict files """
     csv_parser = CsvParser(f_read=fixture_sample_stocks_data,f_config=fixture_sample_config_json)
     _parsed_list = csv_parser.parse("D_EXAMPLE")
@@ -21,7 +21,31 @@ def test_data_parsing(fixture_sample_config_json, fixture_sample_stocks_data):
     _json_dict = csv_parser.content(C.EXPORT_JSON_DICT)
     assert isinstance(_json_dict,list)
 
-def test_validate_wrong_configs(fixture_sample_config_json, fixture_sample_stocks_data):
+def test_csv_parser_ext_columns(fixture_sample_config_json, fixture_sample_stocks_data):
+    """ test the parsing of txt files to parse them as dict files """
+    ext_columns = ["EXT_COLUMN_NONE",
+                   {"k":"EXT_COLUMN_INT","t":"int"},
+                   {"k":"EXT_COLUMN_VALUE","v":5.3},
+                   {"k":"EXT_COLUMN_VAL_N","v":55555}]                   
+    csv_parser = CsvParser(f_read=fixture_sample_stocks_data,f_config=fixture_sample_config_json)
+    csv_parser.add_ext_columns(ext_columns)
+    _parsed_list = csv_parser.parse("D_EXAMPLE")
+    assert isinstance(_parsed_list,list) and len(_parsed_list) > 0
+    _parsed_csv = csv_parser.content(export_format=C.EXPORT_CSV)    
+    assert isinstance(_parsed_csv,list) and len(_parsed_list) > 0
+    _parsed_csv_titles = _parsed_csv[0].split(",")
+    # assert all columns are in output as well 
+    ext_cols_csv = [c for c in _parsed_csv_titles if "EXT_COLUMN" in c]
+    assert len(ext_cols_csv) == len(ext_columns)
+    _parsed_json_dict = csv_parser.content(export_format=C.EXPORT_JSON_DICT)
+
+    assert isinstance(_parsed_json_dict,list) and len(_parsed_json_dict) > 0
+    _parsed_json = csv_parser.content(export_format=C.EXPORT_JSON)
+    assert isinstance(_parsed_json,str) and len(_parsed_json) > 0
+    assert True 
+
+
+def test_csv_parser_wrong_configs(fixture_sample_config_json, fixture_sample_stocks_data):
     """ test wrong configurations / created by adjustments of the correct one """
     csv_parser = CsvParser(f_read=fixture_sample_stocks_data,f_config=fixture_sample_config_json)
     # _copy existing and working configuration

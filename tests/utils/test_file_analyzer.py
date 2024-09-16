@@ -88,7 +88,7 @@ def test_file_analyzer_filetext(fixture_testfile_md,fixture_ruledict_file_conten
     file_analyzer = FileContentAnalyzer()
     file_analyzer.add_rule(fixture_ruledict_file_content)
     rules = file_analyzer._get_matcher(C.RULE_FILE_CONTENT).rules
-    # assert we have one rulej
+    # assert we have one rule
     assert len(rules) == 1
     # find objects
     results = file_analyzer.find_file_content(fixture_testfile_md)

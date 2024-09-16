@@ -113,7 +113,8 @@ class ConfigEnv():
         if _path_ref is None or _replace_str is None:
             logger.info(f"[CONFIG]  [{key}], reference [{_path_key}], no information found")
             return None
-        path_out = os.path.abspath(_path_out.replace(_replace_str,_path_ref))
+        path_out = _path_out.replace(_replace_str,_path_ref)
+        path_out = os.path.abspath(path_out)
         path_exists = os.path.isdir(path_out)
         s = f"[CONFIG]  Key [{key}], path [{_path_out}], calculated path [{path_out}], exists [{path_exists}]"
         if path_exists:

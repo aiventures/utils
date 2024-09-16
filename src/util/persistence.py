@@ -305,10 +305,13 @@ class Persistence():
         else:
             keys_out = keys
         out.append(csv_sep.join(keys_out))
+        # TODO Output In Order
         for data in data_list:
             data_row = []
-            for k in keys:
-                v=data.get(k,"")
+            for k in keys:                
+                v = data.get(k,"")
+                if v is None:
+                    v = "None"
                 if csv_sep in v and wrap_char is None:
                     logger.warning(f"[Persistence] CSV Separator {v} found in {k}:{v}, will be replaced by _sep_")
                     v = v.replace(csv_sep,"_sep_")
