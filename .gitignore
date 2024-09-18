@@ -7,6 +7,7 @@
 *.local
 .vscode/
 config_env_sample.json
+playground/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

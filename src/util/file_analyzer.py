@@ -7,13 +7,13 @@ from copy import deepcopy
 from pathlib import Path
 import logging
 
-from util.constants import APPLY_ALL
+# from util.constants import APPLY_ALL
 # from datetime import datetime as DateTime
 # import json
 # when doing tests add this to reference python path
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from util.const_local import P_TOOLS
+# from util.const_local import P_TOOLS
 from util import constants as C
 from util.colors import col
 from util.persistence import Persistence
