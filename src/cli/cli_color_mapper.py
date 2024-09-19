@@ -19,6 +19,9 @@ ANSI = "ansi" # ansi ciodes not implemented yet
 CODE = "code" # code 0-255
 NAME = "name" # as in ANSI COLOR NAMES
 RGB = "rgb"
+THEME = "theme"
+THEMES = "themes"
+COLORS = "colors"
 BASE_HEX_COLORS = HEX_COLORS[:16]
 BASE_RGB_COLORS = RGB_COLORS[:16]
 
@@ -52,6 +55,42 @@ class ColorMapper():
             _to = min(_num_elems,_from+group_size)
             out.append(group_list[_from:_to])
         return out
+
+    def show_colors(self,num_colums:int=8,colors:list=[])->None:
+        """ displays all colors, you also my use filter strings """
+        _table = Table(title=f"Color Codes matching colors {colors}")
+        _color_list_config = self.config["colors"]
+        _keys = []
+        _color_sort = {}
+        if len(colors)==0:
+            _color_sort["ALL"]=[]
+            _color_list = _color_sort["ALL"]
+        else:
+            for f in colors:
+                _color_sort[f] = []
+        for _color in _color_list_config:
+            name = _color[NAME]
+            passed = True
+            if len(colors) > 0:
+                passed = False
+                for c in colors:
+                    if c in name:
+                        _color_list = _color_sort[c]
+                        passed = True
+            if passed is False:
+                continue
+            
+            s = f"[white on {_color[HEX]}]{str(_color[CODE]).zfill(3)} {_color[NAME]: <15}"
+            _color_list.append(s)
+        # get a sorted list of items        
+        _keys = []
+        for v in _color_sort.values():
+            _keys.extend(v)
+
+        rows = self.group_list(_keys,num_colums)
+        for row in rows:
+            _table.add_row(*row)
+        console.print(_table)
 
     def show_themes(self,num_columns:int=9)->None:
         """ displays all standard color themes grouped into tables """
@@ -93,7 +132,6 @@ class ColorMapper():
             return COLOR_NAMES[index]
         else:
             return None
-        pass
 
     def rgb2hex(self,rgb:tuple)->str:
         """ convert rgb to hex """
@@ -103,9 +141,9 @@ class ColorMapper():
         # 0: This is the padding character, which, in this case, is a zero.
         # 2: This specifies the minimum width of the formatted string. In this case, it should be at least two characters wide.
         # x: This is the conversion type character, which means the integer will be formatted as a lowercase hexadecimal number.
-        try: 
+        try:
             return '#%02x%02x%02x' % rgb
-        except TypeError:            
+        except TypeError:
             logger.warning(f"[ColorMapper] Conversion failed for value [{rgb}] to HEX VALUE, no rgb tuple?")
             return None
 
@@ -167,16 +205,27 @@ class ColorMapper():
             NAME:{RGB:self.name2rgb,HEX:self.name2hex,CODE:self.name2code},
             HEX:{RGB:self.hex2rgb,NAME:self.hex2name,CODE:self.hex2code},
             }
-        self._name2code_dict = {}
-        self._name2rgb_dict = {}
-        self._name2hex_dict = {}
-        self._code2hex_dict = {}
+
         self._hexcolors = HEX_COLORS
         self._rgb_colors = RGB_COLORS
         self._themes = {}
         self._theme = None
         if theme:
             self.theme = theme
+
+    @property
+    def config(self)->dict:
+        """ returns the configuration """
+        out = {}
+        out[THEME] = self._theme
+        _colors = []
+        for i in range(256):
+            _colors.append({CODE:i,NAME:COLOR_NAMES[i],
+                            HEX:self._hexcolors[i],
+                            RGB:self._rgb_colors[i]})
+        out[COLORS]=_colors
+        out[THEMES] =self._read_themes()
+        return out
 
     @property
     def theme(self):
@@ -205,36 +254,10 @@ class ColorMapper():
         else:
             logger.warning(f"[ColorMapper] Configuration file was not found")
 
-    @property
-    def name2code_lut(self):
-        """ get the lookup of names to code only instanciate if needed """
-        if not self._name2code_dict:
-            self._name2code_dict = dict(zip(COLOR_NAMES,range(256)))
-        return self._name2code_dict
-
-    @property
-    def name2rgb_lut(self):
-        """ get the lookup of names to rgb only instanciate if needed """
-        if not self._name2rgb_dict:
-            self._name2rgb_dict = dict(zip(COLOR_NAMES,RGB_COLORS))
-        return self._name2rgb_dict
-
-    @property
-    def name2hex_lut(self):
-        """ get the lookup of names to hex only instanciate if needed """
-        if not self._name2hex_dict:
-            self._name2hex_dict = dict(zip(COLOR_NAMES,HEX_COLORS))
-        return self._name2hex_dict
-
-    @property
-    def code2hex_lut(self):
-        """ get the lookup of names to code only instanciate if needed """
-        if not self._code2hex_dict:
-            self._code2hex_dict = dict(zip(range(256),HEX_COLORS))
-        return self._code2hex_dict
-
     def convert(self,value:Any,to:str=HEX)->Any:
-        """ Convert from one color code to the other, returns blank None if not available """
+        """ Convert from one color code to the other, returns blank None if not available
+            Wraps all other conversion methods
+        """
         _from = None
         if isinstance(value,int) and value < 256 and value >= 0:
             _from = CODE
@@ -266,7 +289,9 @@ if __name__ == "__main__":
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=LOG_LEVEL, datefmt="%Y-%m-%d %H:%M:%S",
                         handlers=[RichHandler(rich_tracebacks=True)])
+    # show themes 
     ColorMapper().show_themes()
-    pass
-
-
+    # show color maps
+    ColorMapper().show_colors()
+    ColorMapper().show_colors(colors=["red","pink","coral","salmon","orange","yellow","gold","green","cyan","turq","blue","violet","purple","gray"])
+    ColorMapper().show_colors(colors=["dark","medium","light","pale"])
