@@ -8,6 +8,9 @@
 .vscode/
 config_env_sample.json
 playground/
+# rich theme resources will be created 
+**/rich_themes/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
