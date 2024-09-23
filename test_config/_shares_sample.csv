@@ -1,0 +1,7 @@
+"INDEX","DATUM","DATUM_N","ISIN_NUMMER","KAUFKURS","KURS_AKTUELL","STUECK","DATUM_EXPORT","FILE"
+"001","02.09.2024","45537","IEABSDEF12345","333,33","444,44","1,1111","45551","c:\\utils\<path>\test_config\sample_stocks_data.txt"
+"002","01.08.2024","45505","IEABSDEF12345","555,55","666,0","2,2222","45551","c:\<PATH>\utils\test_config\sample_stocks_data.txt"
+"003","01.07.2024","45474","IEABSDEF12345","111,4","100,0","1,2911","45551","c:\<PATH>\utils\test_config\sample_stocks_data.txt"
+"004","02.10.2024","45567","IEABSDEF92345","633,33","644,44","4,1111","45551","c:\<PATH>\utils\test_config\sample_stocks_data2.txt"
+"005","01.09.2024","45536","IEABSDEF92345","755,55","766,0","6,2222","45551","c:\<PATH>\utils\test_config\sample_stocks_data2.txt"
+"006","01.04.2024","45383","IEABSDEF92345","811,4","800,0","7,2911","45551","c:\<PATH>\utils\test_config\sample_stocks_data2.txt"

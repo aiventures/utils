@@ -1,7 +1,9 @@
 """ constants file """
 from copy import deepcopy
-# TODO SWITCH TO PYDANTIC IN FUTURE
+from typing import Any
+from util.abstract_enum import AbstractEnum
 
+# TODO SWITCH TO PYDANTIC IN FUTURE
 # Constants
 FILE = "file"
 PATH = "path"
@@ -119,16 +121,19 @@ CONFIG_KEYS = [CONFIG_PATH,CONFIG_FILE,CONFIG_DESCRIPTION,CONFIG_GROUPS,CONFIG_R
 CONFIG_PATH_CWD = "CWD"
 # Key Markers / Prefix may determine which type of file object is there
 CONFIG_KEY_CMD = "CMD_"
+# (W)here OPtion, tries to automativally determine an executable using where command
+CONFIG_KEY_WHERE = "W_"
 CONFIG_KEY_FILE = "F_"
 CONFIG_KEY_PATH = "P_"
 CONFIG_KEY_RULE = "R_"
 CONFIG_KEY_DATA = "D_"
-CONFIG_KEY_TYPES = [CONFIG_KEY_CMD,CONFIG_KEY_FILE,CONFIG_KEY_PATH,CONFIG_KEY_RULE,CONFIG_KEY_DATA]
+CONFIG_KEY_TYPES = [CONFIG_KEY_CMD,CONFIG_KEY_FILE,CONFIG_KEY_PATH,CONFIG_KEY_RULE,
+                    CONFIG_KEY_DATA,CONFIG_KEY_WHERE]
 
 # EXPORT FORMAT
-EXPORT_CSV = "export_csv" # table of csv strings 
+EXPORT_CSV = "export_csv" # table of csv strings
 EXPORT_DICT = "export_dict" # dict including json non compatible objects
-EXPORT_JSON = "export_json" # json string 
+EXPORT_JSON = "export_json" # json string
 EXPORT_JSON_DICT = "export_json_dict" # json compatible dioct
 
 # XLS INT of 1.1.1970
@@ -138,8 +143,14 @@ ENV_DATE_REF = "DATE19700101"
 # REGEX EXPRESSIONS USED
 # regex to find all strings enclosed in brackets
 REGEX_BRACKETS = r"\[.+?\]"
+REGEX_STRING_QUOTED_STR = "^\"(.+)?\"$"
 # REGEX GLOBAL KEY: Find pattern in txt files to identify global keys
 REGEX_GLOBAL_KEY = r"key:(.+)=(.+)"
+# REGEX for absolute path with and without quoted including quotes
+REGEX_WIN_ABS_PATH='[a-zA-Z]:\\\\.+'
+REGEX_WIN_ABS_PATH_WITH_QUOTES=f'"{REGEX_WIN_ABS_PATH}"'
+REGEX_WIN_ABS_PATH_WITH_QUOTES_AND_BLANKS=r'"[a-zA-Z]\:.+[ ]{1,}.*"'
+
 # You may also set global keys that are not treated as values, but
 # will be stored as ENVIRONMENT
 # REGEX ENV KEY: Find pattern in txt files to identify env keys
@@ -161,3 +172,36 @@ ENV_CSV_WRAP_CHAR_DEFAULT = '"'
 # Allowed ENV VARS FOR CSV_PARSER
 ENV_VARS = [ENV_DEC_SEPARATOR,ENV_DATE_FORMAT,ENV_DATE_REF,ENV_CSV_WRAP_CHAR]
 CSV_PARSER_ENV_VARS = [ENV_DEC_SEPARATOR,ENV_DATE_FORMAT,ENV_DATE_REF,ENV_CSV_WRAP_CHAR]
+
+# list of CYGPATH Transformations
+
+# param definitions
+CYGPATH_PATH = "path"
+CYGPATH_CONV = "file_conversion"
+
+class CygPathCmd(AbstractEnum):
+    """ CygPath Command Line params """
+    WIN2UNC = "--unix --absolute"
+    WIN2DOS = "--dos --absolute"
+    DOS2UNC = "--unix --absolute"
+    UNC2WIN = "--windows --absolute"
+    UNC2DOS = "--dos --absolute"
+    NO_CONV = "no_conversion"    
+
+class Conversion(AbstractEnum):
+    """ Enum containing available Conersions from environment, functions etc """
+    VIRTUAL_ENV = "VENV.ENV"
+    GIT_BRANCH  = "BRANCH.ENV"
+    PYTHON      = "PYTHON.ENV"
+    CYGPATH     = "CYGPATH.ENV"
+
+class EnvName(AbstractEnum):
+    """ environemnt variable names """
+    VIRTUAL_ENV = "VIRTUAL_ENV"
+
+class Cmd(AbstractEnum):
+    """ Known Commmamnds variables """
+    PYTHON = "python"
+    CYGPATH = "cygpath"
+    GIT = "git"
+    VENV = "venv"

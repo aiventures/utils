@@ -7,16 +7,36 @@ from copy import deepcopy
 from pathlib import Path
 import logging
 from util import constants as C
+from util.abstract_enum import AbstractEnum
 from util.persistence import Persistence
-
+from enum import Enum
 
 ### [1] Fixtures for File Analyzer
 
 @pytest.fixture
 def fixture_testpath()->Path:
     """ Sample Path """
-    p_testpath = Path(__file__).parent.parent.parent.joinpath("test_path")
+    p_testpath = str(Path(__file__).parent.parent.parent.joinpath("test_path"))
     return p_testpath
+
+@pytest.fixture
+def fixture_testpath_withspace()->Path:
+    """ Sample Path """
+    p_testpath = str(Path(__file__).parent.parent.parent.joinpath("test_path","path with space"))
+    return p_testpath
+
+@pytest.fixture
+def fixture_test_paths(fixture_testpath,fixture_testpath_withspace):
+    """ returns testpaths """
+    _testpaths = [f'"{fixture_testpath_withspace}" -param1 xyz ',
+                  fixture_testpath]
+    return _testpaths
+
+@pytest.fixture
+def fixture_test_invalid_paths():
+    """ returns testpaths """
+    _testpaths = ['C:\HUGO\ any_path -param1 xyz']
+    return _testpaths
 
 @pytest.fixture
 def fixture_testfile(fixture_testpath)->Path:
@@ -33,7 +53,7 @@ def fixture_testfile_md(fixture_testpath)->Path:
 @pytest.fixture
 def fixture_testfile_dict(fixture_testpath):
     """  getting a test file from the sample path """
-    f_sample = fixture_testpath.joinpath("lorem_doc_root.md")
+    f_sample = Path(fixture_testpath).joinpath("lorem_doc_root.md")
     text_lines_dict = Persistence.read_txt_file(f_sample,comment_marker=None,with_line_nums=True)
     return text_lines_dict
 
@@ -167,3 +187,14 @@ def fixture_sample_config_json(fixture_config_env_testpath,fixture_config_env_te
     _sample_dict["F_CONFIGTEST3"]["p"]=str(fixture_config_env_testpath)
     Persistence.save_json(_sample_config_json,_sample_dict)
     return _sample_config_json
+
+@pytest.fixture
+def fixture_sample_enum()->AbstractEnum:
+    """  getting a sample enum class """
+    class sample_enum(AbstractEnum):
+        """ sample enum """
+        TESTNAME1 = "testvalue1"
+        TESTNAME2 = "testvalue2"
+        TESTNAME3 = "testvalue3"
+
+    return sample_enum

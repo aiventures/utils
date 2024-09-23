@@ -5,6 +5,8 @@
 *_old.*
 *.tmp
 *.local
+*.ENV
+*shares.csv
 .vscode/
 config_env_sample.json
 playground/

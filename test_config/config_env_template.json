@@ -7,6 +7,7 @@
                             "d":"Development Stuff Folder"},
     "P_ROOT":              {"p":"C:\\<DEV>\\root",
                             "d":"Root Folder containing dev projects"},
+    "W_PYTHON":            {"d":"(W)here Python, tries to get the Python command usually the VENV Python using where on OS level"},
     "CMD_CYGPATH":         {"p":"P_GIT",
                             "f":"cygpath.exe",
                             "d":"Path Conversion utility (Part of Git)"},
@@ -14,8 +15,7 @@
                             "f":"cmd_dummy1.txt",
                             "d":"Command line example 1 to show how it can be called with commands",
                             "c":{"CMD_FILE":"'[CMD]' -f '[FILE]'",
-                                 "CMD_FILE_LINE":"'[CMD]' -f '[FILE]' -l [LINE]"
-                                }
+                                 "CMD_FILE_LINE":"'[CMD]' -f '[FILE]' -l [LINE]"}
                             },
     "CMD_EXAMPLE2":         {"p":"P_CONFIGTEST",
                             "f":"cmd_dummy2.txt",
@@ -77,5 +77,5 @@
                               "dd": {"0": "AKTIE_NAME","1": "ISIN","2": "WKN","3": "ANZAHL"},
                               "e": ["AKTIE_NAME","ISIN","WKN",{"k":"ANZAHL","t":"float"}],
                               "env": {"DEC_SEPARATOR": ",","DATE_FORMAT": "%d.%m.%Y","CSV_WRAP_CHAR": "\""}
-                          }                                
+                          }
 }

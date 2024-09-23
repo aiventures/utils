@@ -11,7 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from util.persistence import Persistence
 from util.colors import col
 from util import constants as C
-
+from util.utils import Utils
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +245,8 @@ class ConfigEnv():
         # replace all occurences
         for _var in _vars:
             _key = _var[1:-1]
+            # TDOO apply special logic in case the constant needs to be replaced
+            # like for instance python exe needs to be replaced by VENV executable
             _value = str(env_vars.get(_key))
             # TODO check if value contains space and can be interpreted as string or path
             # if so, enclose it into parentheses / or us single quotes as marker to replace them due to json formatting
@@ -417,6 +419,23 @@ class ConfigEnv():
                 _file_ref = self._resolve_file(key)
             elif key_prefix == C.CONFIG_KEY_PATH:
                 _file_ref = self._resolve_path(key)
+            elif key_prefix == C.CONFIG_KEY_WHERE:
+                # TODO Resolve command using where logic
+                cmd = key.replace(C.CONFIG_KEY_WHERE,"").upper()
+                # treat special cases
+                if cmd == C.Cmd.GIT.name:
+                    
+                    pass
+                elif cmd == C.Cmd.PYTHON.name:
+                    _file_ref = Utils.get_python()
+                    pass
+                elif cmd == C.Cmd.VENV.name:
+                    pass
+                elif cmd == C.Cmd.CYGPATH.name:
+                    pass
+                else:
+                    pass
+                pass
 
             if _file_ref is not None:
                 logger.debug(f"[CONFIG] Resolved fileref for config key [{key}], value [{_file_ref}]")

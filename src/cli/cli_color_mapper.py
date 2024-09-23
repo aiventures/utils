@@ -275,8 +275,8 @@ class ColorMapper():
 
         # set a default path
         if self._p_resources is None or not os.path.isdir(self._p_resources):
-            self._p_resources = os.path.join(Path(__file__).parent.parent.parent,"resources")
-            logger.info("[ColorMapper] Setting resource path [{self._p_resources}]")
+            self._p_resources = os.path.join(str(Path(__file__).parent.parent.parent),"resources")
+            logger.info(f"[ColorMapper] Setting resource path [{self._p_resources}]")
 
         self._f_color_themes = os.path.join(self._p_resources,F_COLOR_THEMES)
         if not os.path.isfile(self._f_color_themes):

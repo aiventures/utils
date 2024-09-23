@@ -11,6 +11,7 @@ import logging
 # from pathlib import Path
 # from copy import deepcopy
 from util import const_local
+from pathlib import Path
 from util import constants as C
 from util.file_analyzer import FileSysObjectInfo
 from util.file_analyzer import FileAnalyzer
@@ -22,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 def test_setup(fixture_testfile,fixture_testpath,fixture_testfile_dict):
     """ Setup Method """
-    assert fixture_testfile.is_file()
-    assert fixture_testpath.is_dir()
+    assert Path(fixture_testfile).is_file()
+    assert Path(fixture_testpath).is_dir()
     assert isinstance(fixture_testfile_dict,dict) and len(fixture_testfile_dict) > 0
 
 def test_file_analyzer_simple(fixture_testpath,fixture_ruledict_filename):
