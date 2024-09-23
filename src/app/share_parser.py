@@ -75,7 +75,7 @@ class ShareParser():
         csv_parser.add_ext_columns(masterdata)
         _parsed_list = csv_parser.parse(CONFIG_DATA_DEPOTHISTORIE,f,C.EXPORT_JSON_DICT)
         self._export_list = csv_parser.get_export_info()
-        _config = csv_parser.config.get(C.CONFIG_ENV,{})
+        _config = csv_parser.config.get(C.ConfigAttribute.ENV.value,{})
         self._dec_separator = _config.get(C.ENV_DEC_SEPARATOR,C.ENV_DEC_SEPARATOR_DEFAULT)
         self._wrap_char = _config.get(C.ENV_CSV_WRAP_CHAR,C.ENV_CSV_WRAP_CHAR_DEFAULT)
         return _parsed_list
@@ -93,8 +93,8 @@ class ShareParser():
                         v = v.strip()
                     _info = _export_info.get(k)
                     if _info is None:
-                        _info = {C.CONFIG_KEY:k,C.CONFIG_TYPE:C.TYPE_STR}
-                    _info[C.CONFIG_VALUE] = v
+                        _info = {C.ConfigAttribute.KEY.value:k,C.ConfigAttribute.TYPE.value:C.TYPE_STR}
+                    _info[C.ConfigAttribute.VALUE.value] = v
                     out.append(_info)
         return out
 

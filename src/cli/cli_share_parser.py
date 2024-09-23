@@ -4,7 +4,7 @@ import typer
 import sys
 from rich import print
 # path to config json
-from util.const_local import F_CONFIG_ENV
+# from util.const_local import F_CONFIG_ENV
 
 # different config files
 from util.const_local import F_CONFIG

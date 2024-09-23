@@ -54,43 +54,43 @@ def test_csv_parser_wrong_configs(fixture_sample_config_json, fixture_sample_sto
     assert len(_msg_list) == 0
     _config_wrong = deepcopy(_config)
     # no regex
-    _ = _config_wrong.pop(C.CONFIG_REGEX)
+    _ = _config_wrong.pop(C.ConfigAttribute.REGEX.value)
     _msg_list = CsvParser.validate_config(_config_wrong)
     assert len(_msg_list) > 0
     # wrong regex
     _config_wrong = deepcopy(_config)
-    _config_wrong[C.CONFIG_REGEX] = "wrong regex"
+    _config_wrong[C.ConfigAttribute.REGEX.value] = "wrong regex"
     _msg_list = CsvParser.validate_config(_config_wrong)
     assert len(_msg_list) > 0
     # missing  column data
     _config_wrong = deepcopy(_config)
-    _config_data = _config_wrong[C.CONFIG_DATA]
+    _config_data = _config_wrong[C.ConfigAttribute.DATA.value]
     _config_data["wrong_key"] = "wrong key"
     _msg_list = CsvParser.validate_config(_config_wrong)
     assert len(_msg_list) > 0
     # incorrect column data
     _config_wrong = deepcopy(_config)
-    _config_wrong[C.CONFIG_EXPORT] = "x"
+    _config_wrong[C.ConfigAttribute.EXPORT.value] = "x"
     _msg_list = CsvParser.validate_config(_config_wrong)
     assert len(_msg_list) > 0
     # testing wrong export key
     _config_wrong = deepcopy(_config)
-    _config_wrong[C.CONFIG_EXPORT].append({"k":"WRONG_EXPORT_KEY","t":"str"})
+    _config_wrong[C.ConfigAttribute.EXPORT.value].append({"k":"WRONG_EXPORT_KEY","t":"str"})
     _msg_list = CsvParser.validate_config(_config_wrong)
     assert len(_msg_list) > 0
     # bogus data element
     _config_wrong = deepcopy(_config)
-    _config_wrong[C.CONFIG_EXPORT].append(5)
+    _config_wrong[C.ConfigAttribute.EXPORT.value].append(5)
     _msg_list = CsvParser.validate_config(_config_wrong)
     assert len(_msg_list) > 0
     # dict having no key value
     _config_wrong = deepcopy(_config)
-    _config_wrong[C.CONFIG_EXPORT].append({"b":"no key value","t":"str"})
+    _config_wrong[C.ConfigAttribute.EXPORT.value].append({"b":"no key value","t":"str"})
     _msg_list = CsvParser.validate_config(_config_wrong)
     assert len(_msg_list) > 0
     # testing environment keys
     _config_wrong = deepcopy(_config)
-    _env = _config_wrong[C.CONFIG_ENV]
+    _env = _config_wrong[C.ConfigAttribute.ENV.value]
     _env["WRONG_ENV_KEY"] = "INVALID_ENV_KEY"
     _msg_list = CsvParser.validate_config(_config_wrong)
     assert len(_msg_list) > 0

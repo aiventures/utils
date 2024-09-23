@@ -62,7 +62,7 @@ class ConfigEnv():
             return out_config
 
         for _config_key,_config_info in self._config.items():
-            _groups_env = _config_info.get(C.CONFIG_GROUPS,{})
+            _groups_env = _config_info.get(C.ConfigAttribute.GROUPS.value,{})
             if len(_groups_env) == 0:
                 continue
             if any([g_env in _groups for g_env in _groups_env]):
@@ -73,7 +73,7 @@ class ConfigEnv():
 
     def _resolve_path(self,key):
         _config = self._config.get(key)
-        _path_out = str(_config.get(C.CONFIG_PATH))
+        _path_out = str(_config.get(C.ConfigAttribute.PATH.value))
         if _path_out is None:
             logger.debug(f"[CONFIG] No path was supplied in Config for key [{key}]")
             return None
@@ -105,9 +105,9 @@ class ConfigEnv():
             return None
 
         # get the path from path ref or from path as fallback
-        _path_ref = _config.get(_path_key,{}).get(C.CONFIG_REFERENCE)
+        _path_ref = _config.get(_path_key,{}).get(C.ConfigAttribute.REFERENCE.value)
         if _path_ref is None:
-            _path_ref = self._config.get(_path_key,{}).get(C.CONFIG_PATH)
+            _path_ref = self._config.get(_path_key,{}).get(C.ConfigAttribute.PATH.value)
 
         # resolve path from path refs in path variables
         if _path_ref is None or _replace_str is None:
@@ -127,7 +127,7 @@ class ConfigEnv():
     def _resolve_file(self,key:str)->str:
         """ validate a file reference in key"""
         _config = self._config.get(key)
-        _fileref = _config.get(C.CONFIG_FILE,"")
+        _fileref = _config.get(C.ConfigAttribute.FILE.value,"")
 
         # check if it is a file
         if os.path.isfile(_fileref):
@@ -149,7 +149,7 @@ class ConfigEnv():
 
     def _get_cmd(self,key,**kwargs)->str:
         """ passed on params supplied, identify the correct command """
-        _config_cmds = self._config.get(key,{}).get(C.CONFIG_COMMAND,{})
+        _config_cmds = self._config.get(key,{}).get(C.ConfigAttribute.COMMAND.value,{})
         _cmd_keys = [k.lower() for k in list(kwargs.keys())]
         logger.debug(f"[CONFIG] Find command rule for env key [{key}], params {_cmd_keys}")
         _matching_rules = {}
@@ -212,7 +212,7 @@ class ConfigEnv():
             env_vars[k.lower()] = v
         # get the config items / should be checked before
         _env_config = self._config.get(key)
-        _cmd_info = _env_config.get(C.CONFIG_COMMAND,{}).get(cmd_key)
+        _cmd_info = _env_config.get(C.ConfigAttribute.COMMAND.value,{}).get(cmd_key)
 
         # replace the cmd commands
         if _cmd_info is None:
@@ -220,17 +220,17 @@ class ConfigEnv():
             return None
 
         if isinstance(_cmd_info,str):
-            _cmd_info = {C.CONFIG_RULE:_cmd_info,
-                         C.CONFIG_DESCRIPTION:"No description"}
+            _cmd_info = {C.ConfigAttribute.RULE.value:_cmd_info,
+                         C.ConfigAttribute.DESCRIPTION.value:"No description"}
 
         # parse the command line string
-        cmd_out = _cmd_info.get(C.CONFIG_RULE)
+        cmd_out = _cmd_info.get(C.ConfigAttribute.RULE.value)
         if cmd_out is None:
             logger.warning(f"[CONFIG] Rule [{key}], no (r)ule found")
             return None
 
         # replace the cmd string
-        cmd = _env_config.get(C.CONFIG_REFERENCE)
+        cmd = _env_config.get(C.ConfigAttribute.REFERENCE.value)
         if cmd is None:
             logger.warning(f"[CONFIG] [{key}], no executable was found, check file and path")
             return None
@@ -274,7 +274,7 @@ class ConfigEnv():
             logger.warning(f"[CONFIG] Key [{key}] is not in configured in environment")
             return None
 
-        _commands = _cmd_config.get(C.CONFIG_COMMAND)
+        _commands = _cmd_config.get(C.ConfigAttribute.COMMAND.value)
         if _commands is None:
             logger.warning(f"[CONFIG] Key [{key}], no (c)ommands section")
             return None
@@ -299,11 +299,11 @@ class ConfigEnv():
         _cmd_keys = [k.lower() for k in _cmd_keys]
 
         # get the variables from the command string
-        _cmd_info = self._config.get(key,{}).get(C.CONFIG_COMMAND,{}).get(command)
+        _cmd_info = self._config.get(key,{}).get(C.ConfigAttribute.COMMAND.value,{}).get(command)
         # command can either be a string or dict
         if isinstance(_cmd_info,str):
-            _cmd_info = {C.CONFIG_RULE:_cmd_info,C.CONFIG_DESCRIPTION:"No description"}
-        _cmd_vars = re.findall(C.REGEX_BRACKETS,_cmd_info.get(C.CONFIG_RULE,""),re.IGNORECASE) # from the cmd template get all variables for replacement
+            _cmd_info = {C.ConfigAttribute.RULE.value:_cmd_info,C.ConfigAttribute.DESCRIPTION.value:"No description"}
+        _cmd_vars = re.findall(C.REGEX_BRACKETS,_cmd_info.get(C.ConfigAttribute.RULE.value,""),re.IGNORECASE) # from the cmd template get all variables for replacement
         _cmd_vars = [c.lower()[1:-1] for c in _cmd_vars]
 
         # now at least all vars from command string should be present
@@ -333,7 +333,7 @@ class ConfigEnv():
             if not key_prefix == C.CONFIG_KEY_CMD:
                 continue
 
-            _commands = config.get(C.CONFIG_COMMAND)
+            _commands = config.get(C.ConfigAttribute.COMMAND.value)
             if _commands is None:
                 _msg = f"[CONFIG] Key [{key}] has no (c)ommand section"
                 logger.warning(_msg)
@@ -366,7 +366,7 @@ class ConfigEnv():
             key_prefix = key.split("_")[0]+"_"
             if not key_prefix == C.CONFIG_KEY_RULE:
                 continue
-            _rules = config.get(C.CONFIG_RULE)
+            _rules = config.get(C.ConfigAttribute.RULE.value)
             if _rules is None:
                 logger.warning(f"[CONFIG] Key [{key}] has no (r)ule section")
                 continue
@@ -405,7 +405,7 @@ class ConfigEnv():
         _config = self._config
         logger.debug(f"[CONFIG] ({self._f_config}) contains [len({_config})] items")
         for key, config in _config.items():
-            config[C.CONFIG_REFERENCE] = None
+            config[C.ConfigAttribute.REFERENCE.value] = None
             key_prefix = key.split("_")[0]+"_"
             if not key_prefix in C.CONFIG_KEY_TYPES:
                 logger.warning(f"[CONFIG] Key [{key}] has invalid prefix, allowed {C.CONFIG_KEY_TYPES}")
@@ -439,7 +439,7 @@ class ConfigEnv():
 
             if _file_ref is not None:
                 logger.debug(f"[CONFIG] Resolved fileref for config key [{key}], value [{_file_ref}]")
-                config[C.CONFIG_REFERENCE] = _file_ref
+                config[C.ConfigAttribute.REFERENCE.value] = _file_ref
 
         # validate rules
         self._wrong_rule_keys.update(self._validate_rules())
@@ -451,7 +451,7 @@ class ConfigEnv():
 
     def get_ref(self,key:str)->str:
         """ returns the constructed reference from Configuration """
-        _ref = self._config.get(key,{}).get(C.CONFIG_REFERENCE)
+        _ref = self._config.get(key,{}).get(C.ConfigAttribute.REFERENCE.value)
         if _ref is None:
             logger.warning(f"[CONFIG] Key [{key}] is invalid")
         return _ref
@@ -464,10 +464,10 @@ class ConfigEnv():
         for key,config in self._config.items():
             _num = col(f"[{str(n).zfill(3)}] ","C_LN")
             _key = col(f"{key:<20} ","C_KY")
-            _description = col(f"[{config.get(C.CONFIG_DESCRIPTION,'NO DESCRIPTION')}]","C_TX")
+            _description = col(f"[{config.get(C.ConfigAttribute.DESCRIPTION.value,'NO DESCRIPTION')}]","C_TX")
             _description = f"{_description:<60}"
 
-            _ref = config.get(C.CONFIG_REFERENCE)
+            _ref = config.get(C.ConfigAttribute.REFERENCE.value)
             if _ref:
                 _ref = col("("+_ref+")","C_F")
             else:

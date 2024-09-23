@@ -22,6 +22,7 @@ EXAMPLE = "example"
 # SUFFIX FOR CSV EXPORTS TO CREATE A DATE
 DATEXLS = "_N"
 # type definitions
+
 TYPE_INT = "int"
 TYPE_FLOAT = "float"
 TYPE_DATE = "date"
@@ -81,15 +82,16 @@ DATACOL = {NAME:None,VALUE:None,DESCRIPTION:None,INDEX:None,EXPORT:True}
 DATADICT = {NAME:None,DESCRIPTION:None,RULE_IGNORECASE:True,RULE_IS_REGEX:True,RULE_RULE:None,COLS:{},EXAMPLE:None}
 
 # supported file types
-FILETYPE_XLS = "xlsx"
-FILETYPE_CSV = "csv"
-FILETYPE_MD = "md"
-FILETYPE_TXT = "txt"
-FILETYPE_BAK = "bak"
-FILETYPE_YAML = "yaml"
+class FileType(AbstractEnum):    
+    FILETYPE_XLS = "xlsx"
+    FILETYPE_CSV = "csv"
+    FILETYPE_MD = "md"
+    FILETYPE_TXT = "txt"
+    FILETYPE_BAK = "bak"
+    FILETYPE_YAML = "yaml"    
 
 # Supported file types for search
-FILETYPES_SUPPORTED = [FILETYPE_CSV,FILETYPE_MD,FILETYPE_TXT,FILETYPE_BAK]
+FILETYPES_SUPPORTED = FileType.get_names()
 
 # CONFIG CONSTANTS FOR config_env.py
 # for specification refer to the json sample
@@ -97,28 +99,55 @@ FILETYPES_SUPPORTED = [FILETYPE_CSV,FILETYPE_MD,FILETYPE_TXT,FILETYPE_BAK]
 # it is also possible to plug in the configuration into the file_analzer
 
 # JSON keys
-CONFIG_PATH = "p"    # a path object reference
-CONFIG_FILE = "f"    # a file object reference
-CONFIG_DESCRIPTION = "d" # one line documentation
-CONFIG_GROUPS = "g"      # a list of group this item belongs to
-CONFIG_REFERENCE = "ref" # the resolved path or file path if it can be resolved
-CONFIG_REGEX = "x" # config should be treated as regex
-CONFIG_RULE = "r" # rule dictionary for file_anaylzer / check the json how to use it
-CONFIG_COMMAND = "c" # rule dictionary for command options
-CONFIG_DATA = "dd" # data definition / structure definition
-CONFIG_SAMPLE = "s" # sample / example data
-CONFIG_NAME = "n" # name
-CONFIG_KEY = "k" # key
-CONFIG_VALUE = "v" # value
-CONFIG_TYPE = "t" # (data) type
-CONFIG_EXPORT = "e" # export map
-CONFIG_ENV = "env" # environment settings, only some values are allowed and defined below
-CONFIG_KEYS = [CONFIG_PATH,CONFIG_FILE,CONFIG_DESCRIPTION,CONFIG_GROUPS,CONFIG_REFERENCE,
-               CONFIG_REGEX,CONFIG_RULE,CONFIG_COMMAND,CONFIG_DATA,
-               CONFIG_SAMPLE,CONFIG_NAME,CONFIG_KEY,CONFIG_EXPORT]
+class ConfigAttribute(AbstractEnum):
+    PATH = "p"           # a path object reference
+    FILE = "f"           # a file object reference
+    DESCRIPTION = "d"    # one line documentation
+    GROUPS = "g"         # a list of group this item belongs to
+    REFERENCE = "ref"    # the resolved path or file path if it can be resolved
+    REGEX = "x"          # config should be treated as regex
+    RULE = "r"           # rule dictionary for file_anaylzer / check the json how to use it
+    COMMAND = "c"        # rule dictionary for command options
+    DATA = "dd"          # data definition / structure definition
+    SAMPLE = "s"         # sample / example data
+    NAME = "n"           # name
+    KEY = "k"            # key
+    VALUE = "v"          # value
+    TYPE = "t"           # (data) type
+    EXPORT = "e"         # export map
+    ENV = "env"          # environment settings, only some values are allowed and defined below
 
+# CONFIG_PATH = "p"           # a path object reference
+# CONFIG_FILE = "f"           # a file object reference
+# CONFIG_DESCRIPTION = "d"    # one line documentation
+# CONFIG_GROUPS = "g"         # a list of group this item belongs to
+# CONFIG_REFERENCE = "ref"    # the resolved path or file path if it can be resolved
+# CONFIG_REGEX = "x"          # config should be treated as regex
+# CONFIG_RULE = "r"           # rule dictionary for file_anaylzer / check the json how to use it
+# CONFIG_COMMAND = "c"        # rule dictionary for command options
+# CONFIG_DATA = "dd"          # data definition / structure definition
+# CONFIG_SAMPLE = "s"         # sample / example data
+# CONFIG_NAME = "n"           # name
+# CONFIG_KEY = "k"            # key
+# CONFIG_VALUE = "v"          # value
+# CONFIG_TYPE = "t"           # (data) type
+# CONFIG_EXPORT = "e"         # export map
+# CONFIG_ENV = "env"          # environment settings, only some values are allowed and defined below    
+CONFIG_KEYS = ConfigAttribute.get_names()
 # if this is set in path, then the current path is used
 CONFIG_PATH_CWD = "CWD"
+
+
+class ConfigKey(AbstractEnum):
+    # Key Markers / Prefix may determine which type of file object is there
+    CONFIG_KEY_CMD = "CMD_"
+    # (W)here OPtion, tries to automativally determine an executable using where command
+    CONFIG_KEY_WHERE = "W_"
+    CONFIG_KEY_FILE = "F_"
+    CONFIG_KEY_PATH = "P_"
+    CONFIG_KEY_RULE = "R_"
+    CONFIG_KEY_DATA = "D_"    
+
 # Key Markers / Prefix may determine which type of file object is there
 CONFIG_KEY_CMD = "CMD_"
 # (W)here OPtion, tries to automativally determine an executable using where command
@@ -127,8 +156,7 @@ CONFIG_KEY_FILE = "F_"
 CONFIG_KEY_PATH = "P_"
 CONFIG_KEY_RULE = "R_"
 CONFIG_KEY_DATA = "D_"
-CONFIG_KEY_TYPES = [CONFIG_KEY_CMD,CONFIG_KEY_FILE,CONFIG_KEY_PATH,CONFIG_KEY_RULE,
-                    CONFIG_KEY_DATA,CONFIG_KEY_WHERE]
+CONFIG_KEY_TYPES = ConfigKey.get_names()
 
 # EXPORT FORMAT
 EXPORT_CSV = "export_csv" # table of csv strings

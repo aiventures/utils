@@ -39,16 +39,16 @@ class CsvParser(Persistence):
     def _validate_export_items(config)->list:
         """ validate export against import items,returns error messages """
         _out = []
-        _import_keys = list(config.get(C.CONFIG_DATA,{}).values())
-        _export_list = config.get(C.CONFIG_EXPORT,[])
-        _global_keys = list(config.get(C.CONFIG_KEY,{}).values())
+        _import_keys = list(config.get(C.ConfigAttribute.DATA.value,{}).values())
+        _export_list = config.get(C.ConfigAttribute.EXPORT.value,[])
+        _global_keys = list(config.get(C.ConfigAttribute.KEY.value,{}).values())
         _allowed_keys = deepcopy(_import_keys)
         _allowed_keys.extend(deepcopy(_global_keys))
 
         for _export_item in _export_list:
             _import_key = None
             if isinstance(_export_item,dict):
-                _import_key = _export_item.get(C.CONFIG_KEY)
+                _import_key = _export_item.get(C.ConfigAttribute.KEY.value)
                 if _import_key is None:
                     _msg = f"[CsvParser] (E)xport Item [{_export_item}] has no (k)ey element in dict"
                     logger.warning(_msg)
@@ -78,14 +78,14 @@ class CsvParser(Persistence):
         """ validates a config dict, returns string of errors in case errors are found """
         out = []
         # no expression at all
-        _regex = config.get(C.CONFIG_REGEX)
+        _regex = config.get(C.ConfigAttribute.REGEX.value)
         if _regex is None:
             _msg = "[CsvParser] Regex E(x)pression is empty"
             logger.warning(_msg)
             out.append(_msg)
 
         # cross check export fields to parse fields
-        _column_data = config.get(C.CONFIG_DATA)
+        _column_data = config.get(C.ConfigAttribute.DATA.value)
 
         if not _column_data or not isinstance(_column_data,dict):
             _msg = "[CsvParser] No valid Column Config Data (dd) could be found / is not a dict"
@@ -94,7 +94,7 @@ class CsvParser(Persistence):
             _column_data = {}
 
         # do a smoke test in case regex example is supplied
-        _sample = config.get(C.CONFIG_SAMPLE)
+        _sample = config.get(C.ConfigAttribute.SAMPLE.value)
         if _sample and _regex:
             _results = re.findall(_regex,_sample,re.IGNORECASE)
             if len(_results) == 0:
@@ -119,7 +119,7 @@ class CsvParser(Persistence):
 
 
         # validate output data / if it is empty, all will be exported
-        _export_items = config.get(C.CONFIG_EXPORT,{})
+        _export_items = config.get(C.ConfigAttribute.EXPORT.value,{})
         if not isinstance(_export_items,list):
             _msg = "[CsvParser] Export Information (e) is not a list of dicts/strings"
             logger.warning(_msg)
@@ -130,7 +130,7 @@ class CsvParser(Persistence):
             out.extend(_msgs)
 
         # validate environment items
-        _env = config.get(C.CONFIG_ENV,{})
+        _env = config.get(C.ConfigAttribute.ENV.value,{})
         if isinstance(_env,dict):
             _allowed_env_keys = C.CSV_PARSER_ENV_VARS
             for _env_key in list(_env.keys()):
@@ -147,7 +147,7 @@ class CsvParser(Persistence):
         
     def _create_env(self,config:dict)->None:
         """ set up default environment """
-        _env_config = config.get(C.CONFIG_ENV,{})
+        _env_config = config.get(C.ConfigAttribute.ENV.value,{})
         self._env = {}
         self._env[C.ENV_DEC_SEPARATOR]=_env_config.get(C.ENV_DEC_SEPARATOR,C.ENV_DEC_SEPARATOR_DEFAULT)
         self._env[C.ENV_DATE_FORMAT]=_env_config.get(C.ENV_DATE_FORMAT,C.DATEFORMAT_DD_MM_JJJJ)
@@ -156,12 +156,12 @@ class CsvParser(Persistence):
 
     def _copy_config(self,config:dict)->None:
         """ copies config into object """
-        self._description = config.get(C.CONFIG_DESCRIPTION,"NO_DESCRIPTION")
-        self._regex = re.compile(config.get(C.CONFIG_REGEX,"NO_REGEX"),re.IGNORECASE)
-        self._example = config.get(C.CONFIG_SAMPLE,"NO_SAMPLE")
-        self._global_keys_config = config.get(C.CONFIG_KEY,{})
-        self._import_columns = config.get(C.CONFIG_DATA,{})
-        _export_columns = config.get(C.CONFIG_EXPORT,[])
+        self._description = config.get(C.ConfigAttribute.DESCRIPTION.value,"NO_DESCRIPTION")
+        self._regex = re.compile(config.get(C.ConfigAttribute.REGEX.value,"NO_REGEX"),re.IGNORECASE)
+        self._example = config.get(C.ConfigAttribute.SAMPLE.value,"NO_SAMPLE")
+        self._global_keys_config = config.get(C.ConfigAttribute.KEY.value,{})
+        self._import_columns = config.get(C.ConfigAttribute.DATA.value,{})
+        _export_columns = config.get(C.ConfigAttribute.EXPORT.value,[])
         # no export columns were supplied, use the import columns instead
         if len(_export_columns) == 0:
             _export_columns = list(self._import_columns.values())
@@ -198,10 +198,10 @@ class CsvParser(Persistence):
             self._warnings.append(_msg)
             return None
 
-        _info = {C.CONFIG_KEY:key,C.CONFIG_TYPE:C.TYPE_STR}
+        _info = {C.ConfigAttribute.KEY.value:key,C.ConfigAttribute.TYPE.value:C.TYPE_STR}
 
         if key.endswith(C.DATEXLS):
-            _info[C.CONFIG_TYPE] = C.TYPE_DATEXLS
+            _info[C.ConfigAttribute.TYPE.value] = C.TYPE_DATEXLS
 
         if info is None:
             return _info
@@ -216,23 +216,23 @@ class CsvParser(Persistence):
         if isinstance(info,dict):
             _info = deepcopy(info)
             # convert unknown types to str
-            if not _info.get(C.CONFIG_TYPE,"UNKNOWN") in C.TYPES:
+            if not _info.get(C.ConfigAttribute.TYPE.value,"UNKNOWN") in C.TYPES:
                 _msg = f"[CsvParser] export info [{key}], unknown data (t)ype, allowed {C.TYPES}"
                 logger.warning(_msg)
                 self._warnings.append(_msg)
-                _info[C.CONFIG_TYPE] = C.TYPE_STR
+                _info[C.ConfigAttribute.TYPE.value] = C.TYPE_STR
                 if key.endswith(C.DATEXLS):
-                    _info[C.CONFIG_TYPE] = C.TYPE_DATEXLS
+                    _info[C.ConfigAttribute.TYPE.value] = C.TYPE_DATEXLS
 
         # supply info with a fixed value if supplied
-        _value = _info.get(C.CONFIG_VALUE)
+        _value = _info.get(C.ConfigAttribute.VALUE.value)
         if _value:
-            if _info[C.CONFIG_TYPE] == C.TYPE_DATEXLS:
+            if _info[C.ConfigAttribute.TYPE.value] == C.TYPE_DATEXLS:
                 pass
             elif isinstance(_value,int):
-                _info[C.CONFIG_TYPE] = C.TYPE_INT
+                _info[C.ConfigAttribute.TYPE.value] = C.TYPE_INT
             elif isinstance(_value,float):
-                _info[C.CONFIG_TYPE] = C.TYPE_FLOAT
+                _info[C.ConfigAttribute.TYPE.value] = C.TYPE_FLOAT
 
         return _info
 
@@ -245,7 +245,7 @@ class CsvParser(Persistence):
             _field_info = None
             _key = None
             if isinstance(_export_column,dict):
-                _key = _export_column.get(C.CONFIG_KEY)
+                _key = _export_column.get(C.ConfigAttribute.KEY.value)
                 _field_info = _export_column
             elif isinstance(_export_column,str):
                 _key = _export_column
@@ -257,7 +257,7 @@ class CsvParser(Persistence):
         # adding external columns / as its validated we only need to add it
         _ext_columns = self._ext_columns
         for _ext_column in _ext_columns:
-            _export_info[_ext_column.get(C.CONFIG_KEY)]=_ext_column
+            _export_info[_ext_column.get(C.ConfigAttribute.KEY.value)]=_ext_column
 
         return _export_info
 
@@ -334,7 +334,7 @@ class CsvParser(Persistence):
     def _parse_value(self,value:str,export_info:dict):
         """ parse  value to a target format """
         try:
-            _type = export_info.get(C.CONFIG_TYPE,"no_config")
+            _type = export_info.get(C.ConfigAttribute.TYPE.value,"no_config")
             if _type == C.TYPE_FLOAT:
                 value = self._parse_float(value)
             elif _type == C.TYPE_INT:
@@ -365,12 +365,12 @@ class CsvParser(Persistence):
         _export_info = self._export_info
         for export_key,export_info in _export_info.items():
             data_key = export_key
-            if export_info.get(C.CONFIG_TYPE,"unknown") == C.TYPE_DATEXLS:
+            if export_info.get(C.ConfigAttribute.TYPE.value,"unknown") == C.TYPE_DATEXLS:
                 data_key = export_key[:-len(C.DATEXLS)]
             _value = _result_dict.get(data_key)
             # key is not in result dict, so it is either fixed value from configuration or external constant
             if not _value:
-                _value = export_info.get(C.CONFIG_VALUE)
+                _value = export_info.get(C.ConfigAttribute.VALUE.value)
 
             if _value is None:
                 _msg = f"[CsvParser] Configuration [{self._config_key}], column [{data_key}], no value found in {_result_dict}"
@@ -406,7 +406,7 @@ class CsvParser(Persistence):
                 _msg = f"[CsvParser] Configuration [{self._config_key}], no export info for key [{_gk_export_key}] found"
                 logger.warning(_msg)
                 self._warnings.append(_msg)
-            _export_info[C.CONFIG_VALUE] = g_value
+            _export_info[C.ConfigAttribute.VALUE.value] = g_value
 
     def add_ext_columns(self,ext_columns:list|str)->None:
         """ Adding external columns """
@@ -419,7 +419,7 @@ class CsvParser(Persistence):
             if isinstance(ext_column,str):
                 _key = ext_column
             elif isinstance(ext_column,dict):
-                _key = ext_column.get(C.CONFIG_KEY)
+                _key = ext_column.get(C.ConfigAttribute.KEY.value)
             logger.debug(f"Parsing external Column Info [{ext_column}]")
             if _key is None:
                 _msg = f"No key found for external column [{ext_column}], must be str or dict wiith (k)ey element"
@@ -430,8 +430,8 @@ class CsvParser(Persistence):
             _export_info = self._transform_export_info(_key,ext_column)
             if _export_info:
                 # if there is no value, a dummy value will be added
-                if _export_info.get(C.CONFIG_VALUE) is None:
-                    _export_info[C.CONFIG_VALUE] = None
+                if _export_info.get(C.ConfigAttribute.VALUE.value) is None:
+                    _export_info[C.ConfigAttribute.VALUE.value] = None
                 self._ext_columns.append(_export_info)
 
     def content(self,export_format:str=C.EXPORT_DICT)->list|str:
