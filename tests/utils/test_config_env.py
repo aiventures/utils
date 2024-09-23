@@ -27,7 +27,7 @@ def test_config_setup(fixture_sample_config_json):
 def test_config_get_groups(fixture_sample_config_json):
     """ test the reading of the configuration """
     config_env = ConfigEnv(fixture_sample_config_json)
-    _groups = config_env.get_env_by_groups("groupA")
+    _groups = config_env.get_config_by_groups("groupA")
     assert len(_groups) == 2
 
 def test_validate_commands(fixture_sample_config_json):

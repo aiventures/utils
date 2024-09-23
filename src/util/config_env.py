@@ -7,11 +7,11 @@ import logging
 from pathlib import Path
 # TODO REPLACE BY UNIT TESTS
 # when doing tests add this to reference python path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from util.persistence import Persistence
 from util.colors import col
 from util import constants as C
-from util.utils import Utils
+# from util.utils import Utils
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ class ConfigEnv():
         self._config = Persistence.read_json(self._f_config)
         self._config_keys = list(self._config.keys())
         self._wrong_rule_keys = {}
+        self._env = {}
         if not self._config:
             self._config = {}
         self._validate()
@@ -49,8 +50,8 @@ class ConfigEnv():
         return config
 
     # TODO GET CONFIG GROUPS
-    def get_env_by_groups(self,groups:list|str=None):
-        """ filter env entries by group. """
+    def get_config_by_groups(self,groups:list|str=None):
+        """ filter config entries by group. """
         if isinstance(groups,str):
             _groups = [groups]
         else:
@@ -71,7 +72,33 @@ class ConfigEnv():
         logger.info(f"[CONFIG] Get Config Env using groups {_groups}, returning [{len(out_config)}] entries")
         return out_config
 
-    def _resolve_path(self,key):
+    # TODO Resolve ENV VARIABLE in Configuration
+    def _resolve_env(self,key)->str:
+        """ resolve environemnt """
+        # TODO FOR NOW COLLECT ENVIRONMENT INFORMATION ONLY
+        _config = self._config.get(key)
+        _env = str(_config.get(C.ConfigAttribute.PATH.value))
+        # TODO ADD GROUP TAG
+        if _env is None:
+            logger.debug(f"[CONFIG] No ENVIRONMENT info was supplied in Config for key [{key}]")
+            return None
+        # pass
+        # self._env
+        return ""
+
+    # TODO Resolve command using where logic
+    def _resolve_where(self,key)->str:
+        """ find executable using where command"""
+        _config = self._config.get(key)
+        _where = str(_config.get(C.ConfigAttribute.PATH.value))
+        # TODO ADD GROUP TAG
+        if _where is None:
+            logger.debug(f"[CONFIG] No Executable info was supplied in Config for key [{key}]")
+            return None
+        return ""
+
+    def _resolve_path(self,key)->str:
+        """ retrieves a path  """
         _config = self._config.get(key)
         _path_out = str(_config.get(C.ConfigAttribute.PATH.value))
         if _path_out is None:
@@ -117,8 +144,10 @@ class ConfigEnv():
         path_out = os.path.abspath(path_out)
         path_exists = os.path.isdir(path_out)
         s = f"[CONFIG]  Key [{key}], path [{_path_out}], calculated path [{path_out}], exists [{path_exists}]"
+        # TODO ADD GROUP TAG
         if path_exists:
             logger.info(s)
+            # TODO CONVERT TO OUTPUT FILE FORMAT
             return path_out
         else:
             logger.warning(s)
@@ -138,17 +167,20 @@ class ConfigEnv():
         # validate pathref
         _pathref = self._resolve_path(key)
 
+        # TODO ADD GROUP TAG
+
         # check if it is a valid path when using path_ref
         if _pathref:
             _fileref = os.path.abspath(os.path.join(_pathref,_fileref))
             if os.path.isfile(_fileref):
                 logger.debug(f"[CONFIG] Key [{key}]: combined path/file [{_fileref}]")
+                # TODO CONVERT TO TARGET FILE FORMAT
                 return _fileref
             else:
                 return None
 
     def _get_cmd(self,key,**kwargs)->str:
-        """ passed on params supplied, identify the correct command """
+        """ passed on params supplied, identify the correct command and create a command line command """
         _config_cmds = self._config.get(key,{}).get(C.ConfigAttribute.COMMAND.value,{})
         _cmd_keys = [k.lower() for k in list(kwargs.keys())]
         logger.debug(f"[CONFIG] Find command rule for env key [{key}], params {_cmd_keys}")
@@ -256,6 +288,7 @@ class ConfigEnv():
                 break
             cmd_out = cmd_out.replace(_var,_value)
         # replace single quotes by double quotes
+        # TODO SOLVE THIS MORE GENERICALLY
         cmd_out = cmd_out.replace("'",'"')
         return cmd_out
 
@@ -389,8 +422,7 @@ class ConfigEnv():
         return out_wrong_keys
 
     def _validate_data_rules(self) -> dict:
-        """ validates data rules
-        """
+        """ validates data rules  """
         out_wrong_keys = {}
         _config = self._config
         _ruledict_keys = list(C.RULEDICT_FILENAME.keys())
@@ -400,54 +432,72 @@ class ConfigEnv():
                 continue
         return out_wrong_keys
 
+    def _get_config_keys(self):
+        """ get config keys in order to ensure processing in order """
+        _values = C.ConfigKey.get_values()
+        out_keys = {v:[] for v in _values}
+        _config_keys = list(self._config.keys())
+        for _key in _config_keys:
+            _out_key = _key.split("_")[0]+"_"
+            out_keys[_out_key].append(_key)
+        return out_keys
+
     def _validate(self) -> None:
         """ validates the configuration and populates ref section """
-        _config = self._config
-        logger.debug(f"[CONFIG] ({self._f_config}) contains [len({_config})] items")
-        for key, config in _config.items():
-            config[C.ConfigAttribute.REFERENCE.value] = None
-            key_prefix = key.split("_")[0]+"_"
-            if not key_prefix in C.CONFIG_KEY_TYPES:
-                logger.warning(f"[CONFIG] Key [{key}] has invalid prefix, allowed {C.CONFIG_KEY_TYPES}")
-                continue
-            # check for data definition type
-            if key_prefix == C.ConfigKey.DATA.value:
-                continue
-            _file_ref = None
-            # validate file file type
-            if key_prefix == C.ConfigKey.FILE.value or key_prefix == C.ConfigKey.CMD.value:
-                _file_ref = self._resolve_file(key)
-            elif key_prefix == C.ConfigKey.PATH.value:
-                _file_ref = self._resolve_path(key)
-            elif key_prefix == C.ConfigKey.WHERE.value:
-                # TODO Resolve command using where logic
-                cmd = key.replace(C.ConfigKey.WHERE.value,"").upper()
-                # treat special cases
-                if cmd == C.Cmd.GIT.name:
+        _config_all = self._config
+        logger.debug(f"[CONFIG] ({self._f_config}) contains [len({_config_all})] items")
+        _key_dict = self._get_config_keys()
+        _config_types = C.ConfigKey.get_values()
+        for _config_type in _config_types:
+            _keys = _key_dict.get(_config_type,[])
+            for _key in _keys:
+                _config = _config_all.get(_key)
+                if _config is None:
+                    continue
+                # initialize the ref value
+                _config[C.ConfigAttribute.REFERENCE.value] = None
+                key_prefix = _key.split("_")[0]+"_"
+                # check for data definition type
+                if key_prefix == C.ConfigKey.DATA.value:
+                    continue
+                _file_ref = None
+                # automatically add a default group
+                _group = None
+                # validate file file type
+                if key_prefix == C.ConfigKey.FILE.value or key_prefix == C.ConfigKey.CMD.value:
+                    _file_ref = self._resolve_file(_key)
+                    _group = C.ConfigKey.FILE.name
+                elif key_prefix == C.ConfigKey.PATH.value:
+                    _file_ref = self._resolve_path(_key)
+                    _group = C.ConfigKey.PATH.name
+                elif key_prefix == C.ConfigKey.WHERE.value:
+                    _file_ref = self._resolve_where(_key)
+                    _group = C.ConfigKey.WHERE.name
+                elif key_prefix == C.ConfigKey.ENV.value:
+                    _file_ref = self._resolve_env(_key)
+                    _group = C.ConfigKey.ENV.name
+                elif key_prefix == C.ConfigKey.DATA.value:
+                    _group = C.ConfigKey.DATA.name
+                elif key_prefix == C.ConfigKey.RULE.value:
+                    _group = C.ConfigKey.RULE.name
+                elif key_prefix == C.ConfigKey.CMD.value:
+                    _group = C.ConfigKey.CMD.name
 
-                    pass
-                elif cmd == C.Cmd.PYTHON.name:
-                    _file_ref = Utils.get_python()
-                    pass
-                elif cmd == C.Cmd.VENV.name:
-                    pass
-                elif cmd == C.Cmd.CYGPATH.name:
-                    pass
-                else:
-                    pass
-                pass
+                # add group
+                if _group is not None:
+                    _groups = list(_config.get(C.ConfigAttribute.GROUPS.value,[]))
+                    _groups.append(_group)
+                    _config[C.ConfigAttribute.GROUPS.value]=list(set(_groups))
 
-            if _file_ref is not None:
-                logger.debug(f"[CONFIG] Resolved fileref for config key [{key}], value [{_file_ref}]")
-                config[C.ConfigAttribute.REFERENCE.value] = _file_ref
+                if _file_ref is not None:
+                    logger.debug(f"[CONFIG] Resolved fileref for config key [{_key}], value [{_file_ref}]")
+                    _config[C.ConfigAttribute.REFERENCE.value] = _file_ref
 
         # validate rules
         self._wrong_rule_keys.update(self._validate_rules())
         # validate commands
         # rule name list of wrong config keys
         self._wrong_rule_keys.update(self._validate_commands())
-
-
 
     def get_ref(self,key:str)->str:
         """ returns the constructed reference from Configuration """

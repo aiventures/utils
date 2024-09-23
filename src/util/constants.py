@@ -1,6 +1,6 @@
 """ constants file """
 from copy import deepcopy
-from typing import Any
+# from typing import Any
 from util.abstract_enum import AbstractEnum
 
 # TODO SWITCH TO PYDANTIC IN FUTURE
@@ -157,23 +157,38 @@ class ConfigAttribute(AbstractEnum):
     NAME = "n"           # name
     KEY = "k"            # key
     VALUE = "v"          # value
+    FILEFORMAT = "ff"    # file format type
     TYPE = "t"           # (data) type
     EXPORT = "e"         # export map
     ENV = "env"          # environment settings, only some values are allowed and defined below
+
+# supported file types
+class FileFormat(AbstractEnum):
+    """ File Formats """
+    DOS = "dos"
+    WIN = "win"
+    UNC = "unc"
+    NOC = "noc" # no_cponversion
+
+FILE_FORMATS = FileFormat.get_values()
 
 CONFIG_KEYS = ConfigAttribute.get_values()
 # if this is set in path, then the current path is used
 CONFIG_PATH_CWD = "CWD"
 
 class ConfigKey(AbstractEnum):
-    # Key Markers / Prefix may determine which type of file object is there
-    CMD = "CMD_"
+    """ Key Markers / Prefix may determine which type of file object is there
+        ORDER in Enums is preserved so it can be used to introdice a sequence for processing
+        of config items
+    """
+    ENV = "E_"   # ENV should mainly contain configuration stuff but also things like date and file format
+    PATH = "P_"  # 1st resolve paths
+    WHERE = "W_" # WHERE can be resolved next (maybe some paths from previous steps are required)
+    FILE = "F_"  # FILES MIGHT COME NEXT
+    CMD = "CMD_" # COMMANDS should be avle to be setup from all previous artefacts
+    RULE = "R_"  # RULES only of declarative nature
+    DATA = "D_"  # DATA are of declearative nature as well
     # (W)here OPtion, tries to automativally determine an executable using where command
-    WHERE = "W_"
-    FILE = "F_"
-    PATH = "P_"
-    RULE = "R_"
-    DATA = "D_"
 
 CONFIG_KEY_TYPES = ConfigKey.get_values()
 
@@ -222,6 +237,18 @@ ENV_CSV_WRAP_CHAR_DEFAULT = '"'
 # Allowed ENV VARS FOR CSV_PARSER
 ENV_VARS = [ENV_DEC_SEPARATOR,ENV_DATE_FORMAT,ENV_DATE_REF,ENV_CSV_WRAP_CHAR]
 CSV_PARSER_ENV_VARS = [ENV_DEC_SEPARATOR,ENV_DATE_FORMAT,ENV_DATE_REF,ENV_CSV_WRAP_CHAR]
+
+class Env(AbstractEnum):
+    """" Some Default Env Variables (with default values that can be overwritten by configuration) """
+    # default date formats
+    DATEFORMAT_DD_MM_JJJJ_HH_MM_SS= "%Y-%m-%d %H:%M:%S"
+    DATEFORMAT_JJJJMMDD= "%Y%m%d"
+    # XLS INT VALUE of 1.1.1970
+    DATE_INT_19700101 = 25569
+    # Separator used for CSV export
+    DEC_SEPARATOR = ","
+    # Wrap Character for CSV export
+    CSV_WRAP_CHAR = '"'
 
 # list of CYGPATH Transformations
 
