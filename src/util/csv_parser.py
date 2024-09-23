@@ -72,7 +72,7 @@ class CsvParser(Persistence):
 
         return _out
 
-    
+
     @staticmethod
     def validate_config(config:dict)->list:
         """ validates a config dict, returns string of errors in case errors are found """
@@ -139,12 +139,12 @@ class CsvParser(Persistence):
                     out.append(_msg)
 
         return out
-    
+
     @property
     def config(self):
         """ returns the config """
         return self._config._config[self._config_key]
-        
+
     def _create_env(self,config:dict)->None:
         """ set up default environment """
         _env_config = config.get(C.ConfigAttribute.ENV.value,{})
@@ -198,10 +198,10 @@ class CsvParser(Persistence):
             self._warnings.append(_msg)
             return None
 
-        _info = {C.ConfigAttribute.KEY.value:key,C.ConfigAttribute.TYPE.value:C.TYPE_STR}
+        _info = {C.ConfigAttribute.KEY.value:key,C.ConfigAttribute.TYPE.value:C.DataType.STR.value}
 
         if key.endswith(C.DATEXLS):
-            _info[C.ConfigAttribute.TYPE.value] = C.TYPE_DATEXLS
+            _info[C.ConfigAttribute.TYPE.value] = C.DataType.DATEXLS.value
 
         if info is None:
             return _info
@@ -216,23 +216,23 @@ class CsvParser(Persistence):
         if isinstance(info,dict):
             _info = deepcopy(info)
             # convert unknown types to str
-            if not _info.get(C.ConfigAttribute.TYPE.value,"UNKNOWN") in C.TYPES:
-                _msg = f"[CsvParser] export info [{key}], unknown data (t)ype, allowed {C.TYPES}"
+            if not _info.get(C.ConfigAttribute.TYPE.value,"UNKNOWN") in C.DATA_TYPES:
+                _msg = f"[CsvParser] export info [{key}], unknown data (t)ype, allowed {C.DATA_TYPES}"
                 logger.warning(_msg)
                 self._warnings.append(_msg)
-                _info[C.ConfigAttribute.TYPE.value] = C.TYPE_STR
+                _info[C.ConfigAttribute.TYPE.value] = C.DataType.STR.value
                 if key.endswith(C.DATEXLS):
-                    _info[C.ConfigAttribute.TYPE.value] = C.TYPE_DATEXLS
+                    _info[C.ConfigAttribute.TYPE.value] = C.DataType.DATEXLS.value
 
         # supply info with a fixed value if supplied
         _value = _info.get(C.ConfigAttribute.VALUE.value)
         if _value:
-            if _info[C.ConfigAttribute.TYPE.value] == C.TYPE_DATEXLS:
+            if _info[C.ConfigAttribute.TYPE.value] == C.DataType.DATEXLS.value:
                 pass
             elif isinstance(_value,int):
-                _info[C.ConfigAttribute.TYPE.value] = C.TYPE_INT
+                _info[C.ConfigAttribute.TYPE.value] = C.DataType.INT.value
             elif isinstance(_value,float):
-                _info[C.ConfigAttribute.TYPE.value] = C.TYPE_FLOAT
+                _info[C.ConfigAttribute.TYPE.value] = C.DataType.FLOAT.value
 
         return _info
 
@@ -324,7 +324,7 @@ class CsvParser(Persistence):
         try:
             _dt = DateTime.strptime(value,_date_format)
             # convert to XLS int Format: get days since 1970
-            if format_str == C.TYPE_DATEXLS:
+            if format_str == C.DataType.DATEXLS.value:
                 _dt = C.DATE_INT_19700101 + (_dt- self._env.get(C.ENV_DATE_REF)).days
             return _dt
         except ValueError:
@@ -335,11 +335,11 @@ class CsvParser(Persistence):
         """ parse  value to a target format """
         try:
             _type = export_info.get(C.ConfigAttribute.TYPE.value,"no_config")
-            if _type == C.TYPE_FLOAT:
+            if _type == C.DataType.FLOAT.value:
                 value = self._parse_float(value)
-            elif _type == C.TYPE_INT:
+            elif _type == C.DataType.INT.value:
                 value = int(value)
-            elif _type in [C.TYPE_DATE,C.TYPE_DATEXLS]:
+            elif _type in [C.DataType.DATE.value,C.DataType.DATEXLS.value]:
                 value = self._parse_date(value,_type)
         except ValueError:
             value = None
@@ -365,7 +365,7 @@ class CsvParser(Persistence):
         _export_info = self._export_info
         for export_key,export_info in _export_info.items():
             data_key = export_key
-            if export_info.get(C.ConfigAttribute.TYPE.value,"unknown") == C.TYPE_DATEXLS:
+            if export_info.get(C.ConfigAttribute.TYPE.value,"unknown") == C.DataType.DATEXLS.value:
                 data_key = export_key[:-len(C.DATEXLS)]
             _value = _result_dict.get(data_key)
             # key is not in result dict, so it is either fixed value from configuration or external constant

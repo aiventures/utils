@@ -23,14 +23,29 @@ EXAMPLE = "example"
 DATEXLS = "_N"
 # type definitions
 
-TYPE_INT = "int"
-TYPE_FLOAT = "float"
-TYPE_DATE = "date"
-TYPE_DATEXLS = "datexls"
-TYPE_STR = "str"
-TYPES = [TYPE_STR,TYPE_INT,TYPE_FLOAT,TYPE_STR,TYPE_DATE,TYPE_DATEXLS]
+class DataType(AbstractEnum):
+    """ Enum for data types """
+    INT = "int"
+    FLOAT = "float"
+    DATE = "date"
+    DATEXLS = "datexls"
+    STR = "str"
+
+DATA_TYPES = DataType.get_values()
 
 # REGEX FIELD NAME DEFINITIONS
+class Rule(AbstractEnum):
+    """Rule Types"""
+    NAME="name"
+    IGNORECASE="ignorecase"
+    IS_REGEX="is_regex"
+    RULE="rule"
+    REGEX="regex"
+    INCLUDE = "include"
+    APPLY = "apply"
+    # additional search attribute: rule for file object
+    FILE = "rule_file"
+
 RULE_NAME="name"
 RULE_IGNORECASE="ignorecase"
 RULE_IS_REGEX="is_regex"
@@ -40,6 +55,12 @@ RULE_REGEX="regex"
 RULE_INCLUDE = "rule_include"
 # Rule for applying any or all rules
 RULE_APPLY = "apply"
+
+class RuleApply(AbstractEnum):
+    """"Rule values for Rule Apply """
+    ANY = "any"
+    ALL = "all"
+
 APPLY_ANY = "any"
 APPLY_ALL = "all"
 RULE_RESULTS = "results"
@@ -48,24 +69,44 @@ RULEDICT = {RULE_NAME:None,RULE_IGNORECASE:True,RULE_IS_REGEX:True,RULE_RULE:Non
 
 # search in file name object
 RULE_FILE = "rule_file"              # additional search attribute: rule for file object
-RULE_FILENAME = "filename"           # search in in filename only
-RULE_PATH = "path"                   # search in path
-RULE_ABSOLUTE_PATH = "absolute_path" # search in absolute path
+
+class RuleFile(AbstractEnum):
+    """"Rule values for Rule File """
+    FILENAME = "filename"           # search in in filename only
+    PATH = "path"                   # search in path
+    ABSOLUTE_PATH = "absolute_path" # search in absolute path
+    FILE_CONTENT = "file_content"
+
+RULE_FILENAME = "filename"           # search in in filename only x
+RULE_PATH = "path"                   # search in path x
+RULE_ABSOLUTE_PATH = "absolute_path" # search in absolute path x
+RULE_FILE_CONTENT = "file_content" # is a rule file
+
+class RuleFileAttribute(AbstractEnum):
+    """"Rule Attributes  for Rule File """
+    # Path Objects
+    ABSOLUTE = "files_absolute"         # attribute in search result dict: absolute path
+    FILES = "files"                     # attribute in search result dict: file names
+    FILE_LINE = "line"                  # file line in file
+    # in file: look in complete text or line by line
+    FIND_BY_LINE = "find_by_line"
+
+# TODO REPLACE ATTRIBUTES
 # Path Objects
 FILES_ABSOLUTE = "files_absolute"    # attribute in search result dict: absolute path
 FILES = "files"                      # attribute in search result dict: file names
 FILE_LINE = "line"                   # file line in file
-
 # in file: look in complete text or line by line
 RULE_FIND_BY_LINE = "find_by_line"
 
+# TODO REPLACE ATTRIBUTES
 # search in content
-RULE_FILE_CONTENT = "file_content"
 RULEDICT_FILENAME = deepcopy(RULEDICT)
 RULEDICT_FILENAME[RULE_FILE] = RULE_ABSOLUTE_PATH
 RULEDICT_FILENAME[RULE_FIND_BY_LINE] = True
 
-# prefix and postfixes for search results
+# TODO REPLACE ATTRIBUTES
+# prefix and postfixes for search results to be used for formatting
 RESULT_ANY_PREFIX_BEFORE = "#ANY1#"
 RESULT_ANY_PREFIX_AFTER = "#ANY0#"
 RESULT_ALL_PREFIX_BEFORE = "#ALL1#"
@@ -78,20 +119,22 @@ RESULT_ALL_PREFIX_AFTER = "#ALL0#"
 # index: column index: index column to export
 # export: flag, whther to export this column
 
+# TODO REPLACE ATTRIBUTES
 DATACOL = {NAME:None,VALUE:None,DESCRIPTION:None,INDEX:None,EXPORT:True}
 DATADICT = {NAME:None,DESCRIPTION:None,RULE_IGNORECASE:True,RULE_IS_REGEX:True,RULE_RULE:None,COLS:{},EXAMPLE:None}
 
 # supported file types
-class FileType(AbstractEnum):    
+class FileType(AbstractEnum):
+    """ File Types """
     FILETYPE_XLS = "xlsx"
     FILETYPE_CSV = "csv"
     FILETYPE_MD = "md"
     FILETYPE_TXT = "txt"
     FILETYPE_BAK = "bak"
-    FILETYPE_YAML = "yaml"    
+    FILETYPE_YAML = "yaml"
 
 # Supported file types for search
-FILETYPES_SUPPORTED = FileType.get_names()
+FILETYPES_SUPPORTED = FileType.get_values()
 
 # CONFIG CONSTANTS FOR config_env.py
 # for specification refer to the json sample
@@ -100,6 +143,7 @@ FILETYPES_SUPPORTED = FileType.get_names()
 
 # JSON keys
 class ConfigAttribute(AbstractEnum):
+    """ Attributes in the Config File """
     PATH = "p"           # a path object reference
     FILE = "f"           # a file object reference
     DESCRIPTION = "d"    # one line documentation
@@ -117,47 +161,24 @@ class ConfigAttribute(AbstractEnum):
     EXPORT = "e"         # export map
     ENV = "env"          # environment settings, only some values are allowed and defined below
 
-# CONFIG_PATH = "p"           # a path object reference
-# CONFIG_FILE = "f"           # a file object reference
-# CONFIG_DESCRIPTION = "d"    # one line documentation
-# CONFIG_GROUPS = "g"         # a list of group this item belongs to
-# CONFIG_REFERENCE = "ref"    # the resolved path or file path if it can be resolved
-# CONFIG_REGEX = "x"          # config should be treated as regex
-# CONFIG_RULE = "r"           # rule dictionary for file_anaylzer / check the json how to use it
-# CONFIG_COMMAND = "c"        # rule dictionary for command options
-# CONFIG_DATA = "dd"          # data definition / structure definition
-# CONFIG_SAMPLE = "s"         # sample / example data
-# CONFIG_NAME = "n"           # name
-# CONFIG_KEY = "k"            # key
-# CONFIG_VALUE = "v"          # value
-# CONFIG_TYPE = "t"           # (data) type
-# CONFIG_EXPORT = "e"         # export map
-# CONFIG_ENV = "env"          # environment settings, only some values are allowed and defined below    
-CONFIG_KEYS = ConfigAttribute.get_names()
+CONFIG_KEYS = ConfigAttribute.get_values()
 # if this is set in path, then the current path is used
 CONFIG_PATH_CWD = "CWD"
 
-
 class ConfigKey(AbstractEnum):
     # Key Markers / Prefix may determine which type of file object is there
-    CONFIG_KEY_CMD = "CMD_"
+    CMD = "CMD_"
     # (W)here OPtion, tries to automativally determine an executable using where command
-    CONFIG_KEY_WHERE = "W_"
-    CONFIG_KEY_FILE = "F_"
-    CONFIG_KEY_PATH = "P_"
-    CONFIG_KEY_RULE = "R_"
-    CONFIG_KEY_DATA = "D_"    
+    WHERE = "W_"
+    FILE = "F_"
+    PATH = "P_"
+    RULE = "R_"
+    DATA = "D_"
 
-# Key Markers / Prefix may determine which type of file object is there
-CONFIG_KEY_CMD = "CMD_"
-# (W)here OPtion, tries to automativally determine an executable using where command
-CONFIG_KEY_WHERE = "W_"
-CONFIG_KEY_FILE = "F_"
-CONFIG_KEY_PATH = "P_"
-CONFIG_KEY_RULE = "R_"
-CONFIG_KEY_DATA = "D_"
-CONFIG_KEY_TYPES = ConfigKey.get_names()
+CONFIG_KEY_TYPES = ConfigKey.get_values()
 
+
+# TODO REPLACE ATTRIBUTES
 # EXPORT FORMAT
 EXPORT_CSV = "export_csv" # table of csv strings
 EXPORT_DICT = "export_dict" # dict including json non compatible objects
@@ -190,6 +211,7 @@ ENV_DATE_FORMAT = "DATE_FORMAT"
 DATEFORMAT_DD_MM_JJJJ= "%d.%m.%Y"
 DATEFORMAT_JJJJMMDD= "%Y%m%d"
 
+# TODO REPLACE ATTRIBUTES
 DATEFORMAT_DD_MM_JJJJ_HH_MM_SS= "%Y-%m-%d %H:%M:%S"
 # Separator used for CSV export
 ENV_DEC_SEPARATOR = "DEC_SEPARATOR"
@@ -203,6 +225,7 @@ CSV_PARSER_ENV_VARS = [ENV_DEC_SEPARATOR,ENV_DATE_FORMAT,ENV_DATE_REF,ENV_CSV_WR
 
 # list of CYGPATH Transformations
 
+# TODO REPLACE ATTRIBUTES
 # param definitions
 CYGPATH_PATH = "path"
 CYGPATH_CONV = "file_conversion"
@@ -214,7 +237,7 @@ class CygPathCmd(AbstractEnum):
     DOS2UNC = "--unix --absolute"
     UNC2WIN = "--windows --absolute"
     UNC2DOS = "--dos --absolute"
-    NO_CONV = "no_conversion"    
+    NO_CONV = "no_conversion"
 
 class Conversion(AbstractEnum):
     """ Enum containing available Conersions from environment, functions etc """

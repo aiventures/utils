@@ -265,7 +265,7 @@ class ConfigEnv():
         """
         out = ""
         key_prefix = key.split("_")[0]+"_"
-        if not key_prefix == C.CONFIG_KEY_CMD:
+        if not key_prefix == C.ConfigKey.CMD.value:
             logger.debug(f"[CONFIG] Key [{key}] is not matching to a command line command")
             return None
 
@@ -330,7 +330,7 @@ class ConfigEnv():
 
         for key, config in _config.items():
             key_prefix = key.split("_")[0]+"_"
-            if not key_prefix == C.CONFIG_KEY_CMD:
+            if not key_prefix == C.ConfigKey.CMD.value:
                 continue
 
             _commands = config.get(C.ConfigAttribute.COMMAND.value)
@@ -364,7 +364,7 @@ class ConfigEnv():
         _ruledict_keys = list(C.RULEDICT_FILENAME.keys())
         for key, config in _config.items():
             key_prefix = key.split("_")[0]+"_"
-            if not key_prefix == C.CONFIG_KEY_RULE:
+            if not key_prefix == C.ConfigKey.RULE.value:
                 continue
             _rules = config.get(C.ConfigAttribute.RULE.value)
             if _rules is None:
@@ -396,7 +396,7 @@ class ConfigEnv():
         _ruledict_keys = list(C.RULEDICT_FILENAME.keys())
         for key, _ in _config.items():
             key_prefix = key.split("_")[0]+"_"
-            if not key_prefix == C.CONFIG_KEY_RULE:
+            if not key_prefix == C.ConfigKey.RULE.value:
                 continue
         return out_wrong_keys
 
@@ -411,20 +411,20 @@ class ConfigEnv():
                 logger.warning(f"[CONFIG] Key [{key}] has invalid prefix, allowed {C.CONFIG_KEY_TYPES}")
                 continue
             # check for data definition type
-            if key_prefix == C.CONFIG_KEY_DATA:
+            if key_prefix == C.ConfigKey.DATA.value:
                 continue
             _file_ref = None
             # validate file file type
-            if key_prefix == C.CONFIG_KEY_FILE or key_prefix == C.CONFIG_KEY_CMD:
+            if key_prefix == C.ConfigKey.FILE.value or key_prefix == C.ConfigKey.CMD.value:
                 _file_ref = self._resolve_file(key)
-            elif key_prefix == C.CONFIG_KEY_PATH:
+            elif key_prefix == C.ConfigKey.PATH.value:
                 _file_ref = self._resolve_path(key)
-            elif key_prefix == C.CONFIG_KEY_WHERE:
+            elif key_prefix == C.ConfigKey.WHERE.value:
                 # TODO Resolve command using where logic
-                cmd = key.replace(C.CONFIG_KEY_WHERE,"").upper()
+                cmd = key.replace(C.ConfigKey.WHERE.value,"").upper()
                 # treat special cases
                 if cmd == C.Cmd.GIT.name:
-                    
+
                     pass
                 elif cmd == C.Cmd.PYTHON.name:
                     _file_ref = Utils.get_python()
@@ -482,4 +482,3 @@ if __name__ == "__main__":
     f = Path(__file__).parent.parent.parent.joinpath("test_config","config_env_sample.json")
     config = ConfigEnv(f)
     config.show()
-

@@ -49,6 +49,7 @@ pip install -e .[dev]
 
 ## Todos 
 
+* `20240923` Additional attribute to indocate file path conversions (with no infi implicitly leading to no conversion)
 * `20240923` Move Constants to enums 
 * `20240923` Generate envs to export Configuration as shell / batch setup scripts 
 * `20240923` Create Config validation features (Config.json > CHECK > Errors/Warnings > Automatical Clean Up)

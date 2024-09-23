@@ -22,7 +22,7 @@ def test_config_setup(fixture_sample_config_json):
     for config_key, config_dict in config.items():
         if not "CONFIG" in config_key:
             continue
-        assert config_dict.get(C.ConfigAttribute.REFERENCE.value) is not None
+        assert config_dict.get(C.ConfigAttribute.REFERENCE.value) is not None, f"CONFIG KEY {config_key} is wrong"
 
 def test_config_get_groups(fixture_sample_config_json):
     """ test the reading of the configuration """

@@ -264,7 +264,7 @@ class FileAnalyzer():
             s_out = str(_out_result)
 
             for _rule in _rules:
-                _match_info = _match_infos[_rule]                
+                _match_info = _match_infos[_rule]
                 _apply_rule = _match_info.get(C.RULE_APPLY,C.APPLY_ANY)
                 if _apply_rule == C.APPLY_ALL:
                     _s_before = all_before
@@ -419,14 +419,14 @@ class FileContentAnalyzer(FileAnalyzer):
 
                 for _match in _match_list:
                     s_new =f"{_s_before}{_match}{_s_after}"
-                    s_out = s_out.replace(_match,s_new)                
+                    s_out = s_out.replace(_match,s_new)
 
             _result[C.PATH] = str(f)
             _result[C.OUTPUT] = s_out
             _result[C.FORMATTED] = s_out
             _result[C.RULES] = _rules
             _result[C.LINE] = _line_num
-            results[_line_num] = _result            
+            results[_line_num] = _result
 
         return results
 
