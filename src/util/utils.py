@@ -34,7 +34,131 @@ class Utils():
     """ util collection """
 
     @staticmethod
+    def analyze_path(p:str)->list:
+        """ checks, whether a path can be interpreted as certain path types
+            (max 8 chars per path and no spaces in it)
+            doesn't check the existence of path
+        """
+        _path_types = []
+        _p_test = p
+        # check for spaces
+        if " " in p:
+            _path_types.append(C.FileFormat.SPACE)
+
+        # check for quotes
+        if p.startswith('"') or p.startswith("'"):
+            if p.endswith('"') or p.endswith("'"):
+                _path_types.append(C.FileFormat.QUOTE)
+                _p_test = _p_test.replace('"','')
+                _p_test = _p_test.replace("'","")
+
+        # check for slash indicating unc type
+        if "/" in _p_test:
+            _path_types.append(C.FileFormat.UNC)
+        # check for backslash indicating win type
+        _elems_win = _p_test.split("\\")
+        if len(_elems_win) > 1:
+            _path_types.append(C.FileFormat.WIN)
+            # test for any spaces or path elements
+            if not " " in _p_test:
+                _max_len = max([len(e) for e in _elems_win])
+                if _max_len <= 8:
+                    _path_types.append(C.FileFormat.DOS)
+        return _path_types
+
+    @staticmethod
+    def resolve_path(p:str,check_exist:bool=True,transform_rule:str=None,info:bool=False,quotes:bool=True)->str|dict:
+        """(ugly) Guess Path by parsing, transform on request.
+
+        Args:
+
+            p (str): path / file string
+            check_exist (bool, optional): checks if file exists. Defaults to False.
+            If true file needs to exist otherwise None will be returned
+            transform_rule (C.FileFormat, optional): target format.
+            Defaults to None (supported values are Keys of FileFormat: WIN, UNC, DOS, OS)
+            Always tries to return absolute path or a dict containing file information
+            NOTE: dos conversion wil only work for existing file objects
+        """
+
+        if transform_rule is None:
+            logger.info(f"[Utils]No tranformation rule supplied for conversion of Path [{p}]")
+            return None
+        _transform_rule = transform_rule.upper()
+
+        _test_path = p
+        _real_path = None
+        _path_types = []
+        # get os specific params
+        _sep_native = os.sep
+        _os = ""
+
+        if Utils.os_system() == C.ENV_WINDOWS:
+            _os = "WIN"
+            _native_file_convert =  C.CygPathCmd.UNC2WIN.name
+        else:
+            _os = "UNC"
+            _native_file_convert =  C.CygPathCmd.WIN2UNC.name
+
+
+        # try to guess type from path signatures
+        _path_types = Utils.analyze_path(_test_path)
+
+        # 1. replace any quote occurrences
+        if '"' in _test_path:
+            _test_path = _test_path.replace('"',"")
+        if "'" in _test_path:
+            _test_path = _test_path.replace("'","")
+
+        # 2. Get the transformation rule
+        try:
+            _convert_rule = C.FORMAT_MAP[_os][transform_rule]
+            if _transform_rule == "OS":
+                _convert_rule = _native_file_convert
+        except KeyError:
+            logger.warning(f"[UTILS] No transform of path [{p}], transform rule [{transform_rule}] invalid (WIN, UNC, DOS, OS)")
+            return None
+
+        # 3. Get absolute path in native OS
+        _path_converter = PathConverter()
+        kwargs = {C.CYGPATH_PATH:_test_path,C.CYGPATH_CONV:_native_file_convert}
+        _native_path = _path_converter.convert(**kwargs)
+
+        # 4. Get absolute path from transformation
+        if _convert_rule == _native_file_convert:
+            _converted_path = _native_path
+        else:
+            kwargs = {C.CYGPATH_PATH:_test_path,C.CYGPATH_CONV:_convert_rule}
+            _converted_path = _path_converter.convert(**kwargs)
+
+        # 5. If check for absolute path is done check for existing dir / file
+        #    Using native file path
+        if check_exist:
+            if os.path.isfile(_native_path) or os.path.isdir(_native_path):
+                _real_path = _native_path
+            if _real_path is None:
+                logger.warning(f"[Utils] path [{p}] doesn't exist, return None")
+
+        _quoted = f'"{_converted_path}"'
+
+        # 6. return transformed path or the dict
+        if info:
+            # TODO define variables
+            out = {"OS":_os,"RULE":_transform_rule,"CONVERTED":_converted_path,"QUOTE":_quoted,"ORIGINAL":p,"REAL_PATH":_real_path}
+        else:
+            if check_exist and _real_path is None:
+                out = None
+            else:
+                if quotes:
+                    out = _quoted
+                else:
+                    out = _converted_path
+
+        return out
+
+    @staticmethod
     def is_windows()->bool:
+        """ flag whether running under windows """
         return ( Utils.os_system() == "Windows" )
 
     @staticmethod
@@ -42,7 +166,7 @@ class Utils():
         """ returns OS platform """
         # https://docs.python.org/3/library/platform.html
         # platform.uname()._asdict
-        return platform.system()
+        return platform.system() # Linux, Windows, JAva ...
 
     @staticmethod
     def date2xls_timestamp(d:DateTime)->int:
@@ -77,8 +201,8 @@ class Utils():
 
     @staticmethod
     def where(cmd:str,to_string:bool=True,re_prefered:str=None)->str|list:
-        """ tries to find executables using where command (you need to ensure where command is on PATH 
-            optionally allows to search for a preferred version of an executable
+        """ tries to find executables using where command (you need to ensure where command is on PATH
+            optionally allows to searc1h for a preferred version of an executable
         """
         _cmd_list = CmdRunner().cmd(os_cmd=f"where {cmd}",as_string=False)
         # validate if it is a file
@@ -98,13 +222,7 @@ class Utils():
             _valid = all([os.path.isfile(c) for c in _cmd_list])
         if not _valid:
             logger.warning(f"[Utils] Couldn't locate where command when trying to find [{cmd}].Ensure where is set on your PATH")
-            return None
-
-        # For Windows, enclose Commands with a double quote (shlex conversion does strange things)
-        # TODO centralize check for path to be enclosed in quotes
-        if platform.system() == "Windows":
-            _cmd_list_new = [f'"{c}"' for c in _cmd_list]
-            _cmd_list = _cmd_list_new
+            return C.INVALID
 
         if to_string:
             if len(_cmd_list) == 0:
@@ -112,6 +230,7 @@ class Utils():
             if len(_cmd_list) == 1:
                 return _cmd_list[0]
             else:
+                # todo add crtieria configuration to pick a preferred version
                 logger.warning(f"[Utils] More than 1 executables for [{cmd}] found {_cmd_list}, returning 1st entry")
                 return _cmd_list[0]
         else:
@@ -247,11 +366,11 @@ _ENV_MAP = { C.Conversion.VIRTUAL_ENV:Utils.get_venv,
             C.Conversion.CYGPATH:Utils.cygpath_convert
             }
 class PathConverter():
-    """ converting paths into different path formats using CYGPATH (delivered in GIT standard)
+    """ converting paths into different path formats using CYGPATH (delivered in cyg with GIT standard intallation)
         put into utils class due to circular import issue
+        https://cygwin.com/cygwin-ug-net/cygpath.html
     """
     def __init__(self) -> None:
-        # TODO configure the quotes
         self._cmd_cygpath  = Utils.get_executable(C.Cmd.CYGPATH.value)
 
         # self.cmd_cygpath = config.get_ref(CMD_CYGPATH)
@@ -289,18 +408,15 @@ class PathConverter():
 
         _params = C.CygPathCmd[_convert_key].value
 
-        # for windows _path needs to be enclosed in quotes
-        if _path[0] != '"' and _path[-1] != '"':
-            _path = f"\"{_path}\""
+        # cygpath works with paths enclosed in quotes
+        _path_wrap = f"{_path[0]}{_path[-1]}"
+        if not ( _path_wrap == '""' and _path_wrap == '""' ):
+            _path = f"'{_path}'"
 
         _cmd = f'{self._cmd_cygpath} {_path} {_params}'
-        path_converted = str(CmdRunner().cmd(_cmd,win_split=False))
-        # For Windows, enclose String in Quotes if not already done
-        if _convert_key.endswith("DOS") or _convert_key.endswith("WIN"):
-            quoted_str = re.findall(C.REGEX_STRING_QUOTED_STR,path_converted)
-            if len(quoted_str) == 0:
-                path_converted = f"\"{path_converted}\""
 
+        path_converted = str(CmdRunner().cmd(_cmd))
+        # do not enclose in anything leave this up to the consumer
         return path_converted
 
 class CmdRunner():
@@ -422,7 +538,7 @@ class CmdRunner():
 
         err_code = self.run_cmd(os_cmd,win_split)
         if err_code != 0:
-            logger.error(f"[CmdRunner] There was an error running CmdRunner, check the logs")
+            logger.error("[CmdRunner] There was an error running CmdRunner, check the logs")
             return None
         return self.get_output(as_string,separator)
 

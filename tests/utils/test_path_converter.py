@@ -9,6 +9,7 @@ import logging
 from enum import Enum
 import re
 
+from copy import deepcopy
 from util import constants as C
 from util.config_env import ConfigEnv
 from util.utils import PathConverter
@@ -18,33 +19,53 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@pytest.mark.parametrize("conv",C.CygPathCmd.get_names())
-def test_path_converter_valid(conv,fixture_testpath,fixture_testpath_withspace):
-    """ test the path converter using cygpath
-        Only test if the cygpath executable is present
-    """
-    cmd_cygpath = Utils.get_executable(C.Cmd.CYGPATH.name)
-    if not cmd_cygpath:
-        pytest.skip("CygPath could not be found on machine, check your setup")
+@pytest.mark.parametrize("transform_rule",["UNC","WIN","DOS","OS",None,"WRONG_TYPE"])
+def test_resolve_paths(transform_rule,fixture_paths):
+    """ testing resolve path for win paths (implicitly using PathConverter) """
+    for _path in fixture_paths:
+        _resolved_path = Utils.resolve_path(_path,transform_rule=transform_rule,check_exist=False,info=True)
+        # do some sanity checks
+        if transform_rule == "DOS" and not Utils.is_windows():
+            continue
 
-    testpaths = [fixture_testpath,fixture_testpath_withspace,
-                 '/c/30_Entwicklung/WORK_JUPYTER/root/utils/test_path',]
-    for testpath in testpaths:
-        path_converter = PathConverter()
-        kwargs = {C.CYGPATH_CONV:conv,C.CYGPATH_PATH:testpath}
-        _conv_path = path_converter.convert(**kwargs)
-        assert isinstance(_conv_path,str)
-        _conv_path_dir = re.findall(C.REGEX_STRING_QUOTED_STR,_conv_path)
-        # checking for dir with paths containing quotes will lead to false
-        if len(_conv_path_dir)>0:
-            _conv_path_dir = _conv_path_dir[0]
+        if transform_rule is None:
+            assert _resolved_path is None, "no transform rule was passed"
+            continue
+        if _resolved_path is None:
+            assert transform_rule == "WRONG_TYPE", "assert that wrong type lead to an error"
+            continue
+        _os = _resolved_path["OS"]
+        _rule = _resolved_path["RULE"]
+        _converted = _resolved_path["CONVERTED"]
+        _quote = _resolved_path["QUOTE"]
+        _original = _resolved_path["ORIGINAL"]
+        _real_path = _resolved_path["REAL_PATH"]
+        if _real_path is None:
+            continue
+
+        assert _rule == transform_rule, "assert transfer rule is copied"
+        assert '"' in _quote, "assert quote has quotes"
+        assert not "'" in _quote, "assert single quotes not in string"
+
+        # check semantics
+        if _rule == "UNC":
+            assert "/" in _converted
+            assert not "\\" in _converted
+        elif _rule in ["DOS","WIN"]:
+            assert "\\" in _converted
+            assert not "/" in _converted
+
+        # same os and valid file
+        if _rule == "OS" and _real_path:
+            assert _real_path == _converted, "Conversion within conversion"
+
+        if _os == "WIN":
+            if _real_path:
+                assert os.path.isdir(_original) or os.path.isfile(_original)
+            # check that win paths are file objects as well
+            if _rule == "DOS" or _rule == "WIN" and _real_path:
+                assert os.path.isdir(_converted) or os.path.isfile(_converted)
         else:
-            _conv_path_dir = _conv_path
-        is_dir = os.path.isdir(_conv_path_dir)
-        # UNV paths are not recognized as path
-        if conv == "NO_CONV":
-            assert _conv_path == testpath
+            # not implemented
             continue
-        if conv.endswith("UNC"):
-            continue
-        assert is_dir
+        pass

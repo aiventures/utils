@@ -22,7 +22,7 @@ def get_config_fileref(f:str=None,test:bool=False)->dict:
     """ gets the config file """
     f_config = f
     if test:
-        p_testconfig = Path(__file__).parent.parent.parent.joinpath("test_config")
+        p_testconfig = Path(__file__).parent.parent.parent.joinpath("test_data","test_config")
         # you need to run the unit tests to create this file
         f_config = os.path.join(p_testconfig,"config_env_sample.json")
     else:

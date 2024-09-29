@@ -12,7 +12,7 @@ from util.persistence import Persistence
 @pytest.fixture
 def fixture_config_testpath()->Path:
     """ Sample Path """
-    p_testpath = Path(__file__).parent.parent.parent.joinpath("test_config")
+    p_testpath = Path(__file__).parent.parent.parent.joinpath("test_data","test_config")
     return p_testpath
 
 @pytest.fixture
@@ -33,9 +33,9 @@ def fixture_sample_config_json(fixture_config_testpath,fixture_config_env_testco
     # populate path
     _sample_dict["P_CONFIGTEST"]["p"]=str(fixture_config_testpath)
     # populate configfile 1 file with absolute path
-    p_config_test1 = os.path.join(fixture_config_testpath,"file1_config.txt")    
+    p_config_test1 = os.path.join(fixture_config_testpath,"file1_config.txt")
     _sample_dict["F_CONFIGTEST1"]["f"]=str(p_config_test1)
-    # populate configfile3 with absolute path and file 
+    # populate configfile3 with absolute path and file
     _sample_dict["F_CONFIGTEST3"]["p"]=str(fixture_config_testpath)
     Persistence.save_json(_sample_config_json,_sample_dict)
     return _sample_config_json

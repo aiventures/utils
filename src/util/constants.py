@@ -21,6 +21,7 @@ EXPORT = "export"
 EXAMPLE = "example"
 # SUFFIX FOR CSV EXPORTS TO CREATE A DATE
 DATEXLS = "_N"
+INVALID = "INVALID"
 # type definitions
 
 class DataType(AbstractEnum):
@@ -30,6 +31,13 @@ class DataType(AbstractEnum):
     DATE = "date"
     DATEXLS = "datexls"
     STR = "str"
+    CONFIG = "config" # config key
+    PATH = "path" # path defined in a general way
+    PATH_CMD = "path_cmd" # path var representing a path for a command, eg with quotes in win
+    PATH_UNC = "path_unc" # path var as unc
+    PATH_WIN = "path_win" # path var as win
+    PATH_DOS = "path_dos" # path var as dos, eg without spaces and max 8 chars per path element
+
 
 DATA_TYPES = DataType.get_values()
 
@@ -148,7 +156,7 @@ class ConfigAttribute(AbstractEnum):
     FILE = "f"           # a file object reference
     DESCRIPTION = "d"    # one line documentation
     GROUPS = "g"         # a list of group this item belongs to
-    REFERENCE = "ref"    # the resolved path or file path if it can be resolved
+    REFERENCE = "ref"    # the resolved path or file path of this attribute if it can be resolved
     REGEX = "x"          # config should be treated as regex
     RULE = "r"           # rule dictionary for file_anaylzer / check the json how to use it
     COMMAND = "c"        # rule dictionary for command options
@@ -157,10 +165,21 @@ class ConfigAttribute(AbstractEnum):
     NAME = "n"           # name
     KEY = "k"            # key
     VALUE = "v"          # value
+    WHERE = "w"          # path of a where executable
     FILEFORMAT = "ff"    # file format type
     TYPE = "t"           # (data) type
     EXPORT = "e"         # export map
     ENV = "env"          # environment settings, only some values are allowed and defined below
+    DEPENDENCY = "dep"   # dependencies from other Attributes if there are some
+    STATUS = "st"        # status of the configuration item
+
+class ConfigStatus(AbstractEnum):
+    """ Status on processing / validity of a Configuration item """
+    INITIAL = "initial" # initialized, but not final (eg replacement of placeholders pending)
+    VALID = "valid"     # was checked and can be used
+    INVALID = "invalid" # During Checking Routines there was an error
+
+CONFIG_STATUS =  ConfigStatus.get_values()
 
 # supported file types
 class FileFormat(AbstractEnum):
@@ -168,13 +187,19 @@ class FileFormat(AbstractEnum):
     DOS = "dos"
     WIN = "win"
     UNC = "unc"
-    NOC = "noc" # no_cponversion
+    QUOTE = "quote" # contains quotes
+    OS = "os" # same type as os
+    SPACE = "space" # contains spaces
+
+# FORMATTING MAP (used in resolve_path)
+FORMAT_MAP = {"WIN":{"WIN":"UNC2WIN","DOS":"WIN2DOS","UNC":"WIN2UNC","OS":"OS"},
+              "UNC":{"WIN":"UNC2WIN","DOS":"UNC2DOS","UNC":"WIN2UNC","OS":"OS"}}
 
 FILE_FORMATS = FileFormat.get_values()
 
 CONFIG_KEYS = ConfigAttribute.get_values()
 # if this is set in path, then the current path is used
-CONFIG_PATH_CWD = "CWD"
+CONFIG_PATH_CWD = "CWD" # Underscore marker
 
 class ConfigKey(AbstractEnum):
     """ Key Markers / Prefix may determine which type of file object is there
@@ -189,6 +214,33 @@ class ConfigKey(AbstractEnum):
     RULE = "R_"  # RULES only of declarative nature
     DATA = "D_"  # DATA are of declearative nature as well
     # (W)here OPtion, tries to automativally determine an executable using where command
+    # list of file config types
+
+    @classmethod
+    def is_file_config_type(cls,key:str)->bool:
+        """Checks if key is a file config type """
+        file_config_types = [ConfigKey.PATH,ConfigKey.FILE,ConfigKey.WHERE,ConfigKey.CMD]
+        _config_type = ConfigKey.get_configtype(key)
+        if _config_type in file_config_types:
+            return True
+        else:
+            return False
+
+    # @classmethod
+    # def get_file_config_types(cls)->list:
+    #     """ gets the file ref types """        
+    #     return [ConfigKey.PATH.value,ConfigKey.FILE.value,ConfigKey.WHERE.value,ConfigKey.CMD.value]
+
+    @classmethod
+    def get_configtype(cls,config_key:str)->AbstractEnum:
+        """ return the vorresponding enum for a given config key """
+        # get the prefix and get the corresponding value 
+        _prefix = config_key.split("_")[0]+"_"
+        try:
+            return ConfigKey(_prefix)
+        except ValueError:
+            return None
+
 
 CONFIG_KEY_TYPES = ConfigKey.get_values()
 
@@ -204,9 +256,11 @@ EXPORT_JSON_DICT = "export_json_dict" # json compatible dioct
 DATE_INT_19700101 = 25569
 ENV_DATE_REF = "DATE19700101"
 
+# TODO PUT INTO ENUM
 # REGEX EXPRESSIONS USED
 # regex to find all strings enclosed in brackets
 REGEX_BRACKETS = r"\[.+?\]"
+REGEX_BRACKET_CONTENT = r"\[(.+?)\]" # get the strings enclosed in brackets
 REGEX_STRING_QUOTED_STR = "^\"(.+)?\"$"
 # REGEX GLOBAL KEY: Find pattern in txt files to identify global keys
 REGEX_GLOBAL_KEY = r"key:(.+)=(.+)"
@@ -237,6 +291,7 @@ ENV_CSV_WRAP_CHAR_DEFAULT = '"'
 # Allowed ENV VARS FOR CSV_PARSER
 ENV_VARS = [ENV_DEC_SEPARATOR,ENV_DATE_FORMAT,ENV_DATE_REF,ENV_CSV_WRAP_CHAR]
 CSV_PARSER_ENV_VARS = [ENV_DEC_SEPARATOR,ENV_DATE_FORMAT,ENV_DATE_REF,ENV_CSV_WRAP_CHAR]
+ENV_WINDOWS = "Windows"
 
 class Env(AbstractEnum):
     """" Some Default Env Variables (with default values that can be overwritten by configuration) """
@@ -262,7 +317,8 @@ class CygPathCmd(AbstractEnum):
     WIN2UNC = "--unix --absolute"
     WIN2DOS = "--dos --absolute"
     DOS2UNC = "--unix --absolute"
-    UNC2WIN = "--windows --absolute"
+    UNC2WIN = "--windows --absolute" # like --windows, but with regular slashes (C:/WINNT)
+    UNC2MIX = "--mixed --absolute"
     UNC2DOS = "--dos --absolute"
     NO_CONV = "no_conversion"
 
@@ -283,3 +339,7 @@ class Cmd(AbstractEnum):
     CYGPATH = "cygpath"
     GIT = "git"
     VENV = "venv"
+
+
+
+

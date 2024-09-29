@@ -5,8 +5,10 @@ import sys
 import os
 from copy import deepcopy
 from pathlib import Path
+from copy import deepcopy
 import logging
 from util import constants as C
+from util.utils import Utils
 from util.abstract_enum import AbstractEnum
 from util.persistence import Persistence
 from enum import Enum
@@ -16,14 +18,43 @@ from enum import Enum
 @pytest.fixture
 def fixture_testpath()->Path:
     """ Sample Path """
-    p_testpath = str(Path(__file__).parent.parent.parent.joinpath("test_path"))
+    p_testpath = str(Path(__file__).parent.parent.parent.joinpath("test_data","test_path"))
     return p_testpath
 
 @pytest.fixture
-def fixture_testpath_withspace()->Path:
+def fixture_testpath_withspace(fixture_testpath)->Path:
     """ Sample Path """
-    p_testpath = str(Path(__file__).parent.parent.parent.joinpath("test_path","path with space"))
+    p_testpath = str(Path(fixture_testpath).joinpath("path with space"))
     return p_testpath
+
+@pytest.fixture()
+def fixture_win_paths(fixture_testpath,fixture_testpath_withspace)->list:
+    """ fixture contianing several path combinations for windows """
+    out = []
+    out.append(fixture_testpath)
+    out.append(os.path.join(fixture_testpath,"lorem_doc_root.md"))
+    out.append(os.path.join(fixture_testpath,"file_doesnt_exist.txt"))
+    out.append(fixture_testpath_withspace)
+    out.append(os.path.join(fixture_testpath_withspace,"file doesnt exist.txt"))
+    out.append(os.path.join(fixture_testpath_withspace,"test.txt"))
+    out.append("..\\")
+    return out
+
+@pytest.fixture()
+def fixture_unc_paths(fixture_win_paths)->list:
+    """ fixture contianing several path combinations for unc """    
+    out = []
+    for _win_path in fixture_win_paths:
+        _unc = Utils.resolve_path(p=_win_path,check_exist=False,transform_rule="UNC")
+        out.append(_unc)
+    return out
+
+@pytest.fixture()
+def fixture_paths(fixture_win_paths,fixture_unc_paths)->list:
+    """ fixture contianing several path combinations for unc and win """    
+    out = deepcopy(fixture_win_paths)
+    out.extend(fixture_unc_paths)
+    return out
 
 @pytest.fixture
 def fixture_test_paths(fixture_testpath,fixture_testpath_withspace):
@@ -155,8 +186,10 @@ def fixture_ruledict_file_content_all_rules(fixture_ruledict_file_content):
 @pytest.fixture
 def fixture_config_env_testpath()->Path:
     """ Sample Path """
-    p_testpath = Path(__file__).parent.parent.parent.joinpath("test_config")
+    p_testpath = Path(__file__).parent.parent.parent.joinpath("test_data","test_config")
     return p_testpath
+
+
 
 @pytest.fixture
 def fixture_config_env_testconfig_template(fixture_config_env_testpath)->Path:

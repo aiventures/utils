@@ -10,6 +10,7 @@ Command Line Utils V2 as the tools project has become too bloated. To make a com
 
 ## Features 
 
+
 * Automatically locate executables using `where` `under the hood
 * Convert file paths using `cygpath` (comes with git)
 * Searching in file content and paths (as an alternative to `find` and `grep)
@@ -49,14 +50,17 @@ pip install -e .[dev]
 
 ## Todos 
 
-* `20240923` Additional attribute to indocate file path conversions (with no infi implicitly leading to no conversion)
+* `20240929` Create the possibility to store/load the parsed data without processing 
+* `20240929` Add a logic to update a value in a configuration in any case
+* `20240927` Create an Utility to create Markdown with Date Lines 
+* `20240923` Additional attribute to indicate file path conversions (with no info implicitly leading to no conversion)
 * `20240923` Move Constants to enums 
 * `20240923` Generate envs to export Configuration as shell / batch setup scripts 
 * `20240923` Create Config validation features (Config.json > CHECK > Errors/Warnings > Automatical Clean Up)
 * `20240923` Create a Config schema (idea: create a yaml with comments and convwert it as json), so that configs can also be validated 
 * `20240923` Enable `Yaml` 
 * `20240923` Create `Typer` SubCommands
-* `20240923` Link Executables to Configuration
+* ~~`20240923` Link Executables to Configuration~~
 * `20240923` Add [todo.txt](https://github.com/todotxt/todo.txt) logic 
 * ~~dddd~~
 

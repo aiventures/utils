@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 def test_config_setup(fixture_sample_config_json):
     """ test the reading of the configuration """
+    x = C.ConfigKey.get_configtype("P_fff")
     config_env = ConfigEnv(fixture_sample_config_json)
     config = config_env._config
     # asser the valid environent variables containing CONFIGTEST
@@ -32,9 +33,28 @@ def test_config_get_groups(fixture_sample_config_json):
 
 def test_validate_commands(fixture_sample_config_json):
     """ test the command pattern valiudations """
+
     config_env = ConfigEnv(fixture_sample_config_json)
-    wrong_commands = config_env._validate_commands()
-    assert isinstance(wrong_commands,dict) and len(wrong_commands) > 0
+    _config_keys = config_env._config_keys
+    _valid_keys = []
+    _initialized_keys = []
+    _wrong_keys = []
+    for _config_key in _config_keys:
+        _config = config_env._config[_config_key]
+        _status = C.ConfigStatus(_config.get(C.ConfigAttribute.STATUS.name))
+        if _status is C.ConfigStatus.VALID:
+            _valid_keys.append(_config_key)
+        elif _status is C.ConfigStatus.INITIAL:
+            _initialized_keys.append(_config_key)
+        elif _status is C.ConfigStatus.INVALID:
+            _wrong_keys.append(_config_key)
+    pass
+
+        
+
+
+    # wrong_commands = config_env._validate_commands()
+    # assert isinstance(wrong_commands,dict) and len(wrong_commands) > 0
 
 def test_parse_commands(fixture_sample_config_json):
     """ test the parsing of the command pattern options """

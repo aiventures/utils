@@ -13,14 +13,13 @@ def test_date2xls_timestamp():
 @pytest.mark.parametrize("_cmd",["python","git"])
 def test_where(_cmd):
     """ testing the location feature for git and python"""
-    # to assert it we need to replace the quotes again ...
-    _cmd = Utils.where(_cmd).replace('"',"")
+    _cmd = Utils.where(_cmd)
     assert os.path.isfile(_cmd)
 
 def test_get_python():
     """ the get_python usually will select the Python associated with the VENV """
     # to assert it we need to replace the quotes again ...
-    _cmd = Utils.get_python().replace('"',"")
+    _cmd = Utils.get_python()
     assert os.path.isfile(_cmd)
 
 def test_helper_methods():
