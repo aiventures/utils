@@ -72,7 +72,7 @@
                             "d":"ConfigTest1 - p will be populated by absolute paths"},
     "F_CONFIGTEST4":       {"f":"[P_CONFIGTEST]/file3_config.txt",
                             "d":"ConfigTest4 Symbolic Path"},
-    "R_RULETEST":           { "p":"[P_CONFIGTEST",
+    "R_RULETEST":           { "p":"[P_CONFIGTEST]",
                               "d":"Sample how to define filematcher rules within env configuration",
                               "r":[{"name":"rule_name","ignorecase":true,"is_regex":true,"rule":"sample_rule",
                                     "regex":"rule_regex_str","apply":"any","rule_include":true,

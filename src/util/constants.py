@@ -226,11 +226,6 @@ class ConfigKey(AbstractEnum):
         else:
             return False
 
-    # @classmethod
-    # def get_file_config_types(cls)->list:
-    #     """ gets the file ref types """        
-    #     return [ConfigKey.PATH.value,ConfigKey.FILE.value,ConfigKey.WHERE.value,ConfigKey.CMD.value]
-
     @classmethod
     def get_configtype(cls,config_key:str)->AbstractEnum:
         """ return the vorresponding enum for a given config key """

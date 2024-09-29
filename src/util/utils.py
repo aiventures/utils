@@ -55,10 +55,18 @@ class Utils():
         # check for slash indicating unc type
         if "/" in _p_test:
             _path_types.append(C.FileFormat.UNC)
+        if "\\" in _p_test:
+            _path_types.append(C.FileFormat.WIN)
+        # if there is no slashes then it is a file in native format 
+        if not ( "\\" in _p_test or "/" in _p_test ):
+            if Utils.is_windows():
+                _path_types.append(C.FileFormat.WIN)
+            else:
+                _path_types.append(C.FileFormat.UNC)
+        
         # check for backslash indicating win type
         _elems_win = _p_test.split("\\")
         if len(_elems_win) > 1:
-            _path_types.append(C.FileFormat.WIN)
             # test for any spaces or path elements
             if not " " in _p_test:
                 _max_len = max([len(e) for e in _elems_win])
@@ -102,7 +110,7 @@ class Utils():
 
 
         # try to guess type from path signatures
-        _path_types = Utils.analyze_path(_test_path)
+        # _path_types = Utils.analyze_path(_test_path)
 
         # 1. replace any quote occurrences
         if '"' in _test_path:
@@ -410,10 +418,10 @@ class PathConverter():
 
         # cygpath works with paths enclosed in quotes
         _path_wrap = f"{_path[0]}{_path[-1]}"
-        if not ( _path_wrap == '""' and _path_wrap == '""' ):
+        if not ( _path_wrap == '""' and _path_wrap == "''" ):
             _path = f"'{_path}'"
 
-        _cmd = f'{self._cmd_cygpath} {_path} {_params}'
+        _cmd = f'"{self._cmd_cygpath}" {_path} {_params}'
 
         path_converted = str(CmdRunner().cmd(_cmd))
         # do not enclose in anything leave this up to the consumer

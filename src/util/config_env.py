@@ -172,7 +172,11 @@ class ConfigEnv():
         # TODO allow different path conversions
         # for now convert to os specific path
         _transform_rule = C.FileFormat.OS.name
-        _quotes = True
+        # do not use quotes 
+        if Utils.is_windows():
+            _quotes = True
+        else:
+            _quotes = False
         _check_exist = False
         _info = False
         p_out = Utils.resolve_path(p,_check_exist,_transform_rule,_info,_quotes)
@@ -204,9 +208,6 @@ class ConfigEnv():
                         _parsed = self.get_ref(_config_key[0])
                         # check if a filetype config is reference
                         _is_file_type = C.ConfigKey.is_file_config_type(_config_key)
-                        # _config_type = _config_key.split("_")[0]+"_"
-                        # if _config_type in _file_config_types:
-                        #     _is_file_type = True
             else:
                 _parsed = value
         # parse according to type
@@ -230,9 +231,6 @@ class ConfigEnv():
             elif _data_type == C.DataType.CONFIG:
                 _parsed = self.get_config(value)
                 _is_file_type = C.ConfigKey.is_file_config_type(value)
-                # _config_type = value.split("_")[0]+"_"
-                # if _config_type in _file_config_types:
-                #     _is_file_type = True
             # for now, only support to a os native path type
             # do the specialisation later on
             elif "path" in param_type:
@@ -255,6 +253,8 @@ class ConfigEnv():
         if _cmd is None:
             _msg = f"[CONFIG] Couldn't find executable for key [{key}], can't parse"
             return None
+        if Utils.is_windows():
+            _cmd = f'"{_cmd}"'
         # get the cmd string
         _cmd_info = self._config.get(key).get(C.ConfigAttribute.COMMAND.value).get(cmd_key)
         if isinstance(_cmd_info,str):
@@ -290,8 +290,10 @@ class ConfigEnv():
             return None
 
         # replace string parts
-        cmd_out.replace(f"[{C.CMD.upper()}]",_cmd)
-        for _param_key,_param_value in _param_dict.items():
+        cmd_out = cmd_out.replace(f"[{C.CMD.upper()}]",_cmd)
+        for _param_key,_param_value in _parsed_dict.items():
+            if not isinstance(_param_value,str):
+                _param_value = str(_param_value)
             cmd_out = cmd_out.replace(f"[{_param_key}]",_param_value)
 
         return cmd_out
@@ -304,9 +306,7 @@ class ConfigEnv():
         # todo validate the passed args
 
         out = ""
-        # key_prefix = key.split("_")[0]+"_"
-        # _config_type = 
-        # if not key_prefix == C.ConfigKey.CMD.value:
+
         if C.ConfigKey.get_configtype(key) != C.ConfigKey.CMD:
             logger.debug(f"[CONFIG] Key [{key}] is not matching to a command line command")
             return None
@@ -337,10 +337,8 @@ class ConfigEnv():
         _config = self._config
         _ruledict_keys = list(C.RULEDICT_FILENAME.keys())
         for key, _ in _config.items():
-            # _config_type = 
+            # _config_type =
             if C.ConfigKey.get_configtype(key) != C.ConfigKey.RULE:
-            #key_prefix = key.split("_")[0]+"_"
-            #if not key_prefix == C.ConfigKey.RULE.value:
                 continue
         return out_wrong_keys
 
@@ -348,7 +346,7 @@ class ConfigEnv():
         """ get config keys in order to ensure processing in order """
         _values = C.ConfigKey.get_values()
         out_keys = {v:[] for v in _values}
-        _config_keys = list(self._config.keys())        
+        _config_keys = list(self._config.keys())
         for _key in _config_keys:
             _out_key = _key.split("_")[0]+"_"
             out_keys[_out_key].append(_key)
@@ -425,9 +423,6 @@ class ConfigEnv():
             logger.warning(f"[ConfigEnv] There is no key [{key}] in Config ")
             return None
 
-        #_config_prefix = key.split("_")[0]+"_"
-        # get the config key  TODO UNIT TEST FOR WRONG CONFIG
-        #_config_type = C.ConfigKey.get_enum(_config_prefix,search_name=False,search_value=True,exact=True)
         _config_type = C.ConfigKey.get_configtype(key)
         if _config_type:
             _config_key = _config_type.name
@@ -550,6 +545,9 @@ class ConfigEnv():
                 _msg = f"[CONFIG] Key [{key}], Param [{_param_name}], invalid type [{_param_type}], allowed {_allowed_types}"
                 logger.warning(_msg)
                 valid = None
+        
+        # TODO check for unresolved path / file references
+        valid = self._resolve_path_object(key)
 
         return valid
 
@@ -561,9 +559,7 @@ class ConfigEnv():
             None if there are inherent errors
         """
         _config = self._config.get(key)
-        # _config_type = 
-        # key_prefix = key.split("_")[0]+"_"        
-        # if not key_prefix == C.ConfigKey.CMD.value:
+
         if C.ConfigKey.get_configtype(key) != C.ConfigKey.CMD:
             return None
 
@@ -637,6 +633,12 @@ class ConfigEnv():
                     _dependency_refs[_dep] = _config_ref_value
         # now subtitute all dependencies
         _resolved = self._subst_dependencies(key,_dependency_refs)
+        # set the processing status accordingly
+        if _resolved == True:
+            self._set_status(key,C.ConfigStatus.VALID)
+        else:
+            # if these items are False or None, set the status to invalid
+            self._set_status(key,C.ConfigStatus.INVALID)
         return resolved
 
     def _subst_dependencies(self,key:str,dependencies:dict)->bool:
@@ -695,13 +697,13 @@ class ConfigEnv():
 
     def get_ref(self,key:str)->str:
         """ returns the constructed reference from Configuration """
+
         # treat special case with where variables where the excutable is stored
         # in the where attribute
-
-
-
-
-        _ref = self._config.get(key,{}).get(C.ConfigAttribute.REFERENCE.value)
+        if C.ConfigKey.get_configtype(key) == C.ConfigKey.WHERE:
+            _ref = self._config.get(key,{}).get(C.ConfigAttribute.WHERE.value)
+        else:
+            _ref = self._config.get(key,{}).get(C.ConfigAttribute.REFERENCE.value)
         if _ref is None:
             logger.warning(f"[CONFIG] Key [{key}] is invalid")
         return _ref
@@ -732,225 +734,3 @@ if __name__ == "__main__":
     f = Path(__file__).parent.parent.parent.joinpath("test_data","test_config","config_env_sample.json")
     config = ConfigEnv(f)
     config.show()
-
-    # def _validate_commands(self)->dict:
-    #     """ validates the command line commands
-    #         returns dict of wrong commands
-    #     """
-    #     out_wrong_keys = {}
-    #     _config = self._config
-
-    #     for key, config in _config.items():
-    #         key_prefix = key.split("_")[0]+"_"
-    #         if not key_prefix == C.ConfigKey.CMD.value:
-    #             continue
-
-    #         _commands = config.get(C.ConfigAttribute.COMMAND.value)
-    #         if _commands is None:
-    #             _msg = f"[CONFIG] Key [{key}] has no (c)ommand section"
-    #             logger.warning(_msg)
-    #             out_wrong_keys[key] = [_msg]
-    #             continue
-
-    #         if not isinstance(_commands,dict):
-    #             _msg = f"[CONFIG] Key [{key}], (c)ommand section is not a dict"
-    #             logger.warning(_msg)
-    #             out_wrong_keys[key] = [_msg]
-    #             continue
-    #         _msg_list = []
-    #         for _cmd in _commands.keys():
-    #             _msgs = self._validate_command(key,_cmd)
-    #             if len(_msgs) > 0:
-    #                 _msg_list.append(_msgs)
-    #         if len(_msg_list) > 0:
-    #             out_wrong_keys[key] = _msg_list
-
-    #     return out_wrong_keys
-
-    # def _validate(self) -> None:
-    #     """ validates the configuration and populates ref section """
-
-    #     # TODO resolve all variables in order!
-    #     self._analyze_key_relations()
-
-
-        # _config_all = self._config
-        # logger.debug(f"[CONFIG] ({self._f_config}) contains [len({_config_all})] items")
-        # _key_dict = self._get_config_keys()
-        # _config_types = C.ConfigKey.get_values()
-        # for _config_type in _config_types:
-        #     _keys = _key_dict.get(_config_type,[])
-        #     for _key in _keys:
-        #         _config = _config_all.get(_key)
-        #         if _config is None:
-        #             continue
-        #         # initialize the ref value
-        #         _config[C.ConfigAttribute.REFERENCE.value] = None
-        #         key_prefix = _key.split("_")[0]+"_"
-        #         # check for data definition type
-        #         if key_prefix == C.ConfigKey.DATA.value:
-        #             continue
-        #         # TODO allow to store config files with already stored refs
-        #         _file_ref = None
-        #         # automatically add a default group
-        #         _group = None
-        #         # validate file file type
-        #         if key_prefix == C.ConfigKey.FILE.value or key_prefix == C.ConfigKey.CMD.value:
-        #             _file_ref = self._resolve_file(_key)
-        #             _group = C.ConfigKey.FILE.name
-        #         elif key_prefix == C.ConfigKey.PATH.value:
-        #             _file_ref = self._resolve_path(_key)
-        #             _group = C.ConfigKey.PATH.name
-        #         elif key_prefix == C.ConfigKey.WHERE.value:
-        #             _file_ref = self._resolve_where(_key)
-        #             _group = C.ConfigKey.WHERE.name
-        #         elif key_prefix == C.ConfigKey.ENV.value:
-        #             _file_ref = self._resolve_env(_key)
-        #             _group = C.ConfigKey.ENV.name
-        #         elif key_prefix == C.ConfigKey.DATA.value:
-        #             _group = C.ConfigKey.DATA.name
-        #         elif key_prefix == C.ConfigKey.RULE.value:
-        #             _group = C.ConfigKey.RULE.name
-        #         elif key_prefix == C.ConfigKey.CMD.value:
-        #             _group = C.ConfigKey.CMD.name
-
-        #         # add group
-        #         if _group is not None:
-        #             _groups = list(_config.get(C.ConfigAttribute.GROUPS.value,[]))
-        #             _groups.append(_group)
-        #             _config[C.ConfigAttribute.GROUPS.value]=list(set(_groups))
-
-        #         if _file_ref is not None:
-        #             logger.debug(f"[CONFIG] Resolved fileref for config key [{_key}], value [{_file_ref}]")
-        #             _config[C.ConfigAttribute.REFERENCE.value] = _file_ref
-
-        # # validate rules
-        # self._wrong_rule_keys.update(self._validate_rules())
-        # # validate commands
-        # # rule name list of wrong config keys
-        # self._wrong_rule_keys.update(self._validate_commands())
-
-    # # TODO Resolve ENV VARIABLE in Configuration
-    # def _resolve_env(self,key)->str:
-    #     """ resolve environemnt """
-
-    #     # TODO check if the ref value is already set
-
-    #     # TODO FOR NOW COLLECT ENVIRONMENT INFORMATION ONLY
-    #     _config = self._config.get(key)
-    #     _env = str(_config.get(C.ConfigAttribute.PATH.value))
-    #     # TODO ADD GROUP TAG
-    #     if _env is None:
-    #         logger.debug(f"[CONFIG] No ENVIRONMENT info was supplied in Config for key [{key}]")
-    #         return None
-    #     # pass
-    #     # self._env
-    #     return ""
-
-    # # TODO Resolve command using where logic
-    # def _resolve_where(self,key)->str:
-    #     """ find executable using where command"""
-
-    #     # TODO check if the ref value is already set
-
-    #     _config = self._config.get(key)
-    #     _where = str(_config.get(C.ConfigAttribute.PATH.value))
-    #     # TODO ADD GROUP TAG
-    #     if _where is None:
-    #         logger.debug(f"[CONFIG] No Executable info was supplied in Config for key [{key}]")
-    #         return None
-    #     return ""
-
-    # def _resolve_path(self,key,real_path:bool=False)->str:
-    #     """ retrieves a path,
-    #         real_path: only evaluate real paths not symbolic paths
-    #         returns None if not found
-    #     """
-
-    #     # TODO check if the ref value is already set
-
-    #     _config = self._config.get(key)
-    #     _path_out = str(_config.get(C.ConfigAttribute.PATH.value))
-    #     if _path_out is None:
-    #         logger.debug(f"[CONFIG] No path was supplied in Config for key [{key}]")
-    #         return None
-
-    #     # path is current directory
-    #     if _path_out == C.CONFIG_PATH_CWD: # use current path as directory
-    #         return os.path.abspath(os.getcwd())
-
-    #     # path can be resolved to a real path
-    #     if os.path.isdir(_path_out):
-    #         return os.path.abspath(_path_out)
-
-    #     if real_path:
-    #         return None
-
-    #     _path_key = None
-    #     _replace_str = None
-    #     # check if there is a PATHVAR replacements
-    #     # path = '[PATHVAR]/subpath/.../' => [PATHVAR] will be resolved
-    #     regex_subpaths = re.findall(C.REGEX_BRACKETS,_path_out)
-    #     if len(regex_subpaths) == 1:
-    #         _path_key = regex_subpaths[0][1:-1]
-    #         _replace_str = regex_subpaths[0]
-    #     # check if there is a single key reference
-    #     elif _path_out in self._config_keys:
-    #         _path_key = _path_out
-    #         _replace_str = _path_out
-
-    #     logger.debug(f"[CONFIG]  Key [{key}], replacing Path by reference from [{_path_key}]")
-    #     if _path_key is None:
-    #         logger.debug(f"[CONFIG]  Key [{key}], no path reference found")
-    #         return None
-
-    #     # get the path from path ref or from path as fallback
-    #     _path_ref = _config.get(_path_key,{}).get(C.ConfigAttribute.REFERENCE.value)
-    #     if _path_ref is None:
-    #         _path_ref = self._config.get(_path_key,{}).get(C.ConfigAttribute.PATH.value)
-
-    #     # resolve path from path refs in path variables
-    #     if _path_ref is None or _replace_str is None:
-    #         logger.info(f"[CONFIG]  [{key}], reference [{_path_key}], no information found")
-    #         return None
-    #     path_out = _path_out.replace(_replace_str,_path_ref)
-    #     path_out = os.path.abspath(path_out)
-    #     path_exists = os.path.isdir(path_out)
-    #     s = f"[CONFIG]  Key [{key}], path [{_path_out}], calculated path [{path_out}], exists [{path_exists}]"
-    #     # TODO ADD GROUP TAG
-    #     if path_exists:
-    #         logger.info(s)
-    #         # TODO CONVERT TO OUTPUT FILE FORMAT
-    #         return path_out
-    #     else:
-    #         logger.warning(s)
-    #         return None
-
-    # def _resolve_file(self,key:str,real_path:bool=False)->str:
-    #     """ validate a file reference in key"""
-    #     _config = self._config.get(key)
-    #     if not _config:
-    #         return
-    #     _fileref = _config.get(C.ConfigAttribute.FILE.value,"")
-    #     # self._add_group(key,C.ConfigKey.FILE.name)
-
-    #     # check if it is a file
-    #     if os.path.isfile(_fileref):
-    #         _fileref = os.path.abspath(_fileref)
-    #         logger.debug(f"[CONFIG] Key [{key}]: absolute file path [{_fileref}]")
-    #         return _fileref
-
-    #     # validate pathref
-    #     _pathref = self._resolve_path(key,real_path=real_path)
-
-    #     # check if it is a valid path when using path_ref
-    #     if _pathref:
-    #         _fileref = os.path.abspath(os.path.join(_pathref,_fileref))
-    #         if os.path.isfile(_fileref):
-    #             logger.debug(f"[CONFIG] Key [{key}]: combined path/file [{_fileref}]")
-    #             # TODO CONVERT TO TARGET FILE FORMAT
-    #             return _fileref
-    #         else:
-    #             return None
-    #     else:
-    #         return None

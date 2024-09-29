@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 from copy import deepcopy
 import logging
+import shlex
 
 from util import constants as C
 from util.config_env import ConfigEnv
@@ -15,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 def test_config_setup(fixture_sample_config_json):
     """ test the reading of the configuration """
-    x = C.ConfigKey.get_configtype("P_fff")
     config_env = ConfigEnv(fixture_sample_config_json)
     config = config_env._config
     # asser the valid environent variables containing CONFIGTEST
@@ -48,13 +48,11 @@ def test_validate_commands(fixture_sample_config_json):
             _initialized_keys.append(_config_key)
         elif _status is C.ConfigStatus.INVALID:
             _wrong_keys.append(_config_key)
-    pass
-
-        
-
-
-    # wrong_commands = config_env._validate_commands()
-    # assert isinstance(wrong_commands,dict) and len(wrong_commands) > 0
+    # verify all keys either are wrong or roght but not initialized
+    assert len(_initialized_keys) == 0
+    assert len(_valid_keys) > 0
+    assert len(_wrong_keys) >= 0
+    
 
 def test_parse_commands(fixture_sample_config_json):
     """ test the parsing of the command pattern options """
@@ -64,10 +62,13 @@ def test_parse_commands(fixture_sample_config_json):
     # parsing the commands as dict
     cmd_params = {"file":"testfile.txt","line":5}
     _cmd_dict = config_env.parse_cmd(cmd,**cmd_params)
+    # note that shlex will strip quotes ... 
+    _cmd_dict_args = shlex.split(_cmd_dict)
     assert isinstance(_cmd_dict,str) and len(_cmd_dict) > 0
     # same but using kwargs
     _cmd_kwargs = config_env.parse_cmd(cmd,file="testfile.txt",line=5)
     assert _cmd_dict == _cmd_kwargs
+
 
 def test_validate_data_rules(fixture_sample_config_json, fixture_sample_stocks_data):
     """ test the parsing of txt files to parse them as dict files """
