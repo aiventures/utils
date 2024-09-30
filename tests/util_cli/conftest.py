@@ -1,7 +1,7 @@
 """ ColorMapper setup """
 
 import pytest
-from cli.cli_color_mapper import ColorMapper
+from util_cli.cli_color_mapper import ColorMapper
 
 ### [1] Fixtures for Color Mapper
 

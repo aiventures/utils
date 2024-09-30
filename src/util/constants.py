@@ -287,6 +287,7 @@ ENV_CSV_WRAP_CHAR_DEFAULT = '"'
 ENV_VARS = [ENV_DEC_SEPARATOR,ENV_DATE_FORMAT,ENV_DATE_REF,ENV_CSV_WRAP_CHAR]
 CSV_PARSER_ENV_VARS = [ENV_DEC_SEPARATOR,ENV_DATE_FORMAT,ENV_DATE_REF,ENV_CSV_WRAP_CHAR]
 ENV_WINDOWS = "Windows"
+ENV_UNIX_STYLE = "Unix"
 
 class Env(AbstractEnum):
     """" Some Default Env Variables (with default values that can be overwritten by configuration) """

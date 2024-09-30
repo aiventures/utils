@@ -18,7 +18,7 @@ from rich_theme_manager import Theme, ThemeManager
 # TODO MOVE THIS TO A CONFIG FILE
 from util.const_local import LOG_LEVEL
 from util.persistence import Persistence
-from cli.cli_color_maps import RGB_COLORS,HEX_COLORS,COLOR_NAMES
+from util_cli.cli_color_maps import RGB_COLORS,HEX_COLORS,COLOR_NAMES
 
 HEX = "hex"
 ANSI = "ansi" # ansi ciodes not implemented yet

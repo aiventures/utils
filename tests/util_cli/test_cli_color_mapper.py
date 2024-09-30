@@ -1,6 +1,6 @@
 """ Coloring Console """
-from cli.cli_color_mapper import HEX,CODE,NAME,RGB, BASE_HEX_COLORS
-from cli.cli_color_mapper import RGB_COLORS,HEX_COLORS,COLOR_NAMES
+from util_cli.cli_color_mapper import HEX,CODE,NAME,RGB, BASE_HEX_COLORS
+from util_cli.cli_color_mapper import RGB_COLORS,HEX_COLORS,COLOR_NAMES
 
 import pytest
 

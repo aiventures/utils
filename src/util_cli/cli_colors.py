@@ -1,6 +1,5 @@
 """ Rendering the CLI.
 
-
 """
 import logging
 from typing import Any

@@ -1,5 +1,6 @@
 """ collection of utils """
 
+import shlex
 import sys
 import os
 import logging
@@ -32,6 +33,36 @@ P_SAVE = "p_save"
 
 class Utils():
     """ util collection """
+
+    @staticmethod
+    def split(args,platform:str=None):
+        """ shlex not really works on win so convert paths using a 
+            custom method, credit: 
+            https://stackoverflow.com/questions/69909487/taming-shlex-split-behaviour
+            Like calling shlex.split, but sets `posix=` according to platform 
+            and unquotes previously quoted arguments on Windows
+            :param args: a command line string consisting of a command with arguments, 
+                         e.g. r'dir "C:\Program Files"'  
+            :param platform: a value like os.name would return, e.g. 'nt'
+            :return: a list of arguments like shlex.split(args) would have returned            
+            TODO maybe switch to asyncio in the future ...
+        """
+        if platform is None:
+            if Utils.is_windows():
+                platform = C.ENV_WINDOWS
+            else:
+                platform = C.ENV_UNIX_STYLE
+        elif platform != C.ENV_WINDOWS:            
+            platform = C.ENV_UNIX_STYLE
+    
+        if platform == C.ENV_WINDOWS:
+            _arg_list = shlex.split(args,posix=False)
+        else:
+            _arg_list = shlex.split(args)
+
+        # there is a case to strip leading quotes 
+        # _split_args = [a[1:-1].replace('""', '"') if a[0] == a[-1] == '"' else a for a in _arg_list]
+        return _arg_list
 
     @staticmethod
     def analyze_path(p:str)->list:

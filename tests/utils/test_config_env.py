@@ -9,6 +9,7 @@ import shlex
 
 from util import constants as C
 from util.config_env import ConfigEnv
+from util.utils import Utils
 
 import logging
 
@@ -54,21 +55,35 @@ def test_validate_commands(fixture_sample_config_json):
     assert len(_wrong_keys) >= 0
     
 
-def test_parse_commands(fixture_sample_config_json):
+# use cases to be tested, alos compare with settings in test config template
+# A.01. cmd - minimal example 
+# A.02. cmd - path and file valid 
+# A.03. cmd - only path 
+# A.04. cmd - invalid command / valid command
+# A.05  cmd - variants with or without file refs 
+# A.06  cmd - 
+# B.01  where - test where with executable in param name
+# B.02  where - test where with executable in attribute 
+# ...
+
+# https://docs.pytest.org/en/7.1.x/example/parametrize.html#paramexamples
+@pytest.mark.parametrize(
+    "cmd,cmd_params",
+    [
+        pytest.param("CMD_EXAMPLE1",{"file":"testfile.txt","line":5}, id="A.01 CMD Parsing a CMD simple"),
+    ],
+)
+def test_parse_commands(fixture_sample_config_json,cmd,cmd_params):
     """ test the parsing of the command pattern options """
     config_env = ConfigEnv(fixture_sample_config_json)
-    # check the CMD_EXAMPLE1 definition of variables
-    cmd = "CMD_EXAMPLE1"
     # parsing the commands as dict
-    cmd_params = {"file":"testfile.txt","line":5}
-    _cmd_dict = config_env.parse_cmd(cmd,**cmd_params)
+    _cmd_from_dict = config_env.parse_cmd(cmd,**cmd_params)
     # note that shlex will strip quotes ... 
-    _cmd_dict_args = shlex.split(_cmd_dict)
-    assert isinstance(_cmd_dict,str) and len(_cmd_dict) > 0
+    _cmd_dict_args = Utils.split(_cmd_from_dict)
+    assert isinstance(_cmd_from_dict,str) and len(_cmd_dict_args) > 0
     # same but using kwargs
-    _cmd_kwargs = config_env.parse_cmd(cmd,file="testfile.txt",line=5)
-    assert _cmd_dict == _cmd_kwargs
-
+    _cmd__from_kwargs = config_env.parse_cmd(cmd,file="testfile.txt",line=5)
+    assert _cmd__from_kwargs == _cmd_from_dict
 
 def test_validate_data_rules(fixture_sample_config_json, fixture_sample_stocks_data):
     """ test the parsing of txt files to parse them as dict files """

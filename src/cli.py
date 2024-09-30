@@ -3,8 +3,8 @@
 import sys
 import typer
 import logging
-from cli.cli_share_parser import cli as cli_sp
-from cli.cli_config import cli as cli_config
+from util_cli.cli_share_parser import cli as cli_sp
+from util_cli.cli_config import cli as cli_config
 from rich import print as rprint
 # different config files
 from util.const_local import F_CONFIG
