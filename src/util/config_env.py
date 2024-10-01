@@ -3,8 +3,12 @@
 import os
 import sys
 import re
+import json
 import logging
 from pathlib import Path
+from rich import print_json
+from rich import print as rprint
+
 # TODO REPLACE BY UNIT TESTS
 # when doing tests add this to reference python path
 # sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -13,6 +17,7 @@ from util.persistence import Persistence
 from util.colors import col
 from util import constants as C
 from util.utils import Utils
+from demo.demo_config import create_demo_config
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +26,9 @@ class ConfigEnv():
 
     def __init__(self,f_config:str=None) -> None:
         """ constructor """
-        self._f_config = f_config
+        self._f_config = None
+        self._f_config_dict = None
+        self._bootstrap_path(f_config)
         self._config = Persistence.read_json(self._f_config)
         self._config_keys = list(self._config.keys())
         self._wrong_rule_keys = {}
@@ -72,6 +79,7 @@ class ConfigEnv():
                 out_config[_config_key] = _config_info
         logger.info(f"[CONFIG] Get Config Env using groups {_groups}, returning [{len(out_config)}] entries")
         return out_config
+
 
     def config_is_valid(self,key):
         """ Checks whether the referenced configuration item is valid """
@@ -172,7 +180,7 @@ class ConfigEnv():
         # TODO allow different path conversions
         # for now convert to os specific path
         _transform_rule = C.FileFormat.OS.name
-        # do not use quotes 
+        # do not use quotes
         if Utils.is_windows():
             _quotes = True
         else:
@@ -545,7 +553,7 @@ class ConfigEnv():
                 _msg = f"[CONFIG] Key [{key}], Param [{_param_name}], invalid type [{_param_type}], allowed {_allowed_types}"
                 logger.warning(_msg)
                 valid = None
-        
+
         # TODO check for unresolved path / file references
         valid = self._resolve_path_object(key)
 
@@ -708,6 +716,14 @@ class ConfigEnv():
             logger.warning(f"[CONFIG] Key [{key}] is invalid")
         return _ref
 
+    def show_json(self)->None:
+        """ display the configuration json """
+        rprint("### CONFIGURATION")
+        print_json(json.dumps(self._config))
+        rprint("### CONFIG FILES FOUND IN BOOTSTRAPPING")
+        print_json(json.dumps(self._f_config_dict))
+        rprint(f"### CONFIG FILE USED \[{self._f_config }]")
+
     def show(self)->None:
         """ displays the config  """
         print(col(f"\n###### CONFIGURATION [{self._f_config}]\n","C_T"))
@@ -727,10 +743,45 @@ class ConfigEnv():
             print(_num+_key+_description+_ref)
             n+=1
 
+    def _bootstrap_path(self,f_ext:str):
+        """" bootstraps path to config file  i the following order
+            if ENV CLI_CONFIG_DEMO is set => use /test_data/test_config/config_env_sample.json/
+
+        """
+        # choose one of the following paths for config in order 
+
+        # 1. demo config will be used first if set in VENV
+        _f_demo = None
+        if os.environ.get(C.ConfigBootstrap.CLI_CONFIG_DEMO.name) is not None:
+            # create a demo config if not already there
+            _f_demo = create_demo_config()
+        # 2. external set path is next
+        _f_ext = str(f_ext)
+        # 3. path from environment
+        _f_env = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_ENV.name)        
+        # 4. home path HOME/cli_client/cli_config.json
+        _f_home = str(Path.home().joinpath("cli_client","cli_config.json"))
+
+        # parse for valid paths
+        _config_names = [C.ConfigBootstrap.CLI_CONFIG_DEMO.name,
+                         C.ConfigBootstrap.CLI_CONFIG_EXTERNAL.name,
+                         C.ConfigBootstrap.CLI_CONFIG_ENV.name,
+                         C.ConfigBootstrap.CLI_CONFIG_HOME.name]
+        _config_files = [f if f is not None and os.path.isfile(f) else None for f in [_f_demo,_f_ext,_f_env,_f_home]]
+        # the first in line is the config file
+        _config_dict = dict(zip(_config_names,_config_files))
+        for _name in _config_names:
+            _f_config = _config_dict[_name]
+            if _f_config is not None:
+                self._f_config = _f_config
+                break
+        self._f_config_dict = _config_dict
+
 if __name__ == "__main__":
-    loglevel = logging.INFO
+    loglevel = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=loglevel, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S")
     f = Path(__file__).parent.parent.parent.joinpath("test_data","test_config","config_env_sample.json")
     config = ConfigEnv(f)
-    config.show()
+    # config.show()
+    config.show_json()

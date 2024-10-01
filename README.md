@@ -48,8 +48,9 @@ pip install -e .[dev]
 
 * define a virtual twin of your work environment mapping it into a config json (example ```/test_config/config_env_local.json``` )
 
-## Todos 
+## Todos / Ideas
 
+* `20240929` Parsing links, add numbers and allow to launch links from CLI
 * `20240929` Create the possibility to store/load the parsed data without processing 
 * `20240929` Add a logic to update a value in a configuration in any case
 * `20240927` Create an Utility to create Markdown with Date Lines 

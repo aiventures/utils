@@ -11,6 +11,7 @@ from util import constants as C
 from util.utils import Utils
 from util.abstract_enum import AbstractEnum
 from util.persistence import Persistence
+from demo.demo_config import create_demo_config
 from enum import Enum
 
 ### [1] Fixtures for File Analyzer
@@ -189,8 +190,6 @@ def fixture_config_env_testpath()->Path:
     p_testpath = Path(__file__).parent.parent.parent.joinpath("test_data","test_config")
     return p_testpath
 
-
-
 @pytest.fixture
 def fixture_config_env_testconfig_template(fixture_config_env_testpath)->Path:
     """ Sample Path to configuration file """
@@ -206,20 +205,20 @@ def fixture_sample_config_json(fixture_config_env_testpath,fixture_config_env_te
     """ creates a sample json config file from existing one in test folder
         replacing absolute test paths, returns path to sample config json
     """
-    _sample_config_json = str(os.path.join(fixture_config_env_testpath,"config_env_sample.json"))
-    if os.path.isfile(_sample_config_json):
-        return _sample_config_json
-    # create a sample file
-    _sample_dict = Persistence.read_json(fixture_config_env_testconfig_template)
-    # populate path
-    _sample_dict["P_CONFIGTEST"]["p"]=str(fixture_config_env_testpath)
-    # populate configfile 1 file with absolute path
-    p_config_test1 = os.path.join(fixture_config_env_testpath,"file1_config.txt")    
-    _sample_dict["F_CONFIGTEST1"]["f"]=str(p_config_test1)
-    # populate configfile3 with absolute path and file 
-    _sample_dict["F_CONFIGTEST3"]["p"]=str(fixture_config_env_testpath)
-    Persistence.save_json(_sample_config_json,_sample_dict)
-    return _sample_config_json
+    # _sample_config_json = str(os.path.join(fixture_config_env_testpath,"config_env_sample.json"))
+    # if os.path.isfile(_sample_config_json):
+    #     return _sample_config_json
+    # # create a sample file
+    # _sample_dict = Persistence.read_json(fixture_config_env_testconfig_template)
+    # # populate path
+    # _sample_dict["P_CONFIGTEST"]["p"]=str(fixture_config_env_testpath)
+    # # populate configfile 1 file with absolute path
+    # p_config_test1 = os.path.join(fixture_config_env_testpath,"file1_config.txt")    
+    # _sample_dict["F_CONFIGTEST1"]["f"]=str(p_config_test1)
+    # # populate configfile3 with absolute path and file 
+    # _sample_dict["F_CONFIGTEST3"]["p"]=str(fixture_config_env_testpath)
+    # Persistence.save_json(_sample_config_json,_sample_dict)
+    return create_demo_config()
 
 @pytest.fixture
 def fixture_sample_enum()->AbstractEnum:

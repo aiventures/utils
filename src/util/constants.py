@@ -2,11 +2,13 @@
 from copy import deepcopy
 # from typing import Any
 from util.abstract_enum import AbstractEnum
+from logging import INFO as LOG_INFO
 
 # TODO SWITCH TO PYDANTIC IN FUTURE
 # Constants
 FILE = "file"
 PATH = "path"
+HOME = "home"
 OUTPUT = "output"
 FORMATTED = "formatted"
 LINE = "line"
@@ -22,6 +24,16 @@ EXAMPLE = "example"
 # SUFFIX FOR CSV EXPORTS TO CREATE A DATE
 DATEXLS = "_N"
 INVALID = "INVALID"
+
+# bootstrap File Name
+class ConfigBootstrap(AbstractEnum):
+    """ bootstrap origins """
+    CLI_CONFIG_ENV = "config_env"
+    CLI_CONFIG_EXTERNAL = "config_external"
+    CLI_CONFIG_HOME = "config_home"
+    CLI_CONFIG_LOG_LEVEL = LOG_INFO
+    CLI_CONFIG_DEMO = "DEMO"
+
 # type definitions
 
 class DataType(AbstractEnum):
