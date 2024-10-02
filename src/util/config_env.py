@@ -202,6 +202,15 @@ class ConfigEnv():
         _param_name = param_name.upper()
         _is_file_type = False # for path like objects, enclose in quotes
 
+        # if the value is enclosed in brackets, try to get a reference stored in configuration
+        if isinstance(value,str):
+            _ref_key = re.findall(C.REGEX_BRACKET_CONTENT,value)
+            if len(_ref_key) > 0 and _ref_key[0] in self._config_keys:
+                _ref_value = self.get_ref(_ref_key[0])
+                _msg = f"[CONFIG] Got Param [{param_name}], value [{value}], dereferenced to [{_ref_value}]"
+                logger.debug(_msg)
+                value = _ref_value
+
         if param_type is None:
             if isinstance(value,str):
                 # eastereggs: implicit conversion based on
@@ -220,11 +229,11 @@ class ConfigEnv():
                 _parsed = value
         # parse according to type
         else:
-            # TODO parse according to file type
             # convert string to paramtype
             _data_type = C.DataType.get_enum(param_type,search_name=False,search_value=True,exact=True)
             if _data_type is None:
                 _msg = f"[CONFIG] param [{param_name}], invalid param_type [{param_type}], allowed {C.DataType.get_values()}"
+                logger.warning(_msg)
                 return None
             if _data_type == C.DataType.INT:
                 _parsed = int(value)
@@ -748,7 +757,7 @@ class ConfigEnv():
             if ENV CLI_CONFIG_DEMO is set => use /test_data/test_config/config_env_sample.json/
 
         """
-        # choose one of the following paths for config in order 
+        # choose one of the following paths for config in order
 
         # 1. demo config will be used first if set in VENV
         _f_demo = None
@@ -758,7 +767,7 @@ class ConfigEnv():
         # 2. external set path is next
         _f_ext = str(f_ext)
         # 3. path from environment
-        _f_env = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_ENV.name)        
+        _f_env = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_ENV.name)
         # 4. home path HOME/cli_client/cli_config.json
         _f_home = str(Path.home().joinpath("cli_client","cli_config.json"))
 
