@@ -34,9 +34,12 @@ def create_config_home()->None:
     """ creates a sample configuration in home, if not already there """
     _p_home = str(Path(C.FILE_CONFIGFILE_HOME).parent)
     if os.path.isfile(C.FILE_CONFIGFILE_HOME):
-        print(f"Nothing to do, there is alreadfy a file here: [{C.FILE_CONFIGFILE_HOME}]")
+        print(f"Nothing to do, there is already a file here: [{C.FILE_CONFIGFILE_HOME}]")
         return
-    os.makedirs(str(_p_home))
+    try:
+        os.makedirs(str(_p_home))
+    except FileExistsError:
+        pass
     # get the demo file
     _f_demo = create_demo_config()
     copy2(_f_demo,C.FILE_CONFIGFILE_HOME)

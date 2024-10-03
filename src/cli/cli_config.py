@@ -22,26 +22,31 @@ logger = logging.getLogger(__name__)
 # either from environment vars or from HOME path
 config_env = ConfigEnv()
 
-cli = typer.Typer(name="cli_config_client", add_completion=True, help="Configuration and Environment Settings")
+app = typer.Typer(name="cli_config_client", add_completion=True, help="Configuration and Environment Settings")
 
-@cli.command("show")
-@cli.command("s")
+@app.command("show")
+@app.command("s")
 def show_config():
     """ shows the configuration environment"""
     config_env.show()
 
 # @cli.callback("show_json")
-@cli.command("show_json")
-@cli.command("j")
+@app.command("show_json")
+@app.command("j")
 def show_config_json():
     """ shows the configuration environment as json"""
     config_env.show_json()    
+
+# https://typer.tiangolo.com/tutorial/commands/callback/
+@app.callback()
+def main():
+    """ main method """
+    pass    
 
 if __name__ == "__main__":
     log_level = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)    
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=log_level, datefmt="%Y-%m-%d %H:%M:%S",
                         handlers=[RichHandler(rich_tracebacks=True)])
-    cli()
-    # typer.run(main)
+    app()
 

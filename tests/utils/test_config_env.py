@@ -53,6 +53,16 @@ def test_validate_commands(fixture_sample_config_json):
     assert len(_wrong_keys) >= 0
 
 
+def verify_debug_messages(substr:str,messages:list)->bool:
+    """ checks for a substring in the debug message lists from spy method
+        returns true if message is found        
+    """
+    for _message in messages:
+        for _arg in _message.args:
+            if substr in _arg:
+                return True
+    return False
+
 # use cases to be tested, alos compare with settings in test config template
 # A.01. cmd - minimal example
 
@@ -64,16 +74,8 @@ def test_validate_commands(fixture_sample_config_json):
 # B.01  where - test where with executable in param name
 # B.02  where - test where with executable in attribute
 # ...
-
-def verify_debug_messages(substr:str,messages:list)->bool:
-    """ checks for a substring in the debug message lists from spy method
-        returns true if message is found        
-    """
-    for _message in messages:
-        for _arg in _message.args:
-            if substr in _arg:
-                return True
-    return False
+# TODO TEST THAT PLACEHOLDERS FOR KEYS ARE REPLACED BY ITS REFS
+# TODO DO A NEGATIVE TEST FOR A PARAM THAT IS NEITHER A CONFIG KEY NOR A KEY IN COMMAND KEY
 
 # https://docs.pytest.org/en/7.1.x/example/parametrize.html#paramexamples
 @pytest.mark.parametrize(

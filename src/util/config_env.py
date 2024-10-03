@@ -382,6 +382,7 @@ class ConfigEnv():
         _pf = [o for o in [_p,_f] if o is not None]
         _resolved = True
         for _o in _pf:
+            # resolve variabeles found
             _matches = re.findall(C.REGEX_BRACKET_CONTENT,_o)
             if len(_matches) > 0: # underscore indicates a variable
                 for _m in _matches:
@@ -523,39 +524,57 @@ class ConfigEnv():
         valid = True
         _used_params = []
         _param_names = []
-        for _command,_command in _commands.items():
-            if isinstance(_command,str):
-                _command_str = _command
-            elif isinstance(_command,dict):
-                _command_str = _command.get(C.ConfigAttribute.RULE.value)
+        for _command,_command_info in _commands.items():
+            if isinstance(_command_info,str):
+                _command_str = _command_info
+            elif isinstance(_command_info,dict):
+                _command_str = _command_info.get(C.ConfigAttribute.RULE.value)
             if _command_str is None:
                 _msg = f"[CONFIG] Param [{key}], (C)md [{_command}], couldn't locate command string"
                 logger.warning(_msg)
                 return None
             # get the keys
-            _params = re.findall(C.REGEX_BRACKET_CONTENT,_command_str)
-            _used_params.extend(_params)
-            _command_check = _command_str
-            # since the command key might contain the underscore we look for occurences in the string
-            for _param in _params:
-                if _param in _command_check:
-                    _command_check = _command_check.replace(_param,"")
+            _params_in_command = re.findall(C.REGEX_BRACKET_CONTENT,_command_str)
+            # get the joint command params from key and command, take into account underscores
+            _params_remaining = _command
+            _params_in_key_and_command = []
+            _wrong_params_in_command = []
+            for _param_in_command in _params_in_command:
+                if _param_in_command in _params_remaining:
+                    _params_in_key_and_command.append(_param_in_command)
+                    _params_remaining = _params_remaining.replace(_param_in_command,"")
+                # param in command is not part of the command key
                 else:
+                    _wrong_params_in_command.append(_param_in_command)
+                    # if the found key is not in configuration, mark this as error
+                    if _param_in_command not in self._get_config_keys():
+                        valid = None                    
+                        _msg = f"[CONFIG] Param [{key}], param [{_param_in_command}] in [{_command_str}] is neither in Command Key nor it is a config key"
+                        logger.warning(_msg)
+                    # param is valid
+                    else:
+                        _used_params.append(_param_in_command)
+            _used_params.extend(_params_in_key_and_command)
+
+            _params_remaining = _params_remaining.split("_")
+            # check if there are parts from the key in the command
+            _wrong_params_in_command_key = []
+            for _param_remaining in _params_remaining:
+                if len(_param_remaining) == 0:
+                    continue
+                if not _param_remaining.lower() in _command_str.lower():
                     valid = None
-                    _msg = f"[CONFIG] Param [{key}], (C)md [{_command}], param [{_param}] not in key"
+                    _wrong_params_in_command_key.append(_param_remaining)
+                    _msg = f"[CONFIG] Config [{key}], substring [{_param_remaining}] in cmd [{_command}] not found in command  [{_command_str}]"
                     logger.warning(_msg)
-            # in the end there only should be _
-            _command_check = _command_check.replace("_","")
-            if len(_command_check) > 0:
-                _msg = f"[CONFIG] Param [{key}], (C)md [{_command}], inexplicable key part [{_command_check}]"
-                logger.warning(_msg)
+                
 
         # do a check for the types, if supplied
         _params = _config.get(C.ConfigAttribute.TYPE.value,{})
         _allowed_types = C.DataType.get_values()
         for _param_name,_param_type in _params.items():
             if not _param_name in _used_params:
-                _msg = f"[CONFIG] Key [{key}], Param [{_param_name}], is not used in any of the commands"
+                _msg = f"[CONFIG] Key [{key}], Param [{_param_name}], is not used in any of the variables {_used_params}"
                 logger.warning(_msg)
                 valid = None
             if not _param_type in _allowed_types:
@@ -789,7 +808,7 @@ if __name__ == "__main__":
     loglevel = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=loglevel, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S")
-    f = C.PATH_ROOT.joinpath("test_data","test_config","config_env_sample.json")    
+    f = C.PATH_ROOT.joinpath("test_data","test_config","config_env_sample.json")
     config = ConfigEnv(f)
     # config.show()
     config.show_json()

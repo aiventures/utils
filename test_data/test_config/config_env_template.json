@@ -54,8 +54,8 @@
                             "t":{"FILE":"path","LINE":"int","F_CONFIGTEST1":"config"}},
     "CMD_EXAMPLE_PY":       {"f":"[W_PYTHON]",
                             "d":"Command line example 1 to reference the current Python Executable defined in W_PYTHON",
-                            "c":{"PY_VERSION":{"r":"[CMD] --version",
-                                               "d":"Command Line Option with a description"}}
+                            "c":{"W_PYTHON_VERSION":{"r":"[W_PYTHON] --version",
+                              "d":"Command Line Option with a description note there need to be identical parts"}}
                             },
     "CMD_EXAMPLE_WRONG":    {"p":"[P_CONFIGTEST]",
                             "f":"cmd_dummy2.txt",
