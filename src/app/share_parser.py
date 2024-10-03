@@ -175,7 +175,7 @@ def main():
     """ main program """
     # read configuration, parse all information and export it as csv to original path
     # read sample configuration 
-    p_testconfig = Path(__file__).parent.parent.parent.joinpath("test_data","test_config")
+    p_testconfig = C.PATH_ROOT.joinpath("test_data","test_config")
     # you need to run the unit tests before this
     f_config = os.path.join(p_testconfig,"config_env_sample.json")
     _date_s = DateTime.now().strftime(C.DATEFORMAT_JJJJMMDD)

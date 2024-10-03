@@ -16,6 +16,7 @@ from rich.style import Style
 from rich_theme_manager import Theme, ThemeManager
 
 # TODO MOVE THIS TO A CONFIG FILE
+from util import constants as C
 from util.const_local import LOG_LEVEL
 from util.persistence import Persistence
 from util_cli.cli_color_maps import RGB_COLORS,HEX_COLORS,COLOR_NAMES
@@ -70,8 +71,6 @@ class ColorMapper():
         # TODO ALLOW TO CHANGE PATH in Constructor
         # self._f_color_themes = None
         _f_themes = os.path.join(self._f_color_themes)
-
-        # _f_themes = os.path.join(Path(__file__).parent.parent.parent,"resources",F_COLOR_THEMES)
         _themes = Persistence.read_json(_f_themes)
         for _theme in _themes:
             _name = _theme.get(NAME)
@@ -275,7 +274,7 @@ class ColorMapper():
 
         # set a default path
         if self._p_resources is None or not os.path.isdir(self._p_resources):
-            self._p_resources = os.path.join(str(Path(__file__).parent.parent.parent),"resources")
+            self._p_resources = os.path.join(str(C.PATH_ROOT),"resources")
             logger.info(f"[ColorMapper] Setting resource path [{self._p_resources}]")
 
         self._f_color_themes = os.path.join(self._p_resources,F_COLOR_THEMES)

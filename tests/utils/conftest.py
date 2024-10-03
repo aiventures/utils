@@ -19,12 +19,13 @@ from enum import Enum
 @pytest.fixture
 def fixture_testpath()->Path:
     """ Sample Path """
-    p_testpath = str(Path(__file__).parent.parent.parent.joinpath("test_data","test_path"))
+    p_testpath = str(C.PATH_ROOT.joinpath("test_data","test_path"))
     return p_testpath
 
 @pytest.fixture
 def fixture_testpath_withspace(fixture_testpath)->Path:
     """ Sample Path """
+    
     p_testpath = str(Path(fixture_testpath).joinpath("path with space"))
     return p_testpath
 
@@ -187,7 +188,7 @@ def fixture_ruledict_file_content_all_rules(fixture_ruledict_file_content):
 @pytest.fixture
 def fixture_config_env_testpath()->Path:
     """ Sample Path """
-    p_testpath = Path(__file__).parent.parent.parent.joinpath("test_data","test_config")
+    p_testpath = C.PATH_ROOT.joinpath("test_data","test_config")
     return p_testpath
 
 @pytest.fixture

@@ -26,12 +26,35 @@ Command Line Utils V2 as the tools project has become too bloated. To make a com
   * Capabilities to parse to/from dict <-> json
   * Parsing tree like structrues
 
-## Installation & Dependencies 
+## Installation, Dependencies, Test Drive
+
+## Installation
+
+In the project root, and in your VENV, install by: 
 
 ```
 pip install -e .[dev]
 ```
 * **Dependencies** [requirements.txt](https://github.com/aiventures/utils/blob/main/requirements/requirements.txt)
+
+## Sample Configuration
+
+A sample config showcasing the config structure is stored here
+
+```<root>/test_data/test_config/config_env_template.json``` 
+
+If you run
+```python <root>/src/demo/demo_config.py```, this sample config (with some functional configs) will be copied to path ```[home]/.cli_client/``` directory (with home path being an os dependent path)
+
+## Configuration Bootstrapping Order 
+
+If you do not instanciate the configuration file for yourself by directly submitting config file location, it will be attempted to bootstrap the configuration file in the following order ```<path>\utils\src\util\config_env.py > _bootstrap_path ```):
+1. `ENV` variable `CLI_CONFIG_DEMO` is set (any non `None` value): use demo configuration
+2. `ConfigEnv` constructor is supplied with a `f_config` file path: use path from there
+3. `ENV` variable `CLI_CONFIG_ENV` is set: Path stored in the `ENV`variable is used
+4. Config file stored here: `[HOME]/.cli_client/cli_config.json`
+
+Configuration should be OS independent, but only tested on Win Os.
 
 ## Commands 
 
@@ -41,18 +64,18 @@ pip install -e .[dev]
 
 * on the root level of the project run pytest to see some feature 
 * some modules also provide some functionality on `main`. So you can directly start it 
-* the unit test will generate a `/test_config/config_env_local.json` to illustrate what needs to be configured.
 * To look for configuration hints check where the Constants in `utils/src/util/constants.py` are referenced 
 
 ## Implementation steps
 
-* define a virtual twin of your work environment mapping it into a config json (example ```/test_config/config_env_local.json``` )
+* Define a "virtual twin" of your work environment mapping it into a config json (example ```/test_config/config_env_local.json``` )
 
 ## Todos / Ideas
 
+* ~~`20241002` Parse Placeholder in [...] as links to config in command parser~~
 * `20240929` Parsing links, add numbers and allow to launch links from CLI
 * `20240929` Create the possibility to store/load the parsed data without processing 
-* `20240929` Add a logic to update a value in a configuration in any case
+* `20240929` Add a logic to update a value in a configuration in any case (for example when the config is not build up from scratch )
 * `20240927` Create an Utility to create Markdown with Date Lines 
 * `20240923` Additional attribute to indicate file path conversions (with no info implicitly leading to no conversion)
 * `20240923` Move Constants to enums 

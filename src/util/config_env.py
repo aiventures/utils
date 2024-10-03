@@ -768,15 +768,14 @@ class ConfigEnv():
         _f_ext = str(f_ext)
         # 3. path from environment
         _f_env = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_ENV.name)
-        # 4. home path HOME/cli_client/cli_config.json
-        _f_home = str(Path.home().joinpath("cli_client","cli_config.json"))
+        # 4. home path HOME/cli_client/cli_config.json (set in Constants)
 
         # parse for valid paths
         _config_names = [C.ConfigBootstrap.CLI_CONFIG_DEMO.name,
                          C.ConfigBootstrap.CLI_CONFIG_EXTERNAL.name,
                          C.ConfigBootstrap.CLI_CONFIG_ENV.name,
                          C.ConfigBootstrap.CLI_CONFIG_HOME.name]
-        _config_files = [f if f is not None and os.path.isfile(f) else None for f in [_f_demo,_f_ext,_f_env,_f_home]]
+        _config_files = [f if f is not None and os.path.isfile(f) else None for f in [_f_demo,_f_ext,_f_env,C.FILE_CONFIGFILE_HOME]]
         # the first in line is the config file
         _config_dict = dict(zip(_config_names,_config_files))
         for _name in _config_names:
@@ -790,7 +789,7 @@ if __name__ == "__main__":
     loglevel = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=loglevel, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S")
-    f = Path(__file__).parent.parent.parent.joinpath("test_data","test_config","config_env_sample.json")
+    f = C.PATH_ROOT.joinpath("test_data","test_config","config_env_sample.json")    
     config = ConfigEnv(f)
     # config.show()
     config.show_json()

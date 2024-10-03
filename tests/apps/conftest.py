@@ -12,7 +12,7 @@ from util.persistence import Persistence
 @pytest.fixture
 def fixture_config_testpath()->Path:
     """ Sample Path """
-    p_testpath = Path(__file__).parent.parent.parent.joinpath("test_data","test_config")
+    p_testpath = C.PATH_ROOT.joinpath("test_data","test_config")
     return p_testpath
 
 @pytest.fixture

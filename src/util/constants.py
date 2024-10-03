@@ -1,5 +1,6 @@
 """ constants file """
 from copy import deepcopy
+from pathlib import Path
 # from typing import Any
 from util.abstract_enum import AbstractEnum
 from logging import INFO as LOG_INFO
@@ -24,6 +25,13 @@ EXAMPLE = "example"
 # SUFFIX FOR CSV EXPORTS TO CREATE A DATE
 DATEXLS = "_N"
 INVALID = "INVALID"
+
+## PATHS and FILES
+
+# default location of config file in home 
+FILE_CONFIGFILE_HOME=str(Path.home().joinpath(".cli_client","cli_config.json"))
+# Project Paths
+PATH_ROOT=Path(__file__).parent.parent.parent.absolute()
 
 # bootstrap File Name
 class ConfigBootstrap(AbstractEnum):
