@@ -557,7 +557,7 @@ if __name__ == "__main__":
         theme_console = ThemeConsole(create_themes=True)
         # theme_console._theme_manager.get()
         theme_console.list_themes()
-        # theme_console.preview_theme("ubuntu")
-        theme_console.preview_themes()
+        theme_console.preview_theme("ubuntu")
+        # theme_console.preview_themes()
 
     # test_theme()

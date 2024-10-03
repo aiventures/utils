@@ -72,6 +72,7 @@ Configuration should be OS independent, but only tested on Win Os.
 
 ## Todos / Ideas
 
+* `20241003` Set Environment from Configuration / optionally save it as well as env file / create a bat file
 * ~~`20241002` Parse Placeholder in [...] as links to config in command parser~~
 * `20240929` Parsing links, add numbers and allow to launch links from CLI
 * `20240929` Create the possibility to store/load the parsed data without processing 

@@ -55,5 +55,3 @@ def test_conversions_invalid(fixture_color_mapper,value,to):
     if not _code == value:
         assert _code is None
 
-
-

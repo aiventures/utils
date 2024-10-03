@@ -10,12 +10,6 @@ from rich.logging import RichHandler
 # TODO MOVE THIS TO A CONFIG FILE
 from util.const_local import LOG_LEVEL
 
-# HEX = "hex"
-# ANSI = "ansi" # ansi ciodes not implemented yet
-# CODE = "code" # code 0-255
-# NAME = "name" # as in ANSI COLOR NAMES
-# RGB = "rgb"
-
 logger = logging.getLogger(__name__)
 
 # switch to 256 Colors as default
