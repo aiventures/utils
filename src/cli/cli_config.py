@@ -18,7 +18,7 @@ from util.config_env import ConfigEnv
 
 logger = logging.getLogger(__name__)
 
-# the configuration instance, the config file will be bootstrapped 
+# the configuration instance, the config file will be bootstrapped
 # either from environment vars or from HOME path
 config_env = ConfigEnv()
 
@@ -35,18 +35,17 @@ def show_config():
 @app.command("j")
 def show_config_json():
     """ shows the configuration environment as json"""
-    config_env.show_json()    
+    config_env.show_json()
 
 # https://typer.tiangolo.com/tutorial/commands/callback/
 @app.callback()
 def main():
     """ main method """
-    pass    
+    pass
 
 if __name__ == "__main__":
-    log_level = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)    
+    log_level = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=log_level, datefmt="%Y-%m-%d %H:%M:%S",
                         handlers=[RichHandler(rich_tracebacks=True)])
     app()
-

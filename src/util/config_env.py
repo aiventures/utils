@@ -5,6 +5,7 @@ import sys
 import re
 import json
 import logging
+from functools import wraps
 from pathlib import Path
 from rich import print_json
 from rich import print as rprint
@@ -20,6 +21,28 @@ from util.utils import Utils
 from demo.demo_config import create_demo_config
 
 logger = logging.getLogger(__name__)
+
+def config_key(func):
+    """ decorator to check for existence of a key in configuration """
+    @wraps(func)
+    def func_wrapper(self,key,*args,**kwargs):
+        if not isinstance(key,str):
+            _msg = "[CONFIG] No valid key was passed"
+            logger.warning(_msg)
+            return None
+        # check for key in config, if it is not found
+        # create a warning and return with None return function otherwise
+        if self._config is None:
+            logger.warning("[CONFIG] Configuration was not initialized")
+            return None
+        _config = self._config.get(key)
+        if _config is None:
+            _msg = f"[CONFIG] There is no configuration with key [{key}]"
+            logger.warning(_msg)
+            return None
+        else:
+            return func(self,key,*args,**kwargs)
+    return func_wrapper
 
 class ConfigEnv():
     """ Configuration of Command Line Environment  """
@@ -37,25 +60,10 @@ class ConfigEnv():
             self._config = {}
         self._validate()
 
-    def get_config(self,key:str=None)->dict:
+    @config_key
+    def get_config(self,key:str=None)->dict|None:
         """ returns a configuration """
-        if not isinstance(key,str):
-            _msg = "[CONFIG] No valid key was passed"
-            logger.warning(_msg)
-            return {}
-
-        if not isinstance(self._config,dict):
-            _msg = "[CONFIG] There is no valid configuration"
-            logger.warning(_msg)
-            return {}
-
-        config = self._config.get(key)
-        if config is None:
-            _msg = f"[CONFIG] There is no configuration with key [{key}]"
-            logger.warning(_msg)
-            return {}
-
-        return config
+        return self._config.get(key)
 
     # TODO GET CONFIG GROUPS
     def get_config_by_groups(self,groups:list|str=None):
@@ -80,12 +88,13 @@ class ConfigEnv():
         logger.info(f"[CONFIG] Get Config Env using groups {_groups}, returning [{len(out_config)}] entries")
         return out_config
 
-
+    @config_key
     def config_is_valid(self,key):
         """ Checks whether the referenced configuration item is valid """
         _status = self._config.get(key,{}).get(C.ConfigAttribute.STATUS.value)
         return _status == C.ConfigStatus.VALID.value
 
+    @config_key
     def _get_cmd(self,key,cmd_key:str=None,**kwargs)->str:
         """ based on params supplied, identify the correct command and create a command line command
             alternatively directly pass command name, returns the cmd key or None if an error occured
@@ -261,6 +270,7 @@ class ConfigEnv():
 
         return _parsed
 
+    @config_key
     def _parse_cmd(self,key:str,cmd_key:str,**kwargs)->str|None:
         """ parse the cmd command it was ensured before in _get_cmd
            that all commands could be parsed
@@ -315,13 +325,12 @@ class ConfigEnv():
 
         return cmd_out
 
+    @config_key
     def parse_cmd(self,key:str,**kwargs) -> str|None:
         """ parses the a command line cmd for a configuration
             using the transferred kwargs (that need to match to the params)
             returns None if none could be found
         """
-        # todo validate the passed args
-
         out = ""
 
         if C.ConfigKey.get_configtype(key) != C.ConfigKey.CMD:
@@ -369,6 +378,7 @@ class ConfigEnv():
             out_keys[_out_key].append(_key)
         return out_keys
 
+    @config_key
     def _resolve_path_object(self,key:str)->bool|None:
         """ resolves the path and file attributes """
         _config = self._config.get(key)
@@ -382,7 +392,7 @@ class ConfigEnv():
         _pf = [o for o in [_p,_f] if o is not None]
         _resolved = True
         for _o in _pf:
-            # resolve variabeles found
+            # resolve variables found
             _matches = re.findall(C.REGEX_BRACKET_CONTENT,_o)
             if len(_matches) > 0: # underscore indicates a variable
                 for _m in _matches:
@@ -407,6 +417,7 @@ class ConfigEnv():
 
         return _resolved
 
+    @config_key
     def _resolve_where_object(self,key:str)->bool:
         """ resolves the where variable and returns whether it was resolved  """
         _config = self._config.get(key)
@@ -429,6 +440,7 @@ class ConfigEnv():
 
         return _resolved
 
+    @config_key
     def _add_meta(self,key:str)->bool:
         """ adds dependency (= other key is referenced )
             and config type to config item to attribute
@@ -437,9 +449,6 @@ class ConfigEnv():
         """
 
         _config = self._config.get(key)
-        if _config is None:
-            logger.warning(f"[ConfigEnv] There is no key [{key}] in Config ")
-            return None
 
         _config_type = C.ConfigKey.get_configtype(key)
         if _config_type:
@@ -456,37 +465,50 @@ class ConfigEnv():
 
         # analyze file object types
         # only further anaylsis is required for types of path, file, cmd and where
-        _types_to_analyze = [C.ConfigKey.FILE,C.ConfigKey.PATH,C.ConfigKey.CMD,C.ConfigKey.WHERE,C.ConfigKey.RULE]
+        _types_to_analyze = [C.ConfigKey.FILE,C.ConfigKey.PATH,C.ConfigKey.CMD,C.ConfigKey.WHERE,C.ConfigKey.RULE,C.ConfigKey.ENV]
+
+        # almost all config types could contain path reference data
         _resolved = True
-        if _config_type in _types_to_analyze:
+        if _config_type != C.ConfigKey.DATA:
             _resolved = self._resolve_path_object(key)
 
         if _config_type == C.ConfigKey.WHERE:
             _resolved = self._resolve_where_object(key)
         elif _config_type == C.ConfigKey.CMD:
             _resolved = self._resolve_command(key)
+        elif _config_type == C.ConfigKey.ENV:
+            # only consider resolved status in case path or file reference is
+            # found in environment type configuration otherwise it can be considered
+            # as resolved
+            _attributes = list(self.get_config(key).keys())
+            if not ( C.ConfigAttribute.PATH.value in _attributes or C.ConfigAttribute.FILE.value in _attributes ):
+                _resolved = True
+        elif _config_type == C.ConfigKey.DATA:
+            _resolved = True
 
         # set the Config Status
         self._set_status(key,_resolved)
 
         return _resolved
 
+    @config_key
     def _add_dependency(self,key:str,dependency:str)->None:
         """ adds a group item to a config Key """
         _config = self._config.get(key)
-        if _config is None:
-            return
+
         _dependencies = list(_config.get(C.ConfigAttribute.DEPENDENCY.value,[]))
         if not dependency in _dependencies:
             _dependencies.append(dependency)
             _config[C.ConfigAttribute.DEPENDENCY.value] = _dependencies
 
+    @config_key
     def _set_status(self,key:str,status:C.ConfigStatus|bool|None)->None:
         """ sets the status, also accepts bool
             True: valid
             False: initial
             None: Invalid
         """
+        _config = self._config.get(key)
         _status = status
         if status is None:
             _status = C.ConfigStatus.INVALID
@@ -497,20 +519,19 @@ class ConfigEnv():
                 _status = C.ConfigStatus.INITIAL
             else:
                 _status = C.ConfigStatus.INVALID
-        _config = self._config.get(key)
 
         _config[C.ConfigAttribute.STATUS.name] = _status.value
 
+    @config_key
     def _add_group(self,key:str,group:str)->None:
         """ adds a group item to a config Key """
         _config = self._config.get(key)
-        if _config is None:
-            return
         _groups = list(_config.get(C.ConfigAttribute.GROUPS.value,[]))
         if not group in _groups:
             _groups.append(group)
             _config[C.ConfigAttribute.GROUPS.value] = _groups
 
+    @config_key
     def _validate_command(self,key:str)->bool:
         """ Syntactically Validates a command
             Returns True if all is set
@@ -548,7 +569,7 @@ class ConfigEnv():
                     _wrong_params_in_command.append(_param_in_command)
                     # if the found key is not in configuration, mark this as error
                     if _param_in_command not in self._get_config_keys():
-                        valid = None                    
+                        valid = None
                         _msg = f"[CONFIG] Param [{key}], param [{_param_in_command}] in [{_command_str}] is neither in Command Key nor it is a config key"
                         logger.warning(_msg)
                     # param is valid
@@ -567,7 +588,7 @@ class ConfigEnv():
                     _wrong_params_in_command_key.append(_param_remaining)
                     _msg = f"[CONFIG] Config [{key}], substring [{_param_remaining}] in cmd [{_command}] not found in command  [{_command_str}]"
                     logger.warning(_msg)
-                
+
 
         # do a check for the types, if supplied
         _params = _config.get(C.ConfigAttribute.TYPE.value,{})
@@ -587,7 +608,7 @@ class ConfigEnv():
 
         return valid
 
-
+    @config_key
     def _resolve_command(self,key:str)->dict:
         """ validates the command line commands
             returns True if valid configuration
@@ -644,13 +665,12 @@ class ConfigEnv():
                 num_success += 1
         logger.info(f"[ConfigEnv] Processed [{num_items}] configurations, successful [{num_success}] items")
 
+    @config_key
     def _resolve_dependencies(self,key:str)->bool:
         """ resolves dependent entries in configuration
             returns true if all items were resolved, false otherwise
         """
         _config = self._config.get(key)
-        if _config is None:
-            return None
         _dependencies = list(_config.get(C.ConfigAttribute.DEPENDENCY.value))
         resolved = True
         # get references only
@@ -677,13 +697,12 @@ class ConfigEnv():
             self._set_status(key,C.ConfigStatus.INVALID)
         return resolved
 
+    @config_key
     def _subst_dependencies(self,key:str,dependencies:dict)->bool:
         """ substitute reference placeholders by its values and
             perform a substitution for path and file objects
         """
         _config = self._config.get(key)
-        if _config is None:
-            return True
         dependencies[C.CONFIG_PATH_CWD]=os.getcwd()
 
         # get file and path as file objects
@@ -731,6 +750,7 @@ class ConfigEnv():
         logger.debug(f"[ConfigEnv] Key [{key}], set path ref to [{_config[C.ConfigAttribute.REFERENCE.value]}]")
         return True
 
+    @config_key
     def get_ref(self,key:str)->str:
         """ returns the constructed reference from Configuration """
 

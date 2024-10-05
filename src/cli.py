@@ -14,7 +14,7 @@ app = typer.Typer(name="cli_config_client", add_completion=True, help="Command L
 app.add_typer(cli_config.app,name="config")
 
 if __name__ == "__main__":
-    log_level = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)    
+    log_level = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=log_level, datefmt="%Y-%m-%d %H:%M:%S",
                         handlers=[RichHandler(rich_tracebacks=True)])
@@ -31,7 +31,7 @@ pass
 #     Args:
 #         show: Show Configuration Environemnt. Defaults to False.
 #         show_json: Show COnfiguration Environment as json. Defaults to False.
-#     """    
+#     """
 #     if show:
 #         show_config()
 #     if show_json:
