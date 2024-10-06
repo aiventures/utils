@@ -26,9 +26,13 @@ EXAMPLE = "example"
 DATEXLS = "_N"
 INVALID = "INVALID"
 
+# sdasving environment to files 
+KEY_FILE_SUFFIX = "key"
+ENV_FILE_SUFFIX = "env"
+
 ## PATHS and FILES
 
-# default location of config file in home 
+# default location of config file in home
 FILE_CONFIGFILE_HOME=str(Path.home().joinpath(".cli_client","cli_config.json"))
 # Project Paths
 PATH_ROOT=Path(__file__).parent.parent.parent.absolute()
@@ -190,8 +194,12 @@ class ConfigAttribute(AbstractEnum):
     TYPE = "t"           # (data) type
     EXPORT = "e"         # export map
     ENV = "env"          # environment settings, only some values are allowed and defined below
+    ENV_TYPES = "et"     # environment types, controls behaviour how the env should be handled 
     DEPENDENCY = "dep"   # dependencies from other Attributes if there are some
     STATUS = "st"        # status of the configuration item
+    ORIGINAL = "o"       # original value
+    CONFIG_KEY = "kk"    # key used for config
+
 
 class ConfigStatus(AbstractEnum):
     """ Status on processing / validity of a Configuration item """
@@ -248,17 +256,15 @@ class ConfigKey(AbstractEnum):
 
     @classmethod
     def get_configtype(cls,config_key:str)->AbstractEnum:
-        """ return the vorresponding enum for a given config key """
-        # get the prefix and get the corresponding value 
+        """ return the corresponding enum for a given config key """
+        # get the prefix and get the corresponding value
         _prefix = config_key.split("_")[0]+"_"
         try:
             return ConfigKey(_prefix)
         except ValueError:
             return None
 
-
 CONFIG_KEY_TYPES = ConfigKey.get_values()
-
 
 # TODO REPLACE ATTRIBUTES
 # EXPORT FORMAT
@@ -320,6 +326,27 @@ class Env(AbstractEnum):
     DEC_SEPARATOR = ","
     # Wrap Character for CSV export
     CSV_WRAP_CHAR = '"'
+
+class EnvType(AbstractEnum):
+    """" Environment types determine how these are handled
+         (only used internally, as OS environment, as Cofig Valu to be
+         saved on filesystem)
+    """
+    # as env attribute of a config key 
+    ATTRIBUTE = "attribute"    
+    # only to be used within the program
+    INTERNAL = "internal"
+    # published in the OS environment
+    OS_ENVIRON = "os_environ"
+    # value to be stored in an envfile (key value pairs separated by equal sign)
+    ENV_FILE = "env_file"    
+    # keyfile a file to be stored with value in a file and name of file = variable name
+    KEY_FILE = "key_file"
+    # invalid
+    INVALID = "invalid"
+
+
+ENV_TYPES = EnvType.get_values()
 
 # list of CYGPATH Transformations
 

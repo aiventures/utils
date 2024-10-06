@@ -466,7 +466,7 @@ class CsvParser(Persistence):
 
         self._config_key = config_key
         self._reset_config()
-        _config = self._config.get_config(config_key)
+        _config = self._config.get_config_by_key(config_key)
 
         if _config is None:
             return {}

@@ -55,15 +55,41 @@ class ConfigEnv():
         self._config = Persistence.read_json(self._f_config)
         self._config_keys = list(self._config.keys())
         self._wrong_rule_keys = {}
-        self._env = {}
         if not self._config:
             self._config = {}
         self._validate()
+        self._environment = Environment(self)
+        pass
+
+    @staticmethod
+    def type_is_valid(value:any,data_type:str)->bool:
+        """ checks whether a value fits to the data type """
+        _data_type = C.DataType(data_type)
+        checked = True
+        try:
+            if _data_type == C.DataType.INT:
+                _ = int(value)
+            elif _data_type == C.DataType.FLOAT:
+                _ = float(value)
+            elif _data_type == C.DataType.STR:
+                if not isinstance(value,str):
+                    checked = False
+            elif _data_type == C.DataType.DATEXLS:
+                _ = int(value)
+            # TODO add checks for the other types as well
+        except ValueError:
+            checked = False
+        return checked
 
     @config_key
-    def get_config(self,key:str=None)->dict|None:
+    def get_config_by_key(self,key:str=None)->dict|None:
         """ returns a configuration """
         return self._config.get(key)
+
+    @property
+    def config(self)->dict:
+        """ returns a copy of the configuration """
+        return self._config
 
     # TODO GET CONFIG GROUPS
     def get_config_by_groups(self,groups:list|str=None):
@@ -255,7 +281,7 @@ class ConfigEnv():
             elif _data_type == C.DataType.DATEXLS:
                 _parsed = int(value)
             elif _data_type == C.DataType.CONFIG:
-                _parsed = self.get_config(value)
+                _parsed = self.get_config_by_key(value)
                 _is_file_type = C.ConfigKey.is_file_config_type(value)
             # for now, only support to a os native path type
             # do the specialisation later on
@@ -456,11 +482,11 @@ class ConfigEnv():
 
         # add type to group
         self._add_group(key,_config_key)
-        self._set_status(key,C.ConfigStatus.INITIAL)
+        self.set_status(key,C.ConfigStatus.INITIAL)
 
         # do not process anything if there is already a reference
         if _config.get(C.ConfigAttribute.REFERENCE.value) is not None:
-            self._set_status(key,C.ConfigStatus.VALID)
+            self.set_status(key,C.ConfigStatus.VALID)
             return True
 
         # analyze file object types
@@ -469,7 +495,7 @@ class ConfigEnv():
 
         # almost all config types could contain path reference data
         _resolved = True
-        if _config_type != C.ConfigKey.DATA:
+        if _config_type not in [C.ConfigKey.DATA,C.ConfigKey.ENV]:
             _resolved = self._resolve_path_object(key)
 
         if _config_type == C.ConfigKey.WHERE:
@@ -477,17 +503,12 @@ class ConfigEnv():
         elif _config_type == C.ConfigKey.CMD:
             _resolved = self._resolve_command(key)
         elif _config_type == C.ConfigKey.ENV:
-            # only consider resolved status in case path or file reference is
-            # found in environment type configuration otherwise it can be considered
-            # as resolved
-            _attributes = list(self.get_config(key).keys())
-            if not ( C.ConfigAttribute.PATH.value in _attributes or C.ConfigAttribute.FILE.value in _attributes ):
-                _resolved = True
+            _resolved = self._resolve_env(key)
         elif _config_type == C.ConfigKey.DATA:
             _resolved = True
 
         # set the Config Status
-        self._set_status(key,_resolved)
+        self.set_status(key,_resolved)
 
         return _resolved
 
@@ -502,7 +523,7 @@ class ConfigEnv():
             _config[C.ConfigAttribute.DEPENDENCY.value] = _dependencies
 
     @config_key
-    def _set_status(self,key:str,status:C.ConfigStatus|bool|None)->None:
+    def set_status(self,key:str,status:C.ConfigStatus|bool|None)->None:
         """ sets the status, also accepts bool
             True: valid
             False: initial
@@ -512,15 +533,14 @@ class ConfigEnv():
         _status = status
         if status is None:
             _status = C.ConfigStatus.INVALID
+
         if isinstance(status,bool):
             if status is True:
                 _status = C.ConfigStatus.VALID
             elif status is False:
                 _status = C.ConfigStatus.INITIAL
-            else:
-                _status = C.ConfigStatus.INVALID
 
-        _config[C.ConfigAttribute.STATUS.name] = _status.value
+        _config[C.ConfigAttribute.STATUS.value] = _status.value
 
     @config_key
     def _add_group(self,key:str,group:str)->None:
@@ -605,11 +625,10 @@ class ConfigEnv():
 
         # TODO check for unresolved path / file references
         valid = self._resolve_path_object(key)
-
         return valid
 
     @config_key
-    def _resolve_command(self,key:str)->dict:
+    def _resolve_command(self,key:str)->bool:
         """ validates the command line commands
             returns True if valid configuration
             False if it still needs to be resolved
@@ -636,6 +655,43 @@ class ConfigEnv():
 
         return _validated
 
+    @config_key
+    def _resolve_env(self,key:str)->bool:
+        """ checks for formal integrity of env type
+            returns None if there are errors True if ok
+        """
+        _config = self._config.get(key)
+        _attributes = list(self.get_config_by_key(key).keys())
+        _resolved = True
+        # resolve path / file if supplied
+        if ( C.ConfigAttribute.PATH.value in _attributes or
+             C.ConfigAttribute.FILE.value in _attributes ):
+            _resolved = self._resolve_path_object(key)
+        _env_types = _config.get(C.ConfigAttribute.ENV_TYPES.value)
+        if _env_types is None:
+            _env_types = [C.EnvType.ATTRIBUTE.value]
+        elif isinstance(_env_types,str):
+            if _env_types in C.ENV_TYPES:
+                _env_types = [_env_types]
+                _config[C.ConfigAttribute.ENV_TYPES.value] = _env_types
+            else:
+                _msg = f"[CONFIG] Key [{key}], env type [{_env_types}] unknown, must be one of {C.ENV_TYPES}"
+                logger.warning(_msg)
+                _resolved = None
+        elif isinstance(_env_types,list):
+            for _env_type in _env_types:
+                if not _env_type in C.ENV_TYPES:
+                    _msg = f"[CONFIG] Key [{key}], env type [{_env_types}] unknown, must be one of {C.ENV_TYPES}"
+                    logger.warning(_msg)
+                    _resolved = None
+        else:
+            _msg = f"[CONFIG] Key [{key}], env type is not valid (must be string or list type)"
+            logger.warning(_msg)
+            _resolved = None
+
+        return _resolved
+
+
     def _validate(self):
         """ analyzes key relations for any relations
             * in the first round resolve any paths / files without references already
@@ -648,7 +704,7 @@ class ConfigEnv():
         # get keys in order
         _key_dict = self._get_config_keys()
         _config_types = C.ConfigKey.get_values()
-        # first resolve the ites without any references
+        # first resolve the items without any references
         for _config_type in _config_types:
             _keys = _key_dict.get(_config_type,[])
             for _key in _keys:
@@ -691,10 +747,10 @@ class ConfigEnv():
         _resolved = self._subst_dependencies(key,_dependency_refs)
         # set the processing status accordingly
         if _resolved == True:
-            self._set_status(key,C.ConfigStatus.VALID)
+            self.set_status(key,C.ConfigStatus.VALID)
         else:
             # if these items are False or None, set the status to invalid
-            self._set_status(key,C.ConfigStatus.INVALID)
+            self.set_status(key,C.ConfigStatus.INVALID)
         return resolved
 
     @config_key
@@ -823,6 +879,193 @@ class ConfigEnv():
                 self._f_config = _f_config
                 break
         self._f_config_dict = _config_dict
+
+class Environment():
+    """ Handling environment values """
+
+    def __init__(self,config:str|ConfigEnv) -> None:
+        """ initialize Environment by handing over config or path to config file """
+        self._config_env = {}
+        if isinstance(config,str) and os.path.isfile(config):
+            self._config_env = ConfigEnv(config)
+        elif isinstance(config,ConfigEnv):
+            self._config_env = config
+        else:
+            logger.warning("No configuration or path to configuration file was supplied")
+        self._env_dict = {}
+        self._all_env_keys = []
+        # initialize the environment
+        _env_dict = {}
+        _env_dict[C.EnvType.ATTRIBUTE]=[]
+        _env_dict[C.EnvType.INTERNAL]=[]
+        _env_dict[C.EnvType.ENV_FILE]=[]
+        _env_dict[C.EnvType.OS_ENVIRON]=[]
+        _env_dict[C.EnvType.KEY_FILE]=[]
+        _env_dict[C.EnvType.INVALID]=[]
+        self._all_env_keys = []
+        self._env_dict = _env_dict
+        # map of alias keys and env key
+        self._env_key_map = {}
+        self._get_environment()
+        # clean up duplicates
+        self._all_env_keys = list(set(self._all_env_keys))
+
+
+    def _resolve_env(self,key:str)->bool|None:
+        """ resolves a single environment key
+            if an error occured, None is returned
+        """
+        _ref_key = None
+        _resolved = True
+        _env_info = self._config_env.config[key]
+        # 1. check if there is a key name and whether it needs to be mapped to the CONFIG
+        _env_key = _env_info.get(C.ConfigAttribute.KEY.value)
+        if _env_key is None:
+            _env_key = key
+
+        # 2. check which env types do apply for this key
+        _env_types = _env_info.get(C.ConfigAttribute.ENV_TYPES.value,[C.EnvType.INTERNAL.value])
+        for _env_type in _env_types:
+            if not _env_type in C.ENV_TYPES:
+                _msg = f"[ENV] Key [{_env_key}/{key}] , invalid env type [{_env_type}], allowed {C.ENV_TYPES}"
+                logger.warning(_msg)
+                _resolved = None
+                continue
+            self._env_dict[C.EnvType(_env_type)].append(_env_key)
+            self._all_env_keys.append(_env_key)
+
+        # 3. check whether there is a value / needs to be dereferenced
+        _value = _env_info.get(C.ConfigAttribute.VALUE.value)
+        _ref_value = None
+        if _value is None:
+            _msg = f"[ENV] Key [{_env_key}/{key}], no value found in configuration, pls. check"
+            logger.warning(_msg)
+            _resolved = None
+        else:
+            if isinstance(_value,str):
+                _ref_key = re.findall(C.REGEX_BRACKET_CONTENT,_value)
+                if len(_ref_key) == 1:
+                    _ref_key = _ref_key[0]
+                else:
+                    _ref_key = None
+
+        if _ref_key is not None:
+            _ref_value = self._config_env.get_ref(_ref_key)
+            if _ref_value is None:
+                _msg = f"[ENV] Key [{_env_key}/{key}], found reference {_value}, which ha no reference value"
+                logger.warning(_msg)
+                _resolved = None
+            else:
+                # replace placeholder by its reference
+                _msg = f"[ENV] Key [{_env_key}/{key}], replacing placeholder {_ref_key} by  {_ref_value}"
+                logger.debug(_msg)
+                _env_info[C.ConfigAttribute.ORIGINAL.value] = _value
+                _env_info[C.ConfigAttribute.VALUE.value] = _ref_value
+
+        # 4. if there is a value and a type field, check whether it conforms to this type
+        _type = _env_info.get(C.ConfigAttribute.TYPE.value)
+        if _type is not None:
+            _check_value = _value
+            if _ref_value is not None:
+                _check_value = _ref_value
+            if ConfigEnv.type_is_valid(_check_value,_type) is not True:
+                _msg = f"[ENV] Key [{_env_key}/{key}], value [{_check_value}] is not of type {_type}"
+                logger.warning(_msg)
+                _resolved = None
+
+        if _resolved is True:
+            self._config_env.set_status(key,True)
+            if not key == _env_key:
+                self._env_key_map[_env_key]=key
+            self._all_env_keys.append(_env_key)
+            self._all_env_keys.append(key)
+        else:
+            self._config_env.set_status(key,None)
+
+        if _resolved is None:
+            logger.warning(f"ENV {key} is INVALID")
+            self._env_dict[C.EnvType.INVALID].append(key)
+            if key != _env_key:
+                self._env_dict[C.EnvType.INVALID].append(_env_key)
+
+        return _resolved
+
+    def env_from_config(self,key:str,as_dict:bool=False)->any:
+        """ returns the configuration value from the program
+            optionally as config dict as well
+            Returns None, if not configured
+        """
+        # internally use the _config_key
+        _env_key = key
+        _config_key = self.config_key(key)
+        out = None
+
+        if _config_key in self._env_dict[C.EnvType.INVALID]:
+            _msg = f"[ENV] [{key}/{_config_key}] is invalid"
+            logger.warning(_msg)
+            return None
+
+        # reference data
+        _config = self._config_env.get_config_by_key(_config_key)
+        if _config is None:
+            return
+        _value = _config.get(C.ConfigAttribute.VALUE.value)
+
+        if as_dict is True:
+            # get the key from config (might be differing from input)
+            _env_key = _config.get(C.ConfigAttribute.KEY.value)
+
+            out = {
+                C.ConfigAttribute.CONFIG_KEY.value : _config_key,
+                C.ConfigAttribute.KEY.value : _env_key,
+                C.ConfigAttribute.VALUE.value : _value,
+                C.ConfigAttribute.ORIGINAL.value : _config.get(C.ConfigAttribute.ORIGINAL.value),
+                C.ConfigAttribute.REFERENCE.value : _config.get(C.ConfigAttribute.REFERENCE.value),
+                C.ConfigAttribute.PATH.value : _config.get(C.ConfigAttribute.PATH.value),
+                C.ConfigAttribute.FILE.value : _config.get(C.ConfigAttribute.FILE.value)
+            }
+        else:
+            out = _value
+        
+        return out
+
+    def config_key(self,env_key:str):
+        """ returns the mapped config env key or key itself if there is no config env_key"""
+        if not env_key in self._all_env_keys:
+            _msg = f"[ENV] Key [{env_key}] is not an environment key"
+            logger.warning(_msg)
+            return None
+        try:
+            return self._env_key_map[env_key]
+        except KeyError:
+            return env_key
+
+    def env(self,key:str)->any:
+        """ returns the env value from various sources according to retrieval order """
+        # TODO
+
+        return None
+
+    def _get_environment(self):
+        """ collect environment keys """
+        _config = self._config_env.config
+
+        for _key,_config_info in _config.items():
+            _config_type = C.ConfigKey.get_configtype(_key)
+            _resolved = True
+            if _config_type == C.ConfigKey.ENV:
+                _resolved = self._resolve_env(_key)
+            else:
+                # Check if there is an env section
+                _config_env = _config_info.get(C.ConfigAttribute.ENV.value)
+                if  _config_env is not None:
+                    if not isinstance(_config_env,dict):
+                        _msg = f"[ENV] Key [{_key}], 'env' attribute section is not a dict"
+                        logger.warning(_msg)
+                        _resolved = None
+                    else:
+                        self._env_dict[C.EnvType.ATTRIBUTE].append(_key)
+
 
 if __name__ == "__main__":
     loglevel = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)

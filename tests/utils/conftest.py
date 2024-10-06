@@ -11,25 +11,26 @@ from util import constants as C
 from util.utils import Utils
 from util.abstract_enum import AbstractEnum
 from util.persistence import Persistence
+from util.config_env import Environment
 from demo.demo_config import create_demo_config
 from enum import Enum
 
 ### [1] Fixtures for File Analyzer
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def fixture_testpath()->Path:
     """ Sample Path """
     p_testpath = str(C.PATH_ROOT.joinpath("test_data","test_path"))
     return p_testpath
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def fixture_testpath_withspace(fixture_testpath)->Path:
     """ Sample Path """
     
     p_testpath = str(Path(fixture_testpath).joinpath("path with space"))
     return p_testpath
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def fixture_win_paths(fixture_testpath,fixture_testpath_withspace)->list:
     """ fixture contianing several path combinations for windows """
     out = []
@@ -42,7 +43,7 @@ def fixture_win_paths(fixture_testpath,fixture_testpath_withspace)->list:
     out.append("..\\")
     return out
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def fixture_unc_paths(fixture_win_paths)->list:
     """ fixture contianing several path combinations for unc """    
     out = []
@@ -51,7 +52,7 @@ def fixture_unc_paths(fixture_win_paths)->list:
         out.append(_unc)
     return out
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def fixture_paths(fixture_win_paths,fixture_unc_paths)->list:
     """ fixture contianing several path combinations for unc and win """    
     out = deepcopy(fixture_win_paths)
@@ -231,3 +232,10 @@ def fixture_sample_enum()->AbstractEnum:
         TESTNAME3 = "testvalue3"
 
     return sample_enum
+
+@pytest.fixture(scope="module")
+def fixture_environment():
+    """ instanciate the Environment class """
+    _f_sample_config = create_demo_config()
+    _environment = Environment(_f_sample_config)
+    return _environment

@@ -31,7 +31,7 @@ def test_config_get_groups(fixture_sample_config_json):
     assert len(_groups) == 2
 
 def test_validate_commands(fixture_sample_config_json):
-    """ test the command pattern valiudations """
+    """ test the command pattern validations """
 
     config_env = ConfigEnv(fixture_sample_config_json)
     _config_keys = config_env._config_keys
@@ -40,7 +40,7 @@ def test_validate_commands(fixture_sample_config_json):
     _wrong_keys = []
     for _config_key in _config_keys:
         _config = config_env._config[_config_key]
-        _status = C.ConfigStatus(_config.get(C.ConfigAttribute.STATUS.name))
+        _status = C.ConfigStatus(_config.get(C.ConfigAttribute.STATUS.value))
         if _status is C.ConfigStatus.VALID:
             _valid_keys.append(_config_key)
         elif _status is C.ConfigStatus.INITIAL:
