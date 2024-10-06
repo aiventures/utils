@@ -921,20 +921,13 @@ class Environment():
         # 1. check if there is a key name and whether it needs to be mapped to the CONFIG
         _env_key = _env_info.get(C.ConfigAttribute.KEY.value)
         if _env_key is None:
+            # save config key as env key
             _env_key = key
+            _env_info[C.ConfigAttribute.KEY.value] = _env_key
 
-        # 2. check which env types do apply for this key
-        _env_types = _env_info.get(C.ConfigAttribute.ENV_TYPES.value,[C.EnvType.INTERNAL.value])
-        for _env_type in _env_types:
-            if not _env_type in C.ENV_TYPES:
-                _msg = f"[ENV] Key [{_env_key}/{key}] , invalid env type [{_env_type}], allowed {C.ENV_TYPES}"
-                logger.warning(_msg)
-                _resolved = None
-                continue
-            self._env_dict[C.EnvType(_env_type)].append(_env_key)
-            self._all_env_keys.append(_env_key)
+        self._env_key_map[_env_key]=key
 
-        # 3. check whether there is a value / needs to be dereferenced
+        # 2. check whether there is a value / needs to be dereferenced
         _value = _env_info.get(C.ConfigAttribute.VALUE.value)
         _ref_value = None
         if _value is None:
@@ -962,7 +955,7 @@ class Environment():
                 _env_info[C.ConfigAttribute.ORIGINAL.value] = _value
                 _env_info[C.ConfigAttribute.VALUE.value] = _ref_value
 
-        # 4. if there is a value and a type field, check whether it conforms to this type
+        # 3. if there is a value and a type field, check whether it conforms to this type
         _type = _env_info.get(C.ConfigAttribute.TYPE.value)
         if _type is not None:
             _check_value = _value
@@ -973,10 +966,22 @@ class Environment():
                 logger.warning(_msg)
                 _resolved = None
 
+        # 4. check whether env types do apply for this key
+        if _resolved is True:
+            _env_types = _env_info.get(C.ConfigAttribute.ENV_TYPES.value,[C.EnvType.INTERNAL.value])
+            for _env_type in _env_types:
+                if not _env_type in C.ENV_TYPES:
+                    _msg = f"[ENV] Key [{_env_key}/{key}] , invalid env type [{_env_type}], allowed {C.ENV_TYPES}"
+                    logger.warning(_msg)
+                    _resolved = None
+                    continue
+            if _resolved is True:
+                for _env_type in _env_types:
+                    self._env_dict[C.EnvType(_env_type)].append(_env_key)
+                    self._all_env_keys.append(_env_key)
+
         if _resolved is True:
             self._config_env.set_status(key,True)
-            if not key == _env_key:
-                self._env_key_map[_env_key]=key
             self._all_env_keys.append(_env_key)
             self._all_env_keys.append(key)
         else:
@@ -997,18 +1002,30 @@ class Environment():
         """
         # internally use the _config_key
         _env_key = key
-        _config_key = self.config_key(key)
-        out = None
 
-        if _config_key in self._env_dict[C.EnvType.INVALID]:
-            _msg = f"[ENV] [{key}/{_config_key}] is invalid"
+        if _env_key in self._env_dict[C.EnvType.INVALID]:
+            _msg = f"[ENV] [{_env_key}] is invalid"
             logger.warning(_msg)
             return None
 
+        # only pass the keys from the
+
+        _config_key = self.config_key(key)
+        out = None
+
         # reference data
-        _config = self._config_env.get_config_by_key(_config_key)
+        _config = self._config_env.get_config_by_key(key)
         if _config is None:
             return
+
+        # for the case of key dependent data return env section
+        if key in self._env_dict[C.EnvType.ATTRIBUTE]:
+            _env_info = _config.get(C.ConfigAttribute.ENV.value)
+            if _env_info is None:
+                _msg =  f"[ENV] [{key}] has no env section"
+                logger.warning(_msg)
+            return _env_info
+
         _value = _config.get(C.ConfigAttribute.VALUE.value)
 
         if as_dict is True:
@@ -1026,7 +1043,7 @@ class Environment():
             }
         else:
             out = _value
-        
+
         return out
 
     def config_key(self,env_key:str):
@@ -1035,6 +1052,7 @@ class Environment():
             _msg = f"[ENV] Key [{env_key}] is not an environment key"
             logger.warning(_msg)
             return None
+
         try:
             return self._env_key_map[env_key]
         except KeyError:

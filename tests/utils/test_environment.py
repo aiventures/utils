@@ -38,6 +38,7 @@ def test_environment(fixture_environment):
         pytest.param("E_SAMPLE_WITHKEY", id="E_SAMPLE_WITHKEY Value with a key"),
         pytest.param("E_SAMPLE_ALL_TYPES", id="E_SAMPLE_ALL_TYPES Environemnt for all env types"),
         pytest.param("E_SAMPLE_FILEREF", id="E_SAMPLE_FILEREF Env with a file reference"),
+        pytest.param("D_DEPOTSTAMM", id="D_DEPOTSTAMM Non Env Config with ENV Attribute "),
     ],
 )
 def test_get_config_environments(fixture_environment,env_key):
@@ -54,6 +55,8 @@ def test_get_config_environments(fixture_environment,env_key):
         bracket_expressions = re.findall(C.REGEX_BRACKET_CONTENT,value)        
         assert len(bracket_expressions) == 0    
         assert isinstance(value_dict,dict)
+    elif env_key.startswith("D_"):
+        assert isinstance(value,dict)
     else:
         assert isinstance(value_dict,dict)
         _env_key = value_dict.get(C.ConfigAttribute.KEY.value)
