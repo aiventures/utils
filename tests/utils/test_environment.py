@@ -3,6 +3,7 @@
 import os
 import logging
 import pytest
+# import inspect
 # from unittest.mock import MagicMock
 from copy import deepcopy
 import re
@@ -45,23 +46,56 @@ def test_get_config_environments(fixture_environment,env_key):
     """ testing parsing of some environments """
     _environment = fixture_environment
     value = _environment.env_from_config(env_key)
-    value_dict = _environment.env_from_config(env_key,as_dict=True)
+    value_dict = _environment.env_from_config(env_key,info=True)
 
-    # some basic checks 
+    # some basic checks
     if "WRONG" in env_key.upper():
         assert value == None
     elif "REF" in env_key.upper() or "WHERE" in env_key.upper():
-        # assert any references are resolved 
-        bracket_expressions = re.findall(C.REGEX_BRACKET_CONTENT,value)        
-        assert len(bracket_expressions) == 0    
+        # assert any references are resolved
+        bracket_expressions = re.findall(C.REGEX_BRACKET_CONTENT,value)
+        assert len(bracket_expressions) == 0
         assert isinstance(value_dict,dict)
     elif env_key.startswith("D_"):
         assert isinstance(value,dict)
     else:
         assert isinstance(value_dict,dict)
         _env_key = value_dict.get(C.ConfigAttribute.KEY.value)
-        _config_key = value_dict.get(C.ConfigAttribute.CONFIG_KEY.value)        
-        _config = _environment._config_env.get_config_by_key(_config_key)        
+        _config_key = value_dict.get(C.ConfigAttribute.CONFIG_KEY.value)
+        _config = _environment._config_env.get_config_by_key(_config_key)
         if _config_key is not None and _env_key != _config_key :
             assert _config.get(C.ConfigAttribute.KEY.value) == _env_key
     pass
+
+@pytest.mark.parametrize("env_type",C.ENV_TYPES)
+def test_get_envs_by_env_type(fixture_environment,env_type):
+    """ gets the env keys by type """
+    # getting a docstring
+    # test = inspect.getdoc(Environment._resolve_env)
+
+    _environment = fixture_environment
+    _envs = _environment.get_envs_by_type(env_type)
+    assert isinstance(_envs,list)
+    _envs_dict = _environment.get_envs_by_type(env_type,True)
+    assert isinstance(_envs_dict,dict)
+    # get the corresponding env output by type
+    _env_output = _environment.get_env_formatted(env_type)
+    assert isinstance(_env_output,dict)
+    pass
+
+def test_set_environment(fixture_environment):
+    """ check setting of environment """
+    fixture_environment.set_environment(clear_env=True)
+    # set environmment
+    fixture_environment.set_environment()
+    _env_dict = fixture_environment.get_envs_by_type(C.EnvType.OS_ENVIRON,info=True)
+    for _env_key,_info in _env_dict.items():
+        _value = _info.get(C.ConfigAttribute.VALUE.value)
+        _env_value = os.environ.get(_env_key)
+        assert _value == _env_value
+    # clear environment
+    fixture_environment.set_environment(clear_env=True)
+    for _env_key,_ in _env_dict.items():
+        _env_value = os.environ.get(_env_key)
+        assert _env_value is None
+

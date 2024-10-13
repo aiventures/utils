@@ -26,6 +26,7 @@ def config_key(func):
     """ decorator to check for existence of a key in configuration """
     @wraps(func)
     def func_wrapper(self,key,*args,**kwargs):
+        _has_key = True
         if not isinstance(key,str):
             _msg = "[CONFIG] No valid key was passed"
             logger.warning(_msg)
@@ -37,6 +38,15 @@ def config_key(func):
             return None
         _config = self._config.get(key)
         if _config is None:
+            # case insensitive search
+            _keys = [k for k in self._config_keys if k.lower() == key.lower()]
+            if len(_keys) == 0:
+                _has_key = False
+            else:
+                _config = self._config.get(_keys[0])
+                if not _config:
+                    _has_key = False
+        if _has_key is False:
             _msg = f"[CONFIG] There is no configuration with key [{key}]"
             logger.warning(_msg)
             return None
@@ -302,6 +312,7 @@ class ConfigEnv():
            that all commands could be parsed
         """
         # first check if the executable is there
+        cmd_out = ""
         _cmd = self.get_ref(key)
         if _cmd is None:
             _msg = f"[CONFIG] Couldn't find executable for key [{key}], can't parse"
@@ -475,6 +486,7 @@ class ConfigEnv():
         """
 
         _config = self._config.get(key)
+        _config_key = None
 
         _config_type = C.ConfigKey.get_configtype(key)
         if _config_type:
@@ -566,6 +578,7 @@ class ConfigEnv():
         _used_params = []
         _param_names = []
         for _command,_command_info in _commands.items():
+            _command_str = None
             if isinstance(_command_info,str):
                 _command_str = _command_info
             elif isinstance(_command_info,dict):
@@ -806,6 +819,54 @@ class ConfigEnv():
         logger.debug(f"[ConfigEnv] Key [{key}], set path ref to [{_config[C.ConfigAttribute.REFERENCE.value]}]")
         return True
 
+    def get_file_ref(self,ref:str,exists:bool=False,work_path:str=None)->str:
+        """ gets either a path object or an object from the configuration
+            if the exists flag is set to true only existing path objects will be returned
+        """
+        _cwd = os.getcwd()
+        if work_path is None:
+            _work_path = _cwd
+        else:
+            _work_path = work_path
+        os.chdir(_work_path)
+        _object_path = None
+        # 1. if it's a real file system object return it
+        _path = Path(ref)
+        if _path.is_file() or _path.is_dir():
+            os.chdir(_cwd)
+            return str(os.path.abspath(_path))
+
+        # 2. check if it's a config key (apply case insensitive search)
+        _keys = [k for k in self._config_keys if k.lower() == ref.lower()]
+        if len(_keys) == 1:
+            _object_path =  self.get_ref(_keys[0])
+            if _object_path is not None:
+                _object_path =  os.path.abspath(_object_path)
+            os.chdir(_cwd)
+            if exists and _object_path:
+                if os.path.isfile(_object_path) or os.path.isdir(_object_path):
+                    return _object_path
+                else:
+                    _msg = f"[ConfigEnv] Ref [{ref}]:[{_object_path}] is not representing a real file object"
+                    logger.warning(_msg)
+                    return None
+            else:
+                return _object_path
+
+        # 3. try to assemble a path / parent object needs to be a valid object
+        os.chdir(_cwd)
+        _parent = _path.parent
+        if not ( _parent.is_file() or _parent.is_dir() ):
+            _msg = f"[ConfigEnv] Ref [{ref}], Parent [{str(_parent)}] is not a file object"
+            logger.warning(_msg)
+            return None
+
+        # 4. depending on return check return a fictive path or none
+        if exists:
+            return None # file ref is not existing return none
+        else:
+            return str(_path.absolute())
+
     @config_key
     def get_ref(self,key:str)->str:
         """ returns the constructed reference from Configuration """
@@ -899,6 +960,7 @@ class Environment():
         _env_dict[C.EnvType.ATTRIBUTE]=[]
         _env_dict[C.EnvType.INTERNAL]=[]
         _env_dict[C.EnvType.ENV_FILE]=[]
+        _env_dict[C.EnvType.BAT]=[]
         _env_dict[C.EnvType.OS_ENVIRON]=[]
         _env_dict[C.EnvType.KEY_FILE]=[]
         _env_dict[C.EnvType.INVALID]=[]
@@ -995,7 +1057,7 @@ class Environment():
 
         return _resolved
 
-    def env_from_config(self,key:str,as_dict:bool=False)->any:
+    def env_from_config(self,key:str,info:bool=False)->any:
         """ returns the configuration value from the program
             optionally as config dict as well
             Returns None, if not configured
@@ -1014,7 +1076,7 @@ class Environment():
         out = None
 
         # reference data
-        _config = self._config_env.get_config_by_key(key)
+        _config = self._config_env.get_config_by_key(_config_key)
         if _config is None:
             return
 
@@ -1028,7 +1090,7 @@ class Environment():
 
         _value = _config.get(C.ConfigAttribute.VALUE.value)
 
-        if as_dict is True:
+        if info is True:
             # get the key from config (might be differing from input)
             _env_key = _config.get(C.ConfigAttribute.KEY.value)
 
@@ -1049,20 +1111,73 @@ class Environment():
     def config_key(self,env_key:str):
         """ returns the mapped config env key or key itself if there is no config env_key"""
         if not env_key in self._all_env_keys:
+            # check if this is an attribute key
+            if env_key in self._env_dict.get(C.EnvType.ATTRIBUTE):
+                return env_key
             _msg = f"[ENV] Key [{env_key}] is not an environment key"
             logger.warning(_msg)
             return None
-
         try:
             return self._env_key_map[env_key]
         except KeyError:
             return env_key
 
-    def env(self,key:str)->any:
-        """ returns the env value from various sources according to retrieval order """
-        # TODO
+    def get_envs_by_type(self,env_type:str|C.EnvType,info:bool=False)->dict:
+        """ gets the configuration by EnvType type, returns dict with information
+            if info is set the metadata will be returned as well
+        """
+        _env_type = env_type
+        if isinstance(env_type,str):
+            _env_type = C.EnvType(env_type)
+        _env_keys = list(self._env_key_map.keys())
+        _env_keys_by_type = self._env_dict.get(_env_type,[])
+        _env_keys_by_type = [e for e in _env_keys_by_type if e in _env_keys]
+        if info is False:
+            return _env_keys_by_type
+        # get the meta information as dict
+        out = {}
+        for _env_key in _env_keys_by_type:
+            _out = self.env_from_config(_env_key,True)
+            if _out is not None:
+                out[_env_key] = _out
+        return out
 
-        return None
+    def set_environment(self,clear_env:bool=False)->None:
+        """ sets os environment according to configured environment
+            alternatively resets the env variable set in configuration
+        """
+        _env_dict = self.get_envs_by_type(C.EnvType.OS_ENVIRON,info=True)
+        for _,_info in _env_dict.items():
+            _key = _info.get(C.ConfigAttribute.KEY.value)
+            _value = _info.get(C.ConfigAttribute.VALUE.value)
+            if _key:
+                if clear_env:
+                    os.environ.pop(_key, None)
+                    continue
+                if _value:
+                    logger.debug(f"[ENV] Set Environment [{_key}]: [{_value}]")
+                    os.environ[_key] = _value
+                else:
+                    _config_key =  _info.get(C.ConfigAttribute.CONFIG_KEY.value)
+                    logger.warning(f"[ENV] Can't Set Environment for config key/key/value [{_config_key}/{_key}]:[{_value}]")
+
+    def get_env_formatted(self,env_type:str|C.EnvType)->dict:
+        """ returns environment in corresponding output format """
+        _env_type = env_type
+        if isinstance(env_type,str):
+            _env_type = C.EnvType(env_type)
+
+        out = {}
+        _env_dict = self.get_envs_by_type(env_type,info=True)
+        for _key,_info in _env_dict.items():
+            _value = _info.get(C.ConfigAttribute.VALUE.value)
+            if env_type == C.EnvType.KEY_FILE.value:
+                out[_key] = f"{_key}={_value}"
+            elif env_type == C.EnvType.BAT.value:
+                out[_key] = f'SET "{_key}={_value}"'
+            else:
+                out[_key] = _value
+        return out
 
     def _get_environment(self):
         """ collect environment keys """

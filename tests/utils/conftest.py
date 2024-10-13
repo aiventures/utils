@@ -12,6 +12,7 @@ from util.utils import Utils
 from util.abstract_enum import AbstractEnum
 from util.persistence import Persistence
 from util.config_env import Environment
+from util.config_env import ConfigEnv
 from demo.demo_config import create_demo_config
 from enum import Enum
 
@@ -184,6 +185,24 @@ def fixture_ruledict_file_content_all_rules(fixture_ruledict_file_content):
     file_rule2[C.RULE_NAME] = "testrule2_file_content_sum" # rule name
     return [file_rule,file_rule2]
 
+@pytest.fixture(scope="module")
+def fixture_set_vars_template()->Path:
+    """ Sample Path to bat template """
+    f_vars_template = C.PATH_ROOT.joinpath("resources","set_vars_template.bat")
+    return f_vars_template
+
+@pytest.fixture(scope="module")
+def fixture_set_vars()->Path:
+    """ Sample Path to created path """
+    f_vars_template = C.PATH_ROOT.joinpath("resources","set_vars.bat")
+    return f_vars_template
+
+@pytest.fixture(scope="module")
+def fixture_bat_testpath()->Path:
+    """ Sample Path """
+    p_bat_testpath = str(C.PATH_ROOT.joinpath("test_data","bat"))
+    return p_bat_testpath
+
 ### [2] Fixtures for Config Env
 
 @pytest.fixture
@@ -239,3 +258,10 @@ def fixture_environment():
     _f_sample_config = create_demo_config()
     _environment = Environment(_f_sample_config)
     return _environment
+
+@pytest.fixture(scope="module")
+def fixture_config_env():
+    """ instanciate the Environment Config class """
+    _f_config = create_demo_config()
+    _config_env = ConfigEnv(_f_config)
+    return _config_env

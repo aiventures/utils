@@ -33,13 +33,13 @@
     "E_SAMPLE_ALL_TYPES":  {"d": "Env Example for environemnt for all env types",
                            "k": "key_sample_alltypes",
                            "v": "value_sample_with_all_types",
-                           "et": ["internal","os_environ","env_file","key_file"]
+                           "et": ["internal","os_environ","env_file","key_file","bat"]
                            },
      "E_SAMPLE_FILEREF":  {"d": "Env Example with a file reference",
                            "p": "[CWD]",
                            "k": "key_sample_fileref",
                            "v": "value_sample_with_all_types",
-                           "et": ["internal","os_environ","env_file","key_file"]
+                           "et": ["internal","os_environ","env_file","key_file","bat"]
                            },                                                     
     "W_PYTHON":            {"d":"(W)here Python, tries to get the Python command usually the VENV Python using where on OS level"},
     "W_GIT_234":           {"d":"(W)here Git, other vars are used to store an env file in ff format. The _CWD_ is a shortcut to current path",

@@ -342,6 +342,8 @@ class EnvType(AbstractEnum):
     ENV_FILE = "env_file"    
     # keyfile a file to be stored with value in a file and name of file = variable name
     KEY_FILE = "key_file"
+    # environment to be stored in an bat file
+    BAT = "bat"
     # invalid
     INVALID = "invalid"
 
