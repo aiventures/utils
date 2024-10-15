@@ -99,3 +99,12 @@ def test_set_environment(fixture_environment):
         _env_value = os.environ.get(_env_key)
         assert _env_value is None
 
+def test_create_set_vars_bat(fixture_environment):
+    """ check setting of environment """
+    # create an env file in home directory 
+    if not C.PATH_HOME.is_dir():
+        pytest.skip(f"Path in HOME [{str(C.PATH_HOME)}] doesn't exist")
+    
+    f_ref = fixture_environment.create_set_vars_bat()
+    assert os.path.isfile(f_ref),"SET Vars file in HOME path could not be created"
+

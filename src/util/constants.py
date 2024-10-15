@@ -25,6 +25,9 @@ EXAMPLE = "example"
 # SUFFIX FOR CSV EXPORTS TO CREATE A DATE
 DATEXLS = "_N"
 INVALID = "INVALID"
+F_BAT_SET_VARS="bat_set_vars.bat"
+F_BAT_SET_VARS_TEMPLATE="bat_set_vars_template.bat"
+
 
 # sdasving environment to files 
 KEY_FILE_SUFFIX = "key"
@@ -32,10 +35,12 @@ ENV_FILE_SUFFIX = "env"
 
 ## PATHS and FILES
 
-# default location of config file in home
-FILE_CONFIGFILE_HOME=str(Path.home().joinpath(".cli_client","cli_config.json"))
 # Project Paths
 PATH_ROOT=Path(__file__).parent.parent.parent.absolute()
+PATH_RESOURCE=PATH_ROOT.joinpath("resources")
+PATH_HOME=Path.home().joinpath(".cli_client")
+# default location of config file in home
+FILE_CONFIGFILE_HOME=str(PATH_HOME.joinpath("cli_config.json"))
 
 # bootstrap File Name
 class ConfigBootstrap(AbstractEnum):

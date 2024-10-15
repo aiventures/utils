@@ -9,6 +9,7 @@ from functools import wraps
 from pathlib import Path
 from rich import print_json
 from rich import print as rprint
+from datetime import datetime as DateTime
 
 # TODO REPLACE BY UNIT TESTS
 # when doing tests add this to reference python path
@@ -868,15 +869,18 @@ class ConfigEnv():
             return str(_path.absolute())
 
     @config_key
-    def get_ref(self,key:str)->str:
-        """ returns the constructed reference from Configuration """
-
+    def get_ref(self,key:str,fallback_value:bool=False)->str:
+        """ returns the constructed reference from Configuration
+            if fallback_value is set it will be tried to get the value field
+        """
         # treat special case with where variables where the excutable is stored
         # in the where attribute
         if C.ConfigKey.get_configtype(key) == C.ConfigKey.WHERE:
             _ref = self._config.get(key,{}).get(C.ConfigAttribute.WHERE.value)
         else:
             _ref = self._config.get(key,{}).get(C.ConfigAttribute.REFERENCE.value)
+        if _ref is None and fallback_value is True:
+            _ref = self._config.get(key,{}).get(C.ConfigAttribute.VALUE.value)
         if _ref is None:
             logger.warning(f"[CONFIG] Key [{key}] is invalid")
         return _ref
@@ -944,15 +948,18 @@ class ConfigEnv():
 class Environment():
     """ Handling environment values """
 
-    def __init__(self,config:str|ConfigEnv) -> None:
+    def __init__(self,config:str|ConfigEnv|None) -> None:
         """ initialize Environment by handing over config or path to config file """
         self._config_env = {}
         if isinstance(config,str) and os.path.isfile(config):
             self._config_env = ConfigEnv(config)
         elif isinstance(config,ConfigEnv):
             self._config_env = config
+        elif config is None:
+            logger.info("[ENV] No config was supplied, trying to bootstrap environment")
+            self._config_env = ConfigEnv()
         else:
-            logger.warning("No configuration or path to configuration file was supplied")
+            logger.warning("[ENV] No valid configuration or path to configuration file was supplied")
         self._env_dict = {}
         self._all_env_keys = []
         # initialize the environment
@@ -972,6 +979,10 @@ class Environment():
         # clean up duplicates
         self._all_env_keys = list(set(self._all_env_keys))
 
+    @property
+    def config_env(self):
+        """ returns the embedded env_config """
+        return self._config_env
 
     def _resolve_env(self,key:str)->bool|None:
         """ resolves a single environment key
@@ -1108,6 +1119,41 @@ class Environment():
 
         return out
 
+    def create_set_vars_bat(self,f_out:str=None)->str:
+        """ creates a set vars batch script file
+            if not storage location will be given, it will be stored in the personal folder by default
+        """
+        if f_out is None:
+            f_out = str(C.PATH_HOME.joinpath(C.F_BAT_SET_VARS))
+        else:
+            f_out = self._config_env.get_file_ref(f_out)
+        if f_out is None:
+            _msg = f"[ENV] Couldn't resolve a valid path for [{f_out}], check entry"
+            logger.warning(_msg)
+            return None
+        _bat_template = Persistence.read_txt_file(C.PATH_RESOURCE.joinpath("bat",C.F_BAT_SET_VARS_TEMPLATE))
+        _bat_keys = self.get_envs_by_type(C.EnvType.BAT)
+        _bat_set = []
+        _bat_echo = []
+        for _bat_key in _bat_keys:
+            # dereference the environment key
+            _config_key = self.config_key(_bat_key)
+            # get the ref value or the value from config
+            _ref = self._config_env.get_ref(_config_key,fallback_value=True)
+            if _ref is None:
+                continue
+            _bat_set.append(f'SET "{_bat_key}={_ref}"')
+            _bat_echo.append(f'ECHO "{_bat_key}={_ref}"')
+        _timestamp = _date_s = DateTime.now().strftime(C.DATEFORMAT_DD_MM_JJJJ_HH_MM_SS)
+        _comment = f"rem created using config_env.py on {_timestamp}"
+        out = "\n".join(_bat_template)
+        out = out.replace("__COMMENT__",_comment)
+        out = out.replace("__SET__","\n".join(_bat_set))
+        out = out.replace("__ECHO__","\n".join(_bat_echo))
+        logger.info("[ENV] Saving env var file to [{f_out}]")
+        Persistence.save_txt_file(f_out,out)
+        return f_out
+
     def config_key(self,env_key:str):
         """ returns the mapped config env key or key itself if there is no config env_key"""
         if not env_key in self._all_env_keys:
@@ -1183,6 +1229,7 @@ class Environment():
         """ collect environment keys """
         _config = self._config_env.config
 
+
         for _key,_config_info in _config.items():
             _config_type = C.ConfigKey.get_configtype(_key)
             _resolved = True
@@ -1198,7 +1245,13 @@ class Environment():
                         _resolved = None
                     else:
                         self._env_dict[C.EnvType.ATTRIBUTE].append(_key)
-
+                # check if there is a type section types
+                _config_env_types = _config_info.get(C.ConfigAttribute.ENV_TYPES.value,[])
+                for _config_env_type in _config_env_types:
+                    if not _config_env_type in C.ENV_TYPES:
+                        continue
+                    _env_type = C.EnvType(_config_env_type)
+                    self._env_dict[_env_type].append(_key)
 
 if __name__ == "__main__":
     loglevel = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)

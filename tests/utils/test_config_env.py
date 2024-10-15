@@ -105,7 +105,7 @@ def test_parse_commands(fixture_sample_config_json,cmd,cmd_params,mocker):
         _contains = verify_debug_messages("dereferenced to",spy_debug.call_args_list)
         assert _contains is True,"A.02 CMD Parsing with a Config Reference did fail"
 
-def test_get_testcases_get_ref():
+def create_testcases_get_ref()->list:
     """ returns a list of pytest params as input for the test_get_ref unit test """
     out = []
     # get valid refs to real paths
@@ -140,7 +140,7 @@ def test_get_testcases_get_ref():
     out.append(pytest.param(False,False, str(_f_filename_only) ,id="C.12 filename only"))
     return out
 
-@pytest.mark.parametrize("valid_config,ref_exists,file_ref",test_get_testcases_get_ref())
+@pytest.mark.parametrize("valid_config,ref_exists,file_ref",create_testcases_get_ref())
 def test_get_ref(fixture_config_env,valid_config,ref_exists,file_ref):
     """ testing the get ref method """
     _config_env = fixture_config_env

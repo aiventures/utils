@@ -50,6 +50,7 @@
      "W_NOTEPAD":           {"d":"(W)here Notepad",
                             "k":"notepad",
                             "p":"[CWD]",
+                            "et": ["internal","bat"],
                             "f":"test.env",
                             "ff":"win"},
     "CMD_CYGPATH":         {"p":"[P_GIT]",

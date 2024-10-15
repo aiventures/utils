@@ -92,6 +92,7 @@ class ColorMapper():
 
     def show_colors(self,num_colums:int=8,colors:list=None,console:Console=None)->None:
         """ displays all colors, you also my use filter strings """
+        _color_list = []
         if colors is None:
             colors = []
 
