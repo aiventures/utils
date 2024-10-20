@@ -26,6 +26,12 @@ def fixture_testpath()->Path:
     return p_testpath
 
 @pytest.fixture(scope="module")
+def fixture_battest_path()->str:
+    """ Sample Path """
+    p_testpath = str(C.PATH_ROOT.joinpath("test_data","bat"))
+    return p_testpath
+
+@pytest.fixture(scope="module")
 def fixture_testpath_withspace(fixture_testpath)->Path:
     """ Sample Path """
     

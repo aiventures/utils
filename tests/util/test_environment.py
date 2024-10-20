@@ -3,6 +3,7 @@
 import os
 import logging
 import pytest
+from pathlib import Path
 # import inspect
 # from unittest.mock import MagicMock
 from copy import deepcopy
@@ -99,12 +100,14 @@ def test_set_environment(fixture_environment):
         _env_value = os.environ.get(_env_key)
         assert _env_value is None
 
-def test_create_set_vars_bat(fixture_environment):
+def test_create_set_vars_bat(fixture_battest_path,fixture_environment):
     """ check setting of environment """
-    # create an env file in home directory 
-    if not C.PATH_HOME.is_dir():
-        pytest.skip(f"Path in HOME [{str(C.PATH_HOME)}] doesn't exist")
+    # create a test env file
+    _f_bat_set_vars=Path(fixture_battest_path).joinpath("test_bat_set_vars.bat")
+    # clean up previous test file
+    if os.path.isfile(_f_bat_set_vars):
+        os.remove(_f_bat_set_vars)
     
-    f_ref = fixture_environment.create_env_vars_bat()
+    f_ref = fixture_environment.create_env_vars_bat(_f_bat_set_vars)
     assert os.path.isfile(f_ref),"SET Vars file in HOME path could not be created"
 

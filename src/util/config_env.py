@@ -1145,6 +1145,8 @@ class Environment():
         if f_out is None:
             f_out = str(C.PATH_HOME.joinpath(C.F_BAT_SET_VARS))
         else:
+            if not isinstance(f_out,str):
+                f_out = str(f_out)
             f_out = self._config_env.get_file_ref(f_out)
         if f_out is None:
             _msg = f"[ENV] Couldn't resolve a valid path for [{f_out}], check entry"

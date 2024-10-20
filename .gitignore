@@ -10,6 +10,8 @@
 .vscode/
 config_env_sample.json
 playground/
+# ignore test bat files
+**/test_data/bat/*.bat
 # rich theme resources will be created 
 **/rich_themes/
 
