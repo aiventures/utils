@@ -1119,10 +1119,29 @@ class Environment():
 
         return out
 
-    def create_set_vars_bat(self,f_out:str=None)->str:
+    def create_env_vars_bat(self,f_out:str=None)->str:
+        """ creating a bat set env file based on Configuration Env """
+        _bat_vars = {}
+        _bat_keys = self.get_envs_by_type(C.EnvType.BAT)
+        for _bat_key in _bat_keys:
+            # dereference the environment key
+            _config_key = self.config_key(_bat_key)
+            # get the ref value or the value from config
+            _ref = self._config_env.get_ref(_config_key,fallback_value=True)
+            if _ref is None:
+                continue
+            _bat_vars[_bat_key]=_ref
+        f_return = self.create_set_vars_bat(_bat_vars,f_out)
+        return f_return
+
+    def create_set_vars_bat(self,bat_env_dict:dict=None,f_out:str=None,
+                            bat_set_list:list=None,bat_echo_list:list=None)->str:
         """ creates a set vars batch script file
             if not storage location will be given, it will be stored in the personal folder by default
         """
+        if bat_env_dict is None:
+            bat_env_dict = {}
+            
         if f_out is None:
             f_out = str(C.PATH_HOME.joinpath(C.F_BAT_SET_VARS))
         else:
@@ -1132,18 +1151,18 @@ class Environment():
             logger.warning(_msg)
             return None
         _bat_template = Persistence.read_txt_file(C.PATH_RESOURCE.joinpath("bat",C.F_BAT_SET_VARS_TEMPLATE))
-        _bat_keys = self.get_envs_by_type(C.EnvType.BAT)
+
+        _bat_keys = self.get_envs_by_type(C.EnvType.BAT)        
         _bat_set = []
+        if isinstance(bat_set_list,list):
+            _bat_set.extend(bat_set_list)
         _bat_echo = []
-        for _bat_key in _bat_keys:
-            # dereference the environment key
-            _config_key = self.config_key(_bat_key)
-            # get the ref value or the value from config
-            _ref = self._config_env.get_ref(_config_key,fallback_value=True)
-            if _ref is None:
-                continue
-            _bat_set.append(f'SET "{_bat_key}={_ref}"')
-            _bat_echo.append(f'ECHO "{_bat_key}={_ref}"')
+        if isinstance(bat_echo_list,list):
+            _bat_echo.extend(bat_echo_list)
+        for _bat_key,_bat_value in bat_env_dict.items():
+            _bat_set.append(f'SET "{_bat_key}={_bat_value}"')
+            _bat_echo.append(f'ECHO "{_bat_key}={_bat_value}"')            
+
         _timestamp = _date_s = DateTime.now().strftime(C.DATEFORMAT_DD_MM_JJJJ_HH_MM_SS)
         _comment = f"rem created using config_env.py on {_timestamp}"
         out = "\n".join(_bat_template)

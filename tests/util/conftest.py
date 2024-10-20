@@ -13,6 +13,7 @@ from util.abstract_enum import AbstractEnum
 from util.persistence import Persistence
 from util.config_env import Environment
 from util.config_env import ConfigEnv
+from util.bat_helper import BatHelper
 from demo.demo_config import create_demo_config
 from enum import Enum
 
@@ -253,14 +254,21 @@ def fixture_sample_enum()->AbstractEnum:
     return sample_enum
 
 @pytest.fixture(scope="module")
-def fixture_environment():
+def fixture_environment()->Environment:
     """ instanciate the Environment class """
     _f_sample_config = create_demo_config()
     _environment = Environment(_f_sample_config)
     return _environment
 
 @pytest.fixture(scope="module")
-def fixture_config_env():
+def fixture_bat_helper(fixture_environment)->BatHelper:
+    """ instanciate the Bat Helper class """
+    _f_config = fixture_environment.config_env._f_config
+    _bat_helper = BatHelper(_f_config)
+    return _bat_helper
+
+@pytest.fixture(scope="module")
+def fixture_config_env()->ConfigEnv:
     """ instanciate the Environment Config class """
     _f_config = create_demo_config()
     _config_env = ConfigEnv(_f_config)

@@ -28,7 +28,6 @@ INVALID = "INVALID"
 F_BAT_SET_VARS="bat_set_vars.bat"
 F_BAT_SET_VARS_TEMPLATE="bat_set_vars_template.bat"
 
-
 # sdasving environment to files 
 KEY_FILE_SUFFIX = "key"
 ENV_FILE_SUFFIX = "env"

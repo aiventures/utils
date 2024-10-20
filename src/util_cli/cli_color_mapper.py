@@ -14,6 +14,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.style import Style
 from rich_theme_manager import Theme, ThemeManager
+from copy import deepcopy
 
 # TODO MOVE THIS TO A CONFIG FILE
 from util import constants as C
@@ -51,12 +52,26 @@ class RichStyle(Enum):
     ITALIC = "italic"
     REVERSE = "reverse"
     STRIKE = "strike"
+    RESET = "reset"
 
     @staticmethod
     def values():
         """ returns list of values defined in Enum """
         return list(map(lambda c: c.value, RichStyle))
-
+    
+# MAP OF ESCAAPE CODES    
+# rgb colors are rgb codes in int 
+# https://en.wikipedia.org/wiki/ANSI_escape_code            
+ESC_MAP = {RichStyle.COLOR:"ESC[38;2;R;G;Bm",
+           RichStyle.BG_COLOR:"ESC[48;2;R;G;Bm",
+           RichStyle.BOLD:"ESC[22m",
+           RichStyle.UNDERLINE:"ESC[24m",
+           RichStyle.ITALIC:"ESC[23m",
+           RichStyle.REVERSE:"ESC[27m",
+           RichStyle.STRIKE:"ESC[29m",
+           RichStyle.RESET:"ESC[0m",
+           }
+    
 logger = logging.getLogger(__name__)
 
 # switch to 256 Colors as default
@@ -89,6 +104,12 @@ class ColorMapper():
             _to = min(_num_elems,_from+group_size)
             out.append(group_list[_from:_to])
         return out
+    
+
+    @property
+    def themes(self)->dict:
+        """ returns themes with color codes """
+        return self._read_themes()
 
     def show_colors(self,num_colums:int=8,colors:list=None,console:Console=None)->None:
         """ displays all colors, you also my use filter strings """
@@ -300,7 +321,7 @@ class ColorMapper():
     @property
     def theme(self):
         """ getter for theme """
-        return self._theme
+        return self._themes
 
     @theme.setter
     def theme(self, theme:str):
@@ -362,7 +383,7 @@ class ThemeConsole(ColorMapper):
         defined there (so we have two separate things here)
     """
 
-    def __init__(self, theme: str = THEME_DEFAULT,color_system:str="256",create_themes:bool=False) -> None:
+    def __init__(self, theme: str = None,color_system:str="256",create_themes:bool=False) -> None:
         """Constructor.
 
         Args:
@@ -371,6 +392,9 @@ class ThemeConsole(ColorMapper):
             create_themes (bool, optional): Create the Rich Themes definition files in /resources/rich_themes.
             Defaults to False (needs to be run at least once).
         """
+        if theme is None:
+            theme = THEME_DEFAULT
+
         super().__init__(theme)
         self._color_system = color_system
         # self._console = Console(color_system=color_system)
@@ -388,6 +412,41 @@ class ThemeConsole(ColorMapper):
         self._style_theme = None
         self._set_style_theme(theme)
 
+    def get_esc_codes(self)->dict:
+        """ returns the escape codes for the current theme """
+        out = {}
+        # get the color map and the styles
+        _color_map = self.theme.get(self._style_theme)
+        _styles = self.read_styles()        
+        for _style,_style_info_dict in _styles.items():
+            _out_esc=[]
+            for _style_key,_style_value in _style_info_dict.items():
+                try:
+                    _esc_code = ESC_MAP.get(RichStyle(_style_key))
+                except TypeError:
+                    logger.warning(f"[ThemeConsole] invalid style key [{_style_key}] in styles found")
+                    continue
+                # only evaluate keys that are part of the Rich Style enum
+                except ValueError:
+                    continue
+                # get the color code 
+                if "R;G;B" in _esc_code:
+                    _hex_value = _color_map.get(_style_value)
+                    if _hex_value is None:
+                        continue
+                    # convert to a rgb string
+                    _rgb = self.hex2rgb(_hex_value)
+                    _rgb = ";".join(map(str,_rgb))
+                    _esc_code = _esc_code.replace("R;G;B",_rgb)
+                    _out_esc.append(_esc_code)
+                elif _style_value is True:
+                    _out_esc.append(_esc_code)
+            _out_esc="".join(_out_esc)
+            out[_style] = _out_esc
+                
+        return out
+
+    
     def read_styles(self)->dict:
         """ reads the styles file is existent """
         styles_dict = {}
@@ -407,6 +466,9 @@ class ThemeConsole(ColorMapper):
         """ setting the style theme """
         if theme in self.themes:
             self._style_theme = theme
+        else:
+            logger.warning(f"[ThemeConsole] Invalid Theme [{theme}],using default (valid:{self.themes})")
+            self._style_theme = THEME_DEFAULT
 
     def preview_theme(self,theme:str=THEME_DEFAULT)->None:
         """ displays a theme """
@@ -422,6 +484,13 @@ class ThemeConsole(ColorMapper):
         """ show all availabkle themes """
         for _theme in self.themes:
             self.preview_theme(_theme)
+    
+    @property
+    def color_map(self):
+        """ get current color map for selected theme """
+        _color_map = deepcopy(self.theme.get(self._style_theme,{}))
+        _ = _color_map.pop("name", None)
+        return _color_map
 
     @property
     def themes(self):
