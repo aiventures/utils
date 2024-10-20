@@ -279,3 +279,9 @@ def fixture_config_env()->ConfigEnv:
     _f_config = create_demo_config()
     _config_env = ConfigEnv(_f_config)
     return _config_env
+
+@pytest.fixture(scope="module")
+def fixture_testfile_tablizer()->str:
+    """ Sample Path to tablizer file """
+    f_test_file = str(C.PATH_ROOT.joinpath("test_data","test_path","testfile_for_table.txt"))
+    return f_test_file

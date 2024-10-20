@@ -338,6 +338,9 @@ class Persistence():
     def read_txt_file(filepath,encoding='utf-8',comment_marker="# ",skip_blank_lines=True,strip_lines=True,with_line_nums:bool=False)->list:
         """ reads data as lines from file, optionally as dict with line numbers
         """
+        if not isinstance(filepath,str):
+            filepath = str(filepath)
+            
         if with_line_nums:
             lines = {}
         else:

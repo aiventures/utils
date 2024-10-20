@@ -1,0 +1,42 @@
+# This is to test the tablizer class 
+that allows to read txt files as input for tables 
+
+MARKER_NEW_ENTRY
+
+# some comment
+
+Curvare possunt oculos illius curvi marker_col1
+
+incoluit et manibus clara Haemoniosque marker_col2
+
+fugit primordia concipit aestus marker_col3
+nomine. Ille caeloque dissidet tibi ut sine marker_col4
+
+MARKER_NEW_ENTRY
+
+Lorem markdownum marker_col2
+sequi simul neque marker_col1
+Cyllene ubi, pressaeque secundo
+ament alta marker_col3
+vipereas sanguine. Montes meritis
+
+MARKER_NEW_ENTRY
+
+# no new stuff empty
+
+MARKER_NEW_ENTRY 
+
+i belong to line1 marks_a_new_entry_line
+anything else i belong to line1 
+
+i belong to line1
+
+i belong to line2 marks_a_new_entry_line
+
+anything else i belong to line2
+
+
+
+
+
+
