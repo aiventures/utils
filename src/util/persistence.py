@@ -166,27 +166,27 @@ class Persistence():
                 if root_path_only and _cur_path != _p_root:
                     continue
                 # check for path is there are criteria
-                _match = True
+                _passed = True
                 _p = str(_cur_path)
                 if _re_include_paths or _re_exclude_paths:
-                    _match = _passes(_p,_re_include_paths,_re_exclude_paths)
-                if _match is False:
+                    _passed = _passes(_p,_re_include_paths,_re_exclude_paths)
+                if _passed is False:
                     continue
                 _paths.append(_p)
                 _path_dict[_p]=[]
                 for _f in _files:
                     # check for file name matches
-                    _match = True
+                    _passed = True
                     if _re_include_files or _re_exclude_files:
-                        _match = _passes(_f,_re_include_files,_re_exclude_files)
-                    if _match is False:
+                        _passed = _passes(_f,_re_include_files,_re_exclude_files)
+                    if _passed is False:
                         continue
                     # check for absolute paths
                     _f_abspath = _cur_path.joinpath(_f)
                     _f_abs = str(_f_abspath)
                     if _re_include_abspaths or _re_exclude_abspaths:
-                        _match = _passes(str(_f_abspath),_re_include_abspaths,_re_exclude_abspaths)
-                    if _match is False:
+                        _passed = _passes(_f_abs,_re_include_abspaths,_re_exclude_abspaths)
+                    if _passed is False:
                         continue
                     _path_dict[_p].append(_f_abs)
                     _files.append(_f_abs)
