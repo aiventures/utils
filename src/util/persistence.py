@@ -3,6 +3,7 @@ import sys
 import os
 from pathlib import Path
 import logging
+import re
 from datetime import datetime as DateTime
 from util import constants as C
 
@@ -89,6 +90,120 @@ class Persistence():
             return None
         p = os.path.join(drive,*p_parts)
         return p
+
+    @staticmethod
+    def find(_p_root_paths:list|str=None,
+             include_abspaths:list|str=None,exclude_abspaths:list|str=None,
+             include_files:list|str=None,exclude_files:list|str=None,
+             include_paths:list|str=None,exclude_paths:list|str=None,
+             paths:bool=True,files:bool=True,as_dict:bool=True,
+             root_path_only:bool=False,
+             match_all:bool=True)->list|dict:
+        """ finds files and paths according to path names / a slightly slimmer version than the FileAnalyzer
+            regex can be used (differewntly for filename only, path only or abs path)
+            match all or anxy determines whethwer all or any crieteria need to match
+        """
+        def _is_match(file_info:str,reg_exprs:list|None):
+            """ checks if a file object should be added. if an item is None, then it is considered as ok """
+            if reg_exprs is None:
+                return True
+
+            if not isinstance(reg_exprs,list):
+                logger.warning("[Persistence] Not a list of regexes")
+                return False
+
+            is_match = []
+            for reg_expr in reg_exprs:
+                _match = True if len(reg_expr.findall(file_info))>0 else False
+                is_match.append(_match)
+
+            if match_all:
+                if len(is_match)>0 and all(is_match):
+                    is_match = True
+                else:
+                    is_match = False
+            else:
+                is_match = any(is_match)
+            return is_match
+
+        def _passes(file_info:str,include_exprs:list|None,exclude_exprs:list|None):
+            _matches_include = _is_match(file_info,include_exprs)
+            # only continue if evaluated to true and there are some exclude critera
+            if not isinstance(exclude_exprs,list):
+                return _matches_include
+            _matches_exclude = _is_match(file_info,exclude_exprs)
+            if _matches_exclude is True:
+                return False
+            else:
+                return _matches_include
+
+        _p_root_paths = [_p_root_paths] if isinstance(_p_root_paths,str) else _p_root_paths
+        _include_abspaths = [include_abspaths] if isinstance(include_abspaths,str) else include_abspaths
+        _exclude_abspaths = [exclude_abspaths] if isinstance(exclude_abspaths,str) else exclude_abspaths
+        _include_files = [include_files] if isinstance(include_files,str) else include_files
+        _exclude_files = [exclude_files] if isinstance(exclude_files,str) else exclude_files
+        _include_paths = [include_paths] if isinstance(include_paths,str) else include_paths
+        _exclude_paths = [exclude_paths] if isinstance(exclude_paths,str) else exclude_paths
+        _re_include_abspaths = [re.compile(_i) for _i in _include_abspaths] if isinstance(_include_abspaths,list) else None
+        _re_exclude_abspaths = [re.compile(_e) for _e in _exclude_abspaths] if isinstance(_exclude_abspaths,list) else None
+        _re_include_files = [re.compile(_i) for _i in _include_files] if isinstance(_include_files,list) else None
+        _re_exclude_files = [re.compile(_e) for _e in _exclude_files] if isinstance(_exclude_files,list) else None
+        _re_include_paths = [re.compile(_i) for _i in _include_paths] if isinstance(include_paths,list) else None
+        _re_exclude_paths = [re.compile(_e) for _e in _exclude_paths] if isinstance(_exclude_paths,list) else None
+
+        for _root_path in _p_root_paths:
+            logger.debug(f"[Persistence] Checking files and paths for [{_root_path}]")
+            if not os.path.isdir(_root_path):
+                logger.warning(f"[Persistence] Path [{_root_path}] doesn't exist")
+                continue
+            _p_root = Path(_root_path).absolute
+
+            _paths = []
+            _files = []
+            _path_dict = {}
+            for _subpath,_,_files in os.walk(_p_root):
+                _cur_path = Path(_subpath).absolute()
+                if root_path_only and _cur_path != _p_root:
+                    continue
+                # check for path is there are criteria
+                _match = True
+                _p = str(_cur_path)
+                if _re_include_paths or _re_exclude_paths:
+                    _match = _passes(_p,_re_include_paths,_re_exclude_paths)
+                if _match is False:
+                    continue
+                _paths.append(_p)
+                _path_dict[_p]=[]
+                for _f in _files:
+                    # check for file name matches
+                    _match = True
+                    if _re_include_files or _re_exclude_files:
+                        _match = _passes(_f,_re_include_files,_re_exclude_files)
+                    if _match is False:
+                        continue
+                    # check for absolute paths
+                    _f_abspath = _cur_path.joinpath(_f)
+                    _f_abs = str(_f_abspath)
+                    if _re_include_abspaths or _re_exclude_abspaths:
+                        _match = _passes(str(_f_abspath),_re_include_abspaths,_re_exclude_abspaths)
+                    if _match is False:
+                        continue
+                    _path_dict[_p].append(_f_abs)
+                    _files.append(_f_abs)
+
+        # either return dict or list of files
+        if as_dict:
+            return _path_dict
+        # depending on input return proper file objects
+        else:
+            if paths and files:
+                return (_paths,_files)
+            elif paths:
+                return _paths
+            elif files:
+                return _files
+            
+    # todo: copy and renamee
 
     @staticmethod
     def absolute_winpath(f:str,posix:bool=False,uri:bool=False,as_path:bool=False)->bool:
@@ -286,9 +401,9 @@ class Persistence():
     @staticmethod
     def dicts2csv(data_list:list,csv_sep:str=",",dec_separator:str=",",wrap_char:str=None,keys:list=None)->list:
         """ try to convert a list of dictionaries into csv format
-            - separator is given and 
+            - separator is given and
             - value can be enclosed in wrap_char
-            - keys to be transferred can also be controlled externally (to make sure a csv is 
+            - keys to be transferred can also be controlled externally (to make sure a csv is
               exported in case not all lines contain the same keys)
         """
         if isinstance(wrap_char,str) and len(wrap_char) == 0:
@@ -324,7 +439,7 @@ class Persistence():
                     v = v.replace(".",dec_separator)
                 else:
                     v = str(v)
-                
+
                 if csv_sep in v and wrap_char is None:
                     logger.warning(f"[Persistence] CSV Separator {v} found in {k}:{v}, will be replaced by _sep_")
                     v = v.replace(csv_sep,"_sep_")
@@ -340,7 +455,7 @@ class Persistence():
         """
         if not isinstance(filepath,str):
             filepath = str(filepath)
-            
+
         if with_line_nums:
             lines = {}
         else:

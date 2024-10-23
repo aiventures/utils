@@ -14,6 +14,7 @@ from util import constants as C
 from util.config_env import Environment
 from util_cli.cli_color_mapper import ThemeConsole
 from util_cli.cli_color_mapper import ESC_MAP,RichStyle
+from util.persistence import Persistence
 
 logger = logging.getLogger(__name__)
 
@@ -72,9 +73,24 @@ class BatHelper():
 
         return _f_out
     
+    def create_tmp_env_file(self,key:str,p:str=None,value:str=None)->str|None:
+        """ creates small environment file containing setting of an environment variable to a given path
+            returns path to created file
+        """
+        if value is None and self._environment is not None:
+            value = self._environment.config_env.get_ref(key)
+        if p is not None and not os.path.isdir(p):
+            logger.warning(f"[BatHelper] Path [{p}] is not a valid path, check entry")
+            return        
+        if p is None:
+            p = os.getcwd()
+        p = os.path.abspath(p)
+        f = os.path.join(p,"_tmp_"+key+".bat")
+        s = f'SET "{key}={value}"'
+        Persistence.save_txt_file(f,s)
+        return f
 
-
-
+    
 if __name__ == "__main__":
     loglevel = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',

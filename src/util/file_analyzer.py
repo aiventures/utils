@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 class FileSysObjectInfo():
     """ class to read os file and path info into a dictionary """
     def __init__(self,root_paths:list|str=None) -> None:
+        _root_paths = []
         self._root_paths = []
         self._filter_matcher = StringMatcher()
         if root_paths is None:
