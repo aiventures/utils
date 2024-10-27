@@ -83,7 +83,7 @@ def fixture_test_invalid_paths():
 @pytest.fixture
 def fixture_testfile(fixture_testpath)->Path:
     """ sample tesfile """
-    f_testfile = Path(os.path.join(fixture_testpath,"subpath1","file1.txt"))
+    f_testfile = Path(os.path.join(fixture_testpath,"subpath1","file3.txt"))
     return f_testfile
 
 @pytest.fixture

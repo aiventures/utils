@@ -96,9 +96,9 @@ class Persistence():
              include_abspaths:list|str=None,exclude_abspaths:list|str=None,
              include_files:list|str=None,exclude_files:list|str=None,
              include_paths:list|str=None,exclude_paths:list|str=None,
-             paths:bool=True,files:bool=True,as_dict:bool=True,
+             paths:bool=False,files:bool=True,as_dict:bool=False,
              root_path_only:bool=False,
-             match_all:bool=True)->list|dict:
+             match_all:bool=False,ignore_case:bool=True)->list|dict:
         """ finds files and paths according to path names / a slightly slimmer version than the FileAnalyzer
             regex can be used (differewntly for filename only, path only or abs path)
             match all or anxy determines whethwer all or any crieteria need to match
@@ -137,29 +137,39 @@ class Persistence():
             else:
                 return _matches_include
 
-        _p_root_paths = [_p_root_paths] if isinstance(_p_root_paths,str) else _p_root_paths
-        _include_abspaths = [include_abspaths] if isinstance(include_abspaths,str) else include_abspaths
-        _exclude_abspaths = [exclude_abspaths] if isinstance(exclude_abspaths,str) else exclude_abspaths
-        _include_files = [include_files] if isinstance(include_files,str) else include_files
-        _exclude_files = [exclude_files] if isinstance(exclude_files,str) else exclude_files
-        _include_paths = [include_paths] if isinstance(include_paths,str) else include_paths
-        _exclude_paths = [exclude_paths] if isinstance(exclude_paths,str) else exclude_paths
-        _re_include_abspaths = [re.compile(_i) for _i in _include_abspaths] if isinstance(_include_abspaths,list) else None
-        _re_exclude_abspaths = [re.compile(_e) for _e in _exclude_abspaths] if isinstance(_exclude_abspaths,list) else None
-        _re_include_files = [re.compile(_i) for _i in _include_files] if isinstance(_include_files,list) else None
-        _re_exclude_files = [re.compile(_e) for _e in _exclude_files] if isinstance(_exclude_files,list) else None
-        _re_include_paths = [re.compile(_i) for _i in _include_paths] if isinstance(include_paths,list) else None
-        _re_exclude_paths = [re.compile(_e) for _e in _exclude_paths] if isinstance(_exclude_paths,list) else None
+        def _re_list(_params:any)->list|None:
+            """ transforms input param into a list of regex expressions """
+            out = []
+            if _params is None:
+                return None
+            # separate into single regexex if separated by commas
+            if isinstance(_params,str):
+                _params = _params.split(",")
+            if ignore_case:
+                out = [re.compile(_p,re.IGNORECASE) for _p in _params]
+            else:
+                out = [re.compile(_p) for _p in _params]
+            return out
+
+        _re_include_abspaths = _re_list(include_abspaths)
+        _re_exclude_abspaths = _re_list(exclude_abspaths)
+        _re_include_files = _re_list(include_files)
+        _re_exclude_files = _re_list(exclude_files)
+        _re_include_paths = _re_list(include_paths)
+        _re_exclude_paths =_re_list(exclude_paths)
+
+        if isinstance(_p_root_paths,str):
+            _p_root_paths = _p_root_paths.split(",")
 
         for _root_path in _p_root_paths:
             logger.debug(f"[Persistence] Checking files and paths for [{_root_path}]")
             if not os.path.isdir(_root_path):
                 logger.warning(f"[Persistence] Path [{_root_path}] doesn't exist")
                 continue
-            _p_root = Path(_root_path).absolute
+            _p_root = Path(_root_path).absolute()
 
-            _paths = []
-            _files = []
+            _paths_out = []
+            _files_out = []
             _path_dict = {}
             for _subpath,_,_files in os.walk(_p_root):
                 _cur_path = Path(_subpath).absolute()
@@ -172,7 +182,7 @@ class Persistence():
                     _passed = _passes(_p,_re_include_paths,_re_exclude_paths)
                 if _passed is False:
                     continue
-                _paths.append(_p)
+                _paths_out.append(_p)
                 _path_dict[_p]=[]
                 for _f in _files:
                     # check for file name matches
@@ -189,7 +199,7 @@ class Persistence():
                     if _passed is False:
                         continue
                     _path_dict[_p].append(_f_abs)
-                    _files.append(_f_abs)
+                    _files_out.append(_f_abs)
 
         # either return dict or list of files
         if as_dict:
@@ -197,12 +207,12 @@ class Persistence():
         # depending on input return proper file objects
         else:
             if paths and files:
-                return (_paths,_files)
+                return (_paths_out,_files_out)
             elif paths:
-                return _paths
+                return _paths_out
             elif files:
-                return _files
-            
+                return _files_out
+
     # todo: copy and renamee
 
     @staticmethod
