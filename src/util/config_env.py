@@ -22,6 +22,8 @@ from util.utils import Utils
 from demo.demo_config import create_demo_config
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 def config_key(func):
     """ decorator to check for existence of a key in configuration """

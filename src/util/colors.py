@@ -22,8 +22,12 @@
 import sys
 import logging
 from enum import Enum
+import os
+from util import constants as C
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 ESC='\033'
 COL_BG="[48;5;_NUM_m"

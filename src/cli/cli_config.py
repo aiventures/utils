@@ -12,15 +12,13 @@ from rich.logging import RichHandler
 #from rich import print_json
 #from pathlib import Path
 #from util.persistence import Persistence
-
 from util import constants as C
-from util.config_env import ConfigEnv
+# from util.config_env import ConfigEnv
+from cli.bootstrap_config import config_env
 
 logger = logging.getLogger(__name__)
-
-# the configuration instance, the config file will be bootstrapped
-# either from environment vars or from HOME path
-config_env = ConfigEnv()
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 app = typer.Typer(name="cli_config_client", add_completion=True, help="Configuration and Environment Settings")
 

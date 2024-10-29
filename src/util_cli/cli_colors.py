@@ -6,11 +6,15 @@ from typing import Any
 from rich.color import ANSI_COLOR_NAMES
 from rich.console import Console
 from rich.logging import RichHandler
+import os
+import util.constants as C
 
 # TODO MOVE THIS TO A CONFIG FILE
 from util.const_local import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 # switch to 256 Colors as default
 console = Console(color_system="256")

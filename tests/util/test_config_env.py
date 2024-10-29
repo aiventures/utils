@@ -13,6 +13,8 @@ from util.config_env import logger as util_logger
 from util.utils import Utils
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 def test_config_setup(fixture_sample_config_json):
     """ test the reading of the configuration """

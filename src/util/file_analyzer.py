@@ -6,6 +6,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 import logging
+from util import constants as C
 
 # from util.constants import APPLY_ALL
 # from datetime import datetime as DateTime
@@ -19,8 +20,9 @@ from util.colors import col
 from util.persistence import Persistence
 from util.string_matcher import StringMatcher, FileMatcher
 
-
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 class FileSysObjectInfo():
     """ class to read os file and path info into a dictionary """

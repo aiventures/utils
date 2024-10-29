@@ -8,8 +8,12 @@ from util import constants as C
 from util.csv_parser import CsvParser
 from util.persistence import Persistence
 import logging
+import os
+from util import constants as C
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 def test_csv_parser(fixture_sample_config_json, fixture_sample_stocks_data):
     """ test the parsing of txt files to parse them as dict files """

@@ -10,6 +10,8 @@ import os
 
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 def test_create_csv(fixture_sample_config_json,fixture_config_testpath):
     """ main program """

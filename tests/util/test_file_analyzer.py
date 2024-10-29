@@ -20,6 +20,8 @@ from util.persistence import Persistence
 from util.file_analyzer import FileSysObjectInfo
 import logging
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 def test_setup(fixture_testfile,fixture_testpath,fixture_testfile_dict):
     """ Setup Method """

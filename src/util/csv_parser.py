@@ -12,6 +12,8 @@ from util.config_env import ConfigEnv
 from util.persistence import Persistence
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 class CsvParser(Persistence):
     """ Parsing txt files into tablular data"""

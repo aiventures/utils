@@ -7,8 +7,11 @@ import os
 import re
 import uuid
 import logging
+from util import constants as C
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 # when doing tests add this to reference python path
 if __name__ == "__main__":

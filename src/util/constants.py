@@ -4,6 +4,8 @@ from pathlib import Path
 # from typing import Any
 from util.abstract_enum import AbstractEnum
 from logging import INFO as LOG_INFO
+from logging import ERROR as LOG_ERROR
+
 
 # TODO SWITCH TO PYDANTIC IN FUTURE
 # Constants
@@ -27,6 +29,7 @@ DATEXLS = "_N"
 INVALID = "INVALID"
 F_BAT_SET_VARS="bat_set_vars.bat"
 F_BAT_SET_VARS_TEMPLATE="bat_set_vars_template.bat"
+CLI_LOG_LEVEL = "cli_log_level"
 
 # sdasving environment to files 
 KEY_FILE_SUFFIX = "key"
@@ -47,7 +50,7 @@ class ConfigBootstrap(AbstractEnum):
     CLI_CONFIG_ENV = "config_env"
     CLI_CONFIG_EXTERNAL = "config_external"
     CLI_CONFIG_HOME = "config_home"
-    CLI_CONFIG_LOG_LEVEL = LOG_INFO
+    CLI_CONFIG_LOG_LEVEL = LOG_ERROR
     CLI_CONFIG_DEMO = "DEMO"
 
 # type definitions

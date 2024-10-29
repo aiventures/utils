@@ -20,6 +20,8 @@ from util.file_analyzer import FileAnalyzer
 
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 # Keys refered in the Config File
 CONFIG_PATH_DEPOTHISTORIE = "P_CONFIGTEST" # this was set by configuration json

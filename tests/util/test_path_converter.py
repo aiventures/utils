@@ -18,6 +18,8 @@ from util.utils import Utils
 import logging
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 @pytest.mark.parametrize("transform_rule",["UNC","WIN","DOS","OS",None,"WRONG_TYPE"])
 def test_resolve_paths(transform_rule,fixture_paths):

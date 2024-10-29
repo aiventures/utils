@@ -20,6 +20,9 @@ if __name__ == "__main__":
 # from yaml.constructor import Constructor
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
+
 
 # byte order mark indicates non standard UTF-8
 BOM = '\ufeff'

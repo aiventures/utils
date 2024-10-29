@@ -4,7 +4,12 @@ import logging
 import sys
 import json
 import yaml
+import os
+import util.constants as C
+
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 class Tree():
     """ Tree Object """
@@ -53,6 +58,8 @@ class Tree():
             self._parent_field = parent_field
 
         for node_id,node_info in nodes_dict.items():
+            parent = None
+            name = None
             if isinstance(node_info,str) or isinstance(node_info,int):
                 name=str(node_info)
                 parent=node_info

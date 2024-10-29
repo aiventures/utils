@@ -19,6 +19,9 @@ import shlex
 
 logger = logging.getLogger(__name__)
 
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
+
 # environemnt variables (either from DOS or bash)
 
 # TODO replace by config

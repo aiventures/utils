@@ -10,6 +10,8 @@ from util import constants as C
 from util.persistence import Persistence
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 def create_demo_config()->str:
     """ creates a demo config if not created yet and returns file path """

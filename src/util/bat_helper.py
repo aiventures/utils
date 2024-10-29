@@ -17,6 +17,8 @@ from util_cli.cli_color_mapper import ESC_MAP,RichStyle
 from util.persistence import Persistence
 
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 class BatHelper():
 

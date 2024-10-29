@@ -73,6 +73,8 @@ ESC_MAP = {RichStyle.COLOR:"ESC[38;2;R;G;Bm",
            }
     
 logger = logging.getLogger(__name__)
+# get log level from environment if given 
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 # switch to 256 Colors as default
 # console = Console(color_system="256")
