@@ -29,7 +29,7 @@ DATEXLS = "_N"
 INVALID = "INVALID"
 F_BAT_SET_VARS="bat_set_vars.bat"
 F_BAT_SET_VARS_TEMPLATE="bat_set_vars_template.bat"
-CLI_LOG_LEVEL = "cli_log_level"
+CLI_LOG_LEVEL = "CLI_LOG_LEVEL"
 
 # sdasving environment to files 
 KEY_FILE_SUFFIX = "key"

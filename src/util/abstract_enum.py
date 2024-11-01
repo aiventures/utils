@@ -4,11 +4,10 @@ from enum import Enum
 from typing import Any
 import logging
 import os
-from util import constants as C
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given 
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
+logger.setLevel(int(os.environ.get("CLI_LOG_LEVEL",logging.INFO)))
 
 class AbstractEnum(Enum):
     """ Abstract Enum To Provide some helper methods """
