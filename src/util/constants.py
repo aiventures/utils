@@ -31,7 +31,7 @@ F_BAT_SET_VARS="bat_set_vars.bat"
 F_BAT_SET_VARS_TEMPLATE="bat_set_vars_template.bat"
 CLI_LOG_LEVEL = "CLI_LOG_LEVEL"
 
-# sdasving environment to files 
+# sdasving environment to files
 KEY_FILE_SUFFIX = "key"
 ENV_FILE_SUFFIX = "env"
 
@@ -201,7 +201,7 @@ class ConfigAttribute(AbstractEnum):
     TYPE = "t"           # (data) type
     EXPORT = "e"         # export map
     ENV = "env"          # environment settings, only some values are allowed and defined below
-    ENV_TYPES = "et"     # environment types, controls behaviour how the env should be handled 
+    ENV_TYPES = "et"     # environment types, controls behaviour how the env should be handled
     DEPENDENCY = "dep"   # dependencies from other Attributes if there are some
     STATUS = "st"        # status of the configuration item
     ORIGINAL = "o"       # original value
@@ -339,14 +339,14 @@ class EnvType(AbstractEnum):
          (only used internally, as OS environment, as Cofig Valu to be
          saved on filesystem)
     """
-    # as env attribute of a config key 
-    ATTRIBUTE = "attribute"    
+    # as env attribute of a config key
+    ATTRIBUTE = "attribute"
     # only to be used within the program
     INTERNAL = "internal"
     # published in the OS environment
     OS_ENVIRON = "os_environ"
     # value to be stored in an envfile (key value pairs separated by equal sign)
-    ENV_FILE = "env_file"    
+    ENV_FILE = "env_file"
     # keyfile a file to be stored with value in a file and name of file = variable name
     KEY_FILE = "key_file"
     # environment to be stored in an bat file

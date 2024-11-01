@@ -19,11 +19,11 @@ from util.const_local import LOG_LEVEL
 # declaring short names: https://typer.tiangolo.com/tutorial/parameter-types/bool/#short-names
 # Help Options: https://typer.tiangolo.com/tutorial/options/help/
 # ENVIRONMENT vars: https://typer.tiangolo.com/tutorial/arguments/envvar/
-# Callback Options / Validations 
+# Callback Options / Validations
 # https://typer.tiangolo.com/tutorial/options/callback-and-context/#validate-cli-parameters
 # Additional Command Line Options / Short Versions
 # Password and repeat https://typer.tiangolo.com/tutorial/options/password/
-# Alternative Names / Short Names 
+# Alternative Names / Short Names
 # https://typer.tiangolo.com/tutorial/parameter-types/bool/?h=short#alternative-names
 
 
@@ -36,13 +36,13 @@ app = typer.Typer(name="cli_demo_client", add_completion=False, help="Demo Parse
 sample_int = 10
 sample_str = "HUGO"
 
-# you may define the params separately 
+# you may define the params separately
 _annot_test = Annotated[str, typer.Option(help="HELP TEXT param2_annot")]
-# Annotation Optional 
+# Annotation Optional
 
 
 @app.command("params1")
-def demo1(param1:int,
+def demo_params1(param1:int,
           param2_annot: _annot_test,
           param3_opt:str="OPTIONALPARAM3",
           param4_opt_annot: Annotated[str, typer.Option()] = "OPTIONALPARAM4",
@@ -56,11 +56,11 @@ def demo1(param1:int,
         param3_opt (str, optional): DOCTYPE for param3_opt
         param4_opt_annot (Annotated[str, typer.Option, optional): DOCTYPE for param4_opt_annot
 
-    """    
+    """
     print(f"Hello params1:  param1 {param1}, param2_annot {param2_annot}, param3_opt {param3_opt}, param4_opt_annot {param4_opt_annot}, param5_opt_annot {param5_opt_annot}")
 
 @app.command("demo1")
-def demo1(param_str:str,param_out:str="Test"):
+def demo_demo1(param_str:str,param_out:str="Test"):
     """demo1 method summary
 
     Args:
@@ -72,7 +72,7 @@ def demo1(param_str:str,param_out:str="Test"):
     pass
 
 @app.command("demo2")
-def demo2(param_str:str,param_opt:str="Test"):
+def demo_demo2(param_str:str,param_opt:str="Test"):
     """demo1 method summary
 
     Args:
@@ -86,7 +86,7 @@ def demo2(param_str:str,param_opt:str="Test"):
 def demo_args1(req_param1:str, req_param2: Annotated[str, typer.Option("--req1")]):
     """ testing arguments req_param1 as positional arg and req_param2 as required
     """
-    # https://typer.tiangolo.com/tutorial/options/name/    
+    # https://typer.tiangolo.com/tutorial/options/name/
     # since rich is used we need to mask the brackets
     print(f"req_param1 \[{req_param1}] req_param2 \[{req_param2}]")
 
@@ -110,7 +110,7 @@ def demo_prompt2(
     if force:
         print(f"FORCE was chosen")
     else:
-        print("Operation cancelled")    
+        print("Operation cancelled")
 
 @app.command("progress")
 def demo_progress():
