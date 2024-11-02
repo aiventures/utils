@@ -131,7 +131,9 @@ def create_testcases_find()->list:
                "as_dict":False,
                "root_path_only":False,
                "match_all":False,
-               "ignore_case":True}
+               "ignore_case":True,
+               "show_progress":True
+               }
     # TC check tuple return
     _tc = deepcopy(_kwargs)
     _expected="tuple"

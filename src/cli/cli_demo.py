@@ -12,6 +12,7 @@ from util import constants as C
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from typing_extensions import Annotated,Optional
 from util.const_local import LOG_LEVEL
+from util.persistence import Persistence
 
 # This is just a typer playground, topics of interest in the typer documentation
 # Password https://typer.tiangolo.com/tutorial/options/password/
@@ -148,6 +149,14 @@ def demo_progress2():
             time.sleep(0.05)
             total += 1
     print(f"Processed {total} user IDs.")
+
+@app.command("progress_sample")
+def demo_progress_sample():
+    """progress from test data sample
+    """
+    p = os.path.join(C.PATH_ROOT,"test_data")
+    # display the file search
+    _file_objects = Persistence.find(p,show_progress=True)
 
 
 @app.command("progress_nested")

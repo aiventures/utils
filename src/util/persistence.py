@@ -5,9 +5,10 @@ from pathlib import Path
 import logging
 import re
 from datetime import datetime as DateTime
-from util import constants as C
-
+from rich.progress import track
+from rich import print as rprint
 import json
+from util import constants as C
 
 # when doing tests add this to reference python path
 if __name__ == "__main__":
@@ -189,12 +190,16 @@ class Persistence():
                    re_exclude_files:list=None,
                    re_include_abspaths:list = None,
                    re_exclude_abspaths:list = None,
-                   match_all:bool=False )->int:
+                   match_all:bool=False,
+                   show_progress:bool=False )->int:
         """ walks the path in a given root directory
             is used in find method as a way to get objects without rendering
             progress bars, returns number of processed files
         """
         out = 0
+
+        if show_progress:
+            rprint(f"[deep_sky_blue1]### Path  [orange3][{p_root}]")
         for _subpath,_,_files in os.walk(p_root):
             _cur_path = Path(_subpath).absolute()
             if root_path_only and str(_cur_path) != p_root:
@@ -219,12 +224,25 @@ class Persistence():
                         "re_exclude_abspaths":re_exclude_abspaths,
                         "match_all":match_all}
 
-            for _f in _files:
-                _file_params["f_abs"]=os.path.join(_p,_f)
-                _passed = Persistence._passes_filecheck(**_file_params)
-                if _passed is False:
-                    continue
-                out += 1
+            # use progress bar
+            if show_progress is False:
+                for _f in _files:
+                    _file_params["f_abs"]=os.path.join(_p,_f)
+                    _passed = Persistence._passes_filecheck(**_file_params)
+                    if _passed is False:
+                        continue
+                    out += 1
+            else:
+                # only show relative portion
+                _p_rel=os.path.relpath(_p,p_root)
+                _s = f"[deep_sky_blue1]  - ({str(len(_files)).zfill(3)}) [gold3].\{_p_rel:<60}"
+                for _f in track(_files,description=_s,style="orange3",refresh_per_second=2):
+                    _file_params["f_abs"]=os.path.join(_p,_f)
+                    _passed = Persistence._passes_filecheck(**_file_params)
+                    if _passed is False:
+                        continue
+                    out += 1
+
         return out
 
     @staticmethod
@@ -234,11 +252,13 @@ class Persistence():
              include_paths:list|str=None,exclude_paths:list|str=None,
              paths:bool=False,files:bool=True,as_dict:bool=False,
              root_path_only:bool=False,
-             match_all:bool=False,ignore_case:bool=True)->list|dict:
+             match_all:bool=False,ignore_case:bool=True,
+             show_progress:bool=True)->list|dict:
         """ finds files and paths according to path names / a slightly slimmer version than the FileAnalyzer
             regex can be used (differewntly for filename only, path only or abs path)
             match all or anxy determines whethwer all or any crieteria need to match
         """
+        _num_total = 0
 
         _re_include_abspaths = Persistence._re_list(include_abspaths,ignore_case)
         _re_exclude_abspaths = Persistence._re_list(exclude_abspaths,ignore_case)
@@ -272,11 +292,16 @@ class Persistence():
                        "re_exclude_files":_re_exclude_files,
                        "re_include_abspaths":_re_include_abspaths,
                        "re_exclude_abspaths":_re_exclude_abspaths,
-                       "match_all":match_all}
+                       "match_all":match_all,
+                       "show_progress":show_progress}
 
             # do the analysis
             _num_files = Persistence._walk_path(**_params)
+            _num_total += _num_files
             logger.debug(f"[Persistence] Found [{_num_files}] in Path [{_root_path}]")
+
+        if show_progress:
+            rprint(f"[deep_sky_blue1]### ({str(_num_total).zfill(3)}) Files found in [gold1]{_p_root_paths}")
 
         # either return dict or list of files
         if as_dict:
