@@ -6,6 +6,7 @@ import sys
 import os
 from rich import print
 from rich.prompt import Prompt
+from rich.progress import BarColumn,DownloadColumn
 from rich.progress import track
 from util import constants as C
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -117,9 +118,9 @@ def demo_progress():
     """ demo progress bar """
     # https://typer.tiangolo.com/tutorial/progressbar/
     total = 0
+    # for value in track(["a","b","c"], description="Processing..."):
     for value in track(range(100), description="Processing..."):
-        # Fake processing time
-        time.sleep(0.01)
+        time.sleep(0.05)
         total += 1
     print(f"Processed {total} things.")
 
@@ -147,6 +148,42 @@ def demo_progress2():
             time.sleep(0.05)
             total += 1
     print(f"Processed {total} user IDs.")
+
+
+@app.command("progress_nested")
+def demo_progress_nested():
+    """ demo progress for nested progress bars"""
+    # https://github.com/Textualize/rich/discussions/950#discussioncomment-300794
+    # https://typer.tiangolo.com/tutorial/progressbar/#progress-bar_1
+    # COlor Table https://rich.readthedocs.io/en/latest/appendix/colors.html
+
+    class MyProgress(Progress):
+        def get_renderables(self):
+            for task in self.tasks:
+                if task.fields.get("progress_type") == "mygreenbar":
+                    # self.columns = ("[green]Rich is awesome!", BarColumn(bar_width=20,style="bar.back"))                    
+                    self.columns = ("[green1]Rich is awesome!", BarColumn(bar_width=20,style="green1"))
+                if task.fields.get("progress_type") == "mybluebar":
+                    self.columns = (
+                        "[blue]Another bar with a different layout",
+                        BarColumn(bar_width=10),
+                        #"•",
+                        # DownloadColumn(),
+                    )
+                yield self.make_tasks_table([task])
+
+    with MyProgress() as progress:
+        num_outer = 5
+        num_inner = 10
+        taskone = progress.add_task("taskone", progress_type="mygreenbar",total=num_outer)
+        # tasktwo = progress.add_task("tasktwo", progress_type="mybluebar",total=num_inner)
+        for outer in range(num_outer):
+            progress.update(taskone,advance=1)
+            tasktwo = progress.add_task("tasktwo", progress_type="mybluebar",total=num_inner)
+            for _ in range(num_inner):
+                progress.update(tasktwo,advance=1)
+                time.sleep(0.1)
+            time.sleep(0.1)
 
 @app.command("spinner")
 def demo_spinner():

@@ -20,7 +20,7 @@ if __name__ == "__main__":
 # from yaml.constructor import Constructor
 
 logger = logging.getLogger(__name__)
-# get log level from environment if given 
+# get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 
@@ -89,10 +89,158 @@ class Persistence():
         drive = p_parts[0]+":\\"
         p_parts = p_parts[1:]
         if not os.path.isdir(drive):
-            logger(f"Could not find drive {drive} from Path {f}")
+            logger.warning(f"[Persistence] Could not find drive {drive} from Path {f}")
             return None
         p = os.path.join(drive,*p_parts)
         return p
+
+    @staticmethod
+    def _re_list(_params:any,ignore_case:bool=True)->list|None:
+        """ transforms input param into a list of regex expressions """
+        out = []
+        if _params is None:
+            return None
+        # separate into single regexex if separated by commas
+        if isinstance(_params,str):
+            _params = _params.split(",")
+        if ignore_case:
+            out = [re.compile(_p,re.IGNORECASE) for _p in _params]
+        else:
+            out = [re.compile(_p) for _p in _params]
+        return out
+
+    @staticmethod
+    def _is_match(file_info:str,reg_exprs:list|None,
+                  match_all:bool=False):
+        """ checks if a file object should be added. if an item is None, then it is considered as ok """
+        if reg_exprs is None:
+            return True
+
+        if not isinstance(reg_exprs,list):
+            logger.warning("[Persistence] Not a list of regexes")
+            return False
+
+        is_match = []
+        for reg_expr in reg_exprs:
+            _match = True if len(reg_expr.findall(file_info))>0 else False
+            is_match.append(_match)
+
+        if match_all:
+            if len(is_match)>0 and all(is_match):
+                is_match = True
+            else:
+                is_match = False
+        else:
+            is_match = any(is_match)
+        return is_match
+
+    @staticmethod
+    def _passes(file_info:str,include_exprs:list|None,exclude_exprs:list|None,
+                match_all:bool=False):
+        """ checking wheter a file info passes regex expr list """
+        _matches_include = Persistence._is_match(file_info,include_exprs)
+        # only continue if evaluated to true and there are some exclude critera
+        if not isinstance(exclude_exprs,list):
+            return _matches_include
+        _matches_exclude = Persistence._is_match(file_info,exclude_exprs,match_all)
+        if _matches_exclude is True:
+            return False
+        else:
+            return _matches_include
+
+    @staticmethod
+    def _passes_filecheck(f_abs:str,
+                     path:str,
+                     path_dict:dict,
+                     files_out:list,
+                     re_include_files:list=None,
+                     re_exclude_files:list=None,
+                     re_include_abspaths:list = None,
+                     re_exclude_abspaths:list = None,
+                     match_all:bool=False
+    )->bool:
+        """ checking whether a file ref passes criteria
+            returns 1 if file passes filter
+        """
+        passed = True
+        _f = Path(f_abs)
+        _f_name = _f.name
+        if re_include_files or re_exclude_files:
+            passed = Persistence._passes(_f_name,re_include_files,re_exclude_files,match_all)
+        if passed is False:
+            return 0
+        # check for absolute paths
+        if re_include_abspaths or re_exclude_abspaths:
+            passed = Persistence._passes(f_abs,re_include_abspaths,re_exclude_abspaths,match_all)
+
+        if passed is False:
+            return passed
+
+        path_dict[path].append(f_abs)
+        files_out.append(f_abs)
+        return passed
+
+    @staticmethod
+    def _walk_path(path_dict:dict,paths_out:list,files_out:list,
+                   p_root:str,root_path_only:bool=False,
+                   re_include_paths:list=None,
+                   re_exclude_paths:list=None,
+                   re_include_files:list=None,
+                   re_exclude_files:list=None,
+                   re_include_abspaths:list = None,
+                   re_exclude_abspaths:list = None,
+                   match_all:bool=False )->int:
+        """ walks the path in a given root directory
+            is used in find method as a way to get objects without rendering
+            progress bars, returns number of processed files
+        """
+        out = 0
+        for _subpath,_,_files in os.walk(p_root):
+            _cur_path = Path(_subpath).absolute()
+            if root_path_only and str(_cur_path) != p_root:
+                continue
+            # check for path is there are criteria
+            _passed = True
+            _p = str(_cur_path)
+            if re_include_paths or re_exclude_paths:
+                _passed = Persistence._passes(_p,re_include_paths,re_exclude_paths,match_all)
+            if _passed is False:
+                continue
+            paths_out.append(_p)
+            path_dict[_p]=[]
+
+            _file_params = {"f_abs":None,
+                        "path":_p,
+                        "path_dict":path_dict,
+                        "files_out":files_out,
+                        "re_include_files":re_include_files,
+                        "re_exclude_files":re_exclude_files,
+                        "re_include_abspaths":re_include_abspaths,
+                        "re_exclude_abspaths":re_exclude_abspaths,
+                        "match_all":match_all}
+
+            for _f in _files:
+
+                # check for file name matches
+                # _passed = True
+                # if re_include_files or re_exclude_files:
+                #     _passed = Persistence._passes(_f,re_include_files,re_exclude_files,match_all)
+                # if _passed is False:
+                #     continue
+                # # check for absolute paths
+                # _f_abspath = _cur_path.joinpath(_f)
+                # _f_abs = str(_f_abspath)
+                # if re_include_abspaths or re_exclude_abspaths:
+                #     _passed = Persistence._passes(_f_abs,re_include_abspaths,re_exclude_abspaths,match_all)
+                # if _passed is False:
+                #     continue
+
+                _file_params["f_abs"]=os.path.join(_p,_f)
+                _passed = Persistence._passes_filecheck(**_file_params)
+                if _passed is False:
+                    continue
+                out += 1
+        return out
 
     @staticmethod
     def find(_p_root_paths:list|str=None,
@@ -106,63 +254,53 @@ class Persistence():
             regex can be used (differewntly for filename only, path only or abs path)
             match all or anxy determines whethwer all or any crieteria need to match
         """
-        def _is_match(file_info:str,reg_exprs:list|None):
-            """ checks if a file object should be added. if an item is None, then it is considered as ok """
-            if reg_exprs is None:
-                return True
+        # def _is_match(file_info:str,reg_exprs:list|None):
+        #     """ checks if a file object should be added. if an item is None, then it is considered as ok """
+        #     if reg_exprs is None:
+        #         return True
 
-            if not isinstance(reg_exprs,list):
-                logger.warning("[Persistence] Not a list of regexes")
-                return False
+        #     if not isinstance(reg_exprs,list):
+        #         logger.warning("[Persistence] Not a list of regexes")
+        #         return False
 
-            is_match = []
-            for reg_expr in reg_exprs:
-                _match = True if len(reg_expr.findall(file_info))>0 else False
-                is_match.append(_match)
+        #     is_match = []
+        #     for reg_expr in reg_exprs:
+        #         _match = True if len(reg_expr.findall(file_info))>0 else False
+        #         is_match.append(_match)
 
-            if match_all:
-                if len(is_match)>0 and all(is_match):
-                    is_match = True
-                else:
-                    is_match = False
-            else:
-                is_match = any(is_match)
-            return is_match
+        #     if match_all:
+        #         if len(is_match)>0 and all(is_match):
+        #             is_match = True
+        #         else:
+        #             is_match = False
+        #     else:
+        #         is_match = any(is_match)
+        #     return is_match
 
-        def _passes(file_info:str,include_exprs:list|None,exclude_exprs:list|None):
-            _matches_include = _is_match(file_info,include_exprs)
-            # only continue if evaluated to true and there are some exclude critera
-            if not isinstance(exclude_exprs,list):
-                return _matches_include
-            _matches_exclude = _is_match(file_info,exclude_exprs)
-            if _matches_exclude is True:
-                return False
-            else:
-                return _matches_include
+        # def _passes(file_info:str,include_exprs:list|None,exclude_exprs:list|None):
+        #     _matches_include = _is_match(file_info,include_exprs)
+        #     # only continue if evaluated to true and there are some exclude critera
+        #     if not isinstance(exclude_exprs,list):
+        #         return _matches_include
+        #     _matches_exclude = _is_match(file_info,exclude_exprs)
+        #     if _matches_exclude is True:
+        #         return False
+        #     else:
+        #         return _matches_include
 
-        def _re_list(_params:any)->list|None:
-            """ transforms input param into a list of regex expressions """
-            out = []
-            if _params is None:
-                return None
-            # separate into single regexex if separated by commas
-            if isinstance(_params,str):
-                _params = _params.split(",")
-            if ignore_case:
-                out = [re.compile(_p,re.IGNORECASE) for _p in _params]
-            else:
-                out = [re.compile(_p) for _p in _params]
-            return out
-
-        _re_include_abspaths = _re_list(include_abspaths)
-        _re_exclude_abspaths = _re_list(exclude_abspaths)
-        _re_include_files = _re_list(include_files)
-        _re_exclude_files = _re_list(exclude_files)
-        _re_include_paths = _re_list(include_paths)
-        _re_exclude_paths =_re_list(exclude_paths)
+        _re_include_abspaths = Persistence._re_list(include_abspaths,ignore_case)
+        _re_exclude_abspaths = Persistence._re_list(exclude_abspaths,ignore_case)
+        _re_include_files = Persistence._re_list(include_files,ignore_case)
+        _re_exclude_files = Persistence._re_list(exclude_files,ignore_case)
+        _re_include_paths = Persistence._re_list(include_paths,ignore_case)
+        _re_exclude_paths =Persistence._re_list(exclude_paths,ignore_case)
 
         if isinstance(_p_root_paths,str):
             _p_root_paths = _p_root_paths.split(",")
+
+        _paths_out = []
+        _files_out = []
+        _path_dict = {}
 
         for _root_path in _p_root_paths:
             logger.debug(f"[Persistence] Checking files and paths for [{_root_path}]")
@@ -171,38 +309,52 @@ class Persistence():
                 continue
             _p_root = Path(_root_path).absolute()
 
-            _paths_out = []
-            _files_out = []
-            _path_dict = {}
-            for _subpath,_,_files in os.walk(_p_root):
-                _cur_path = Path(_subpath).absolute()
-                if root_path_only and _cur_path != _p_root:
-                    continue
-                # check for path is there are criteria
-                _passed = True
-                _p = str(_cur_path)
-                if _re_include_paths or _re_exclude_paths:
-                    _passed = _passes(_p,_re_include_paths,_re_exclude_paths)
-                if _passed is False:
-                    continue
-                _paths_out.append(_p)
-                _path_dict[_p]=[]
-                for _f in _files:
-                    # check for file name matches
-                    _passed = True
-                    if _re_include_files or _re_exclude_files:
-                        _passed = _passes(_f,_re_include_files,_re_exclude_files)
-                    if _passed is False:
-                        continue
-                    # check for absolute paths
-                    _f_abspath = _cur_path.joinpath(_f)
-                    _f_abs = str(_f_abspath)
-                    if _re_include_abspaths or _re_exclude_abspaths:
-                        _passed = _passes(_f_abs,_re_include_abspaths,_re_exclude_abspaths)
-                    if _passed is False:
-                        continue
-                    _path_dict[_p].append(_f_abs)
-                    _files_out.append(_f_abs)
+            _params = {"path_dict":_path_dict,
+                       "paths_out":_paths_out,
+                       "files_out":_files_out,
+                       "p_root":_root_path,
+                       "root_path_only":root_path_only,
+                       "re_include_paths":_re_include_paths,
+                       "re_exclude_paths":_re_exclude_paths,
+                       "re_include_files":_re_include_files,
+                       "re_exclude_files":_re_exclude_files,
+                       "re_include_abspaths":_re_include_abspaths,
+                       "re_exclude_abspaths":_re_exclude_abspaths,
+                       "match_all":match_all}
+
+            # do the analysis
+            _num_files = Persistence._walk_path(**_params)
+            logger.debug(f"[Persistence] Found [{_num_files}] in Path [{_root_path}]")
+
+            # for _subpath,_,_files in os.walk(_p_root):
+            #     _cur_path = Path(_subpath).absolute()
+            #     if root_path_only and _cur_path != _p_root:
+            #         continue
+            #     # check for path is there are criteria
+            #     _passed = True
+            #     _p = str(_cur_path)
+            #     if _re_include_paths or _re_exclude_paths:
+            #         _passed = _passes(_p,_re_include_paths,_re_exclude_paths)
+            #     if _passed is False:
+            #         continue
+            #     _paths_out.append(_p)
+            #     _path_dict[_p]=[]
+            #     for _f in _files:
+            #         # check for file name matches
+            #         _passed = True
+            #         if _re_include_files or _re_exclude_files:
+            #             _passed = _passes(_f,_re_include_files,_re_exclude_files)
+            #         if _passed is False:
+            #             continue
+            #         # check for absolute paths
+            #         _f_abspath = _cur_path.joinpath(_f)
+            #         _f_abs = str(_f_abspath)
+            #         if _re_include_abspaths or _re_exclude_abspaths:
+            #             _passed = _passes(_f_abs,_re_include_abspaths,_re_exclude_abspaths)
+            #         if _passed is False:
+            #             continue
+            #         _path_dict[_p].append(_f_abs)
+            #         _files_out.append(_f_abs)
 
         # either return dict or list of files
         if as_dict:
@@ -215,8 +367,6 @@ class Persistence():
                 return _paths_out
             elif files:
                 return _files_out
-
-    # todo: copy and renamee
 
     @staticmethod
     def absolute_winpath(f:str,posix:bool=False,uri:bool=False,as_path:bool=False)->bool:
