@@ -220,21 +220,6 @@ class Persistence():
                         "match_all":match_all}
 
             for _f in _files:
-
-                # check for file name matches
-                # _passed = True
-                # if re_include_files or re_exclude_files:
-                #     _passed = Persistence._passes(_f,re_include_files,re_exclude_files,match_all)
-                # if _passed is False:
-                #     continue
-                # # check for absolute paths
-                # _f_abspath = _cur_path.joinpath(_f)
-                # _f_abs = str(_f_abspath)
-                # if re_include_abspaths or re_exclude_abspaths:
-                #     _passed = Persistence._passes(_f_abs,re_include_abspaths,re_exclude_abspaths,match_all)
-                # if _passed is False:
-                #     continue
-
                 _file_params["f_abs"]=os.path.join(_p,_f)
                 _passed = Persistence._passes_filecheck(**_file_params)
                 if _passed is False:
@@ -254,39 +239,6 @@ class Persistence():
             regex can be used (differewntly for filename only, path only or abs path)
             match all or anxy determines whethwer all or any crieteria need to match
         """
-        # def _is_match(file_info:str,reg_exprs:list|None):
-        #     """ checks if a file object should be added. if an item is None, then it is considered as ok """
-        #     if reg_exprs is None:
-        #         return True
-
-        #     if not isinstance(reg_exprs,list):
-        #         logger.warning("[Persistence] Not a list of regexes")
-        #         return False
-
-        #     is_match = []
-        #     for reg_expr in reg_exprs:
-        #         _match = True if len(reg_expr.findall(file_info))>0 else False
-        #         is_match.append(_match)
-
-        #     if match_all:
-        #         if len(is_match)>0 and all(is_match):
-        #             is_match = True
-        #         else:
-        #             is_match = False
-        #     else:
-        #         is_match = any(is_match)
-        #     return is_match
-
-        # def _passes(file_info:str,include_exprs:list|None,exclude_exprs:list|None):
-        #     _matches_include = _is_match(file_info,include_exprs)
-        #     # only continue if evaluated to true and there are some exclude critera
-        #     if not isinstance(exclude_exprs,list):
-        #         return _matches_include
-        #     _matches_exclude = _is_match(file_info,exclude_exprs)
-        #     if _matches_exclude is True:
-        #         return False
-        #     else:
-        #         return _matches_include
 
         _re_include_abspaths = Persistence._re_list(include_abspaths,ignore_case)
         _re_exclude_abspaths = Persistence._re_list(exclude_abspaths,ignore_case)
@@ -325,36 +277,6 @@ class Persistence():
             # do the analysis
             _num_files = Persistence._walk_path(**_params)
             logger.debug(f"[Persistence] Found [{_num_files}] in Path [{_root_path}]")
-
-            # for _subpath,_,_files in os.walk(_p_root):
-            #     _cur_path = Path(_subpath).absolute()
-            #     if root_path_only and _cur_path != _p_root:
-            #         continue
-            #     # check for path is there are criteria
-            #     _passed = True
-            #     _p = str(_cur_path)
-            #     if _re_include_paths or _re_exclude_paths:
-            #         _passed = _passes(_p,_re_include_paths,_re_exclude_paths)
-            #     if _passed is False:
-            #         continue
-            #     _paths_out.append(_p)
-            #     _path_dict[_p]=[]
-            #     for _f in _files:
-            #         # check for file name matches
-            #         _passed = True
-            #         if _re_include_files or _re_exclude_files:
-            #             _passed = _passes(_f,_re_include_files,_re_exclude_files)
-            #         if _passed is False:
-            #             continue
-            #         # check for absolute paths
-            #         _f_abspath = _cur_path.joinpath(_f)
-            #         _f_abs = str(_f_abspath)
-            #         if _re_include_abspaths or _re_exclude_abspaths:
-            #             _passed = _passes(_f_abs,_re_include_abspaths,_re_exclude_abspaths)
-            #         if _passed is False:
-            #             continue
-            #         _path_dict[_p].append(_f_abs)
-            #         _files_out.append(_f_abs)
 
         # either return dict or list of files
         if as_dict:
@@ -756,8 +678,10 @@ class Persistence():
         Persistence.save_txt_file(f_save,data)
         return f_save
 
-
-
+if __name__ == "__main__":
+    loglevel = logging.DEBUG
+    logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
+                        level=loglevel, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S")
 
     # make it static
     # def save(self,data,f_save:str=None)->str:
@@ -804,11 +728,6 @@ class Persistence():
     #         return
     #     logger.info(f"Saved [{suffix}] data: {f_save}")
     #     return f_save
-
-if __name__ == "__main__":
-    loglevel = logging.DEBUG
-    logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
-                        level=loglevel, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S")
 
     # @staticmethod
     # def read_yaml(filepath:str,line_key:str=None)->dict:
