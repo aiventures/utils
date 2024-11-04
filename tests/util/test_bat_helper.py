@@ -13,7 +13,7 @@ def test_create_colors_template(fixture_battest_path,fixture_bat_helper):
     # clean up previous test file
     if os.path.isfile(_f_bat_set_colors):
         os.remove(_f_bat_set_colors)
-    _theme = "vscode"
+    _theme = "ubuntu"
     _f_out = fixture_bat_helper.create_colors_template(_f_bat_set_colors,_theme)
     assert os.path.isfile(_f_bat_set_colors)
 

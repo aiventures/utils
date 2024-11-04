@@ -18,6 +18,7 @@ from copy import deepcopy
 from util.persistence import Persistence
 from util.colors import col
 from util import constants as C
+from util.constants import DEFAULT_COLORS as CMAP
 from util.utils import Utils
 from demo.demo_config import create_demo_config
 
@@ -889,11 +890,12 @@ class ConfigEnv():
 
     def show_json(self)->None:
         """ display the configuration json """
-        rprint("### CONFIGURATION")
+
+        rprint(f"[{CMAP['out_title']}]### CONFIGURATION")
         print_json(json.dumps(self._config))
-        rprint("### CONFIG FILES FOUND IN BOOTSTRAPPING")
+        rprint(f"[{CMAP['out_title']}]### CONFIG FILES FOUND IN BOOTSTRAPPING")
         print_json(json.dumps(self._f_config_dict))
-        rprint(f"### CONFIG FILE USED \[{self._f_config }]")
+        rprint(f"[{CMAP['out_title']}]### CONFIG FILE USED\n    [{CMAP['out_path']}]\[{self._f_config }]")
 
     def show(self)->None:
         """ displays the config  """
@@ -913,6 +915,8 @@ class ConfigEnv():
                 _ref = col("INVALID","C_ERR")
             print(_num+_key+_description+_ref)
             n+=1
+        print(col(f"\n###### CONFIGURATION [{self._f_config}]\n","C_T"))
+
 
     def _bootstrap_path(self,f_ext:str):
         """" bootstraps path to config file  i the following order

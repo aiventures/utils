@@ -45,17 +45,16 @@ class BatHelper():
         _bat_set_list = ["SET C_0=%ESC%[0m"]
         _bat_echo_list = []
         _theme_console = ThemeConsole(theme)
+
+        # is a key value dict for colors 
         _color_map = _theme_console.color_map
 
+
         # ADD DEFAULT COLORS FROM THEME
-        _esc_color = ESC_MAP.get(RichStyle.COLOR)
-        for col_key,_hexcol in _color_map.items():
+        for col_key,_value in _color_map.items():
             _colkey = "C_"+col_key.upper()
-            _rgb = _theme_console.hex2rgb(_hexcol)
-            _rgb = ";".join(map(str,_rgb))
-            _esc_code = _esc_color.replace("R;G;B",_rgb)
-            _esc_code = _esc_code.replace("ESC","%ESC%")
-            _cmd = f"SET {_colkey}={_esc_code}"
+            _value = _value.replace("ESC","%ESC%")
+            _cmd = f"SET {_colkey}={_value}"
             _show = f"ECHO %{_colkey}%ENV VAR [{_colkey}] THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG%C_0%"
             _bat_set_list.append(_cmd)
             _bat_echo_list.append(_show)

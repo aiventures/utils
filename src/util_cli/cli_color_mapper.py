@@ -30,7 +30,7 @@ RGB = "rgb"
 THEME = "theme"
 THEMES = "themes"
 DEFAULT = "default"
-THEME_DEFAULT="ubuntu"
+THEME_DEFAULT=C.ConfigBootstrap.CLI_DEFAULT_THEME.value
 COLORS = "colors"
 STYLES = "styles"
 COLOR = "color"
@@ -58,10 +58,10 @@ class RichStyle(Enum):
     def values():
         """ returns list of values defined in Enum """
         return list(map(lambda c: c.value, RichStyle))
-    
-# MAP OF ESCAAPE CODES    
-# rgb colors are rgb codes in int 
-# https://en.wikipedia.org/wiki/ANSI_escape_code            
+
+# MAP OF ESCAAPE CODES
+# rgb colors are rgb codes in int
+# https://en.wikipedia.org/wiki/ANSI_escape_code
 ESC_MAP = {RichStyle.COLOR:"ESC[38;2;R;G;Bm",
            RichStyle.BG_COLOR:"ESC[48;2;R;G;Bm",
            RichStyle.BOLD:"ESC[22m",
@@ -71,9 +71,9 @@ ESC_MAP = {RichStyle.COLOR:"ESC[38;2;R;G;Bm",
            RichStyle.STRIKE:"ESC[29m",
            RichStyle.RESET:"ESC[0m",
            }
-    
+
 logger = logging.getLogger(__name__)
-# get log level from environment if given 
+# get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 # switch to 256 Colors as default
@@ -106,7 +106,7 @@ class ColorMapper():
             _to = min(_num_elems,_from+group_size)
             out.append(group_list[_from:_to])
         return out
-    
+
 
     @property
     def themes(self)->dict:
@@ -187,6 +187,33 @@ class ColorMapper():
     def code2rgb(self,code:int)->str:
         """ convert code to rgb  """
         return self._rgb_colors[code]
+
+
+    @staticmethod
+    def rgb2ansi(rgb:tuple)->int:
+        """ create an ANSI color code for console out put
+            Credits:
+            https://github.com/Qix-/color-convert/blob/427cbb70540bb9e5b3e94aa3bb9f97957ee5fbc0/conversions.js#L555-L580
+            https://stackoverflow.com/questions/15682537/ansi-color-specific-rgb-sequence-bash
+        """
+        r,g,b=rgb
+        ansi = 0
+        # gray values
+        if ( r == g and r == b ):
+            if r < 8:
+                ansi = 16
+            elif r > 231:
+                ansi = 231
+            else:
+                ansi = int(round((r-8)/247) * 24 ) + 232
+        # color values
+        else:
+            # color cube
+            ansi = 16
+            ansi += 6 * 6 * round((r/255) * 5)
+            ansi += 6 * round((g/255) * 5)
+            ansi += round((b/255) * 5)
+        return int(ansi)
 
     def code2name(self,code:int)->str:
         """ convert code to name """
@@ -288,10 +315,11 @@ class ColorMapper():
 
         self._hexcolors = HEX_COLORS
         self._rgb_colors = RGB_COLORS
-        self._themes = {}
+        self._themes = []
         self._theme = None
         if theme:
-            self.theme = theme
+            self._theme = theme
+        # TODO APPLY DEFAULT THEME
 
     def _set_config_path(self):
         """ sets config path  """
@@ -385,7 +413,7 @@ class ThemeConsole(ColorMapper):
         defined there (so we have two separate things here)
     """
 
-    def __init__(self, theme: str = None,color_system:str="256",create_themes:bool=False) -> None:
+    def __init__(self, theme: str = None,color_system:str="256",create_themes:bool=False,p_resources=None) -> None:
         """Constructor.
 
         Args:
@@ -394,64 +422,91 @@ class ThemeConsole(ColorMapper):
             create_themes (bool, optional): Create the Rich Themes definition files in /resources/rich_themes.
             Defaults to False (needs to be run at least once).
         """
-        if theme is None:
-            theme = THEME_DEFAULT
 
-        super().__init__(theme)
+        super().__init__(theme,p_resources)
+
+        # create a fallback theme
+        _theme_env_default = os.environ.get(C.ConfigBootstrap.CLI_DEFAULT_THEME.name,C.ConfigBootstrap.CLI_DEFAULT_THEME.value)
+        self._default_theme = _theme_env_default
+
+        if theme is None:
+            # try to bootstrap theme from OS (defined in /cli/bootstrap_env.py )
+            _theme_env = os.environ.get(C.ConfigBootstrap.CLI_THEME.name)
+            if _theme_env is None:
+                _theme_env = _theme_env_default
+            theme = _theme_env
+            logger.debug(f"[ThemeConsole] Setting Theme from ENV/ENV_DEFAULT [{_theme_env}/{_theme_env_default}] to [{theme}]")
+
         self._color_system = color_system
-        # self._console = Console(color_system=color_system)
         self._p_rich_themes = None
         self._set_rich_themes_path()
-        # self._rich_styles = {}
-        # self._read_styles()
 
+        # todo handle themes / instanciate theme manager
         self._theme_manager = None
-        # todo handle themes
         if create_themes:
             self._theme_manager = self.create_rich_themes()
         if not self._theme_manager:
             self._theme_manager = ThemeManager(theme_dir=self._p_rich_themes)
-        self._style_theme = None
-        self._set_style_theme(theme)
+            self._themes = list(self._theme_manager._themes.keys())
+        # validate theme
+        if theme in self._themes:
+            self._theme = theme
+        else:
+            logger.warning(f"[ThemeConsole] Invalid Theme [{theme}], allowed {self._themes},using default [{self._default_theme}]")
+            self._theme = self._default_theme
 
     def get_esc_codes(self)->dict:
-        """ returns the escape codes for the current theme """
+        """ returns the ANSI escape codes for the current theme """
         out = {}
-        # get the color map and the styles
-        _color_map = self.theme.get(self._style_theme)
-        _styles = self.read_styles()        
-        for _style,_style_info_dict in _styles.items():
-            _out_esc=[]
-            for _style_key,_style_value in _style_info_dict.items():
-                try:
-                    _esc_code = ESC_MAP.get(RichStyle(_style_key))
-                except TypeError:
-                    logger.warning(f"[ThemeConsole] invalid style key [{_style_key}] in styles found")
+        out["reset"]="ESC[0m"
+        # get the color map and the styles from current theme
+        # https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+        # We need to transform the RGB code into ANSI Code (otherwise it seems not to be working 
+        # for BAT FILES, even as it's running with Rich)
+        _esc_color = "ESC[38;5;ANSIm"
+        _esc_bgcolor = "ESC[48;5;ANSIm"
+
+        _theme = self._theme_manager.get(self._theme)
+        _style_names = _theme.style_names
+        _styles = _theme.styles
+        _color_map = self.config.get("themes",{}).get(self._theme,{})
+        for _style_name in _style_names:
+            _esc_out=[]
+            _style = _styles.get(_style_name)
+            # add formattings
+
+            # add front and back colors
+            _style_cols = []
+            if _style.color:
+                _style_cols.append([_esc_color,_style.color.triplet])
+            if _style.bgcolor:
+                _style_cols.append([_esc_bgcolor,_style.bgcolor.triplet])
+            for _style_col in _style_cols:
+                _esc = _style_col[0]
+                _col = _style_col[1]
+                _rgb = (_col.red,_col.green,_col.blue)
+                _ansi = str(ColorMapper.rgb2ansi(_rgb))
+                _col_esc = _esc.replace("ANSI",_ansi)
+                _esc_out.append(_col_esc)
+
+            _style_map = ((_style.bold,"ESC[22m"),
+                          (_style.underline,"ESC[24m"),
+                          (_style.italic,"ESC[23m"),
+                          (_style.reverse,"ESC[27m"),
+                          (_style.strike,"ESC[29m"))
+            for _style_opt in _style_map:
+                if _style_opt[0] is None:
                     continue
-                # only evaluate keys that are part of the Rich Style enum
-                except ValueError:
-                    continue
-                # get the color code 
-                if "R;G;B" in _esc_code:
-                    _hex_value = _color_map.get(_style_value)
-                    if _hex_value is None:
-                        continue
-                    # convert to a rgb string
-                    _rgb = self.hex2rgb(_hex_value)
-                    _rgb = ";".join(map(str,_rgb))
-                    _esc_code = _esc_code.replace("R;G;B",_rgb)
-                    _out_esc.append(_esc_code)
-                elif _style_value is True:
-                    _out_esc.append(_esc_code)
-            _out_esc="".join(_out_esc)
-            out[_style] = _out_esc
-                
+                _esc_out.append(_style_opt[1])
+            # add the resulting string to an output map
+            out[_style_name]="".join(_esc_out)
+
         return out
 
-    
     def read_styles(self)->dict:
         """ reads the styles file is existent """
         styles_dict = {}
+        # TODO CHANGE LOCATION
         _f_styles = os.path.join(self._p_resources,F_STYLES)
         if os.path.isfile(_f_styles):
             styles_dict = Persistence.read_json(_f_styles)
@@ -464,13 +519,13 @@ class ThemeConsole(ColorMapper):
             logger.warning(f"[ThemeConsole] invalid path to styles file [{_f_styles}]")
         return styles_dict
 
-    def _set_style_theme(self,theme:str=None)->None:
-        """ setting the style theme """
-        if theme in self.themes:
-            self._style_theme = theme
-        else:
-            logger.warning(f"[ThemeConsole] Invalid Theme [{theme}],using default (valid:{self.themes})")
-            self._style_theme = THEME_DEFAULT
+    # def _set_style_theme(self,theme:str=None)->None:
+    #     """ setting the style theme """
+    #     if theme in self.themes:
+    #         self._style_theme = theme
+    #     else:
+    #         logger.warning(f"[ThemeConsole] Invalid Theme [{theme}],using default [{self._default_theme}] (valid:{self.themes})")
+    #         self._style_theme = self._default_theme
 
     def preview_theme(self,theme:str=THEME_DEFAULT)->None:
         """ displays a theme """
@@ -486,18 +541,27 @@ class ThemeConsole(ColorMapper):
         """ show all availabkle themes """
         for _theme in self.themes:
             self.preview_theme(_theme)
-    
+
     @property
     def color_map(self):
         """ get current color map for selected theme """
-        _color_map = deepcopy(self.theme.get(self._style_theme,{}))
-        _ = _color_map.pop("name", None)
-        return _color_map
+        return self.get_esc_codes()
+
+    @property
+    def theme(self):
+        """ get current theme """
+        return self._theme
 
     @property
     def themes(self):
         """ returns list of available themes """
-        return [t.name for t in self._theme_manager.themes]
+        return self._themes
+
+    @property
+    def style_names(self)->dict:
+        """ returns styles for currently selected theme """
+        _theme = self._theme_manager.get(self._theme)
+        return _theme.style_names
 
     def list_themes(self):
         """ shows the list of themes """
@@ -543,7 +607,7 @@ class ThemeConsole(ColorMapper):
                         if _style_col:
                             _value = _style_col.color.name
                     _custom_style_info[_style]=_value
-                if len(_custom_info) > 0:                    
+                if len(_custom_info) > 0:
                     _styles[_custom_style] = Style(**_custom_style_info)
 
             _theme[STYLES]=_styles
@@ -562,6 +626,57 @@ class ThemeConsole(ColorMapper):
             self._p_rich_themes = _p_rich_themes
         else:
             logger.warning("f[ThemeConsole] No valid resources path [{self._p_resources}], check your configuration")
+
+    def get_console(self,theme:str=None)->Console:
+        """ returns a console with created theme """
+        _theme_name = theme
+        if not _theme_name in self._themes:
+            logging.debug(f"[ThemeConsole] No theme was transferred, using initital theme")
+            _theme_name = self._theme
+        print(f"THEME {_theme_name}")
+        _theme = self._theme_manager.get(_theme_name)
+        return Console(theme=_theme)
+
+    def show_styles(self,theme:str=None)->None:
+        """ prints the styles """
+        _console = self.get_console(theme)
+        _style_names = self.style_names
+        for _style in _style_names:
+            _console.print(f"[{_style}]\[STYLE {_style:<20}] THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG")
+
+if __name__ == "__main__":
+    logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
+                        level=LOG_LEVEL, datefmt="%Y-%m-%d %H:%M:%S",
+                        handlers=[RichHandler(rich_tracebacks=True)])
+
+    # # show color themes
+    if False:
+        ColorMapper().show_themes()
+    # show color maps
+    if False:
+        ColorMapper().show_colors(num_colums=4)
+        ColorMapper().show_colors(colors=["red","pink","coral","salmon","orange","yellow","gold","green","cyan","turq","blue","violet","purple","gray"])
+        ColorMapper().show_colors(colors=["dark","medium","light","pale"])
+    # handling via console
+    if False:
+        theme_console = ThemeConsole(create_themes=True)
+        # theme_console._theme_manager.get()
+        theme_console.list_themes()
+        theme_console.preview_theme("ubuntu")
+        # theme_console.preview_themes()
+    # testing the themed console
+    if True:
+        _console_manager = ThemeConsole()
+        _esc_codes = _console_manager.get_esc_codes()
+        _theme = _console_manager.theme
+        _themes = _console_manager.themes
+        # print("### STYLES #########")
+        _style_names = _console_manager.style_names
+        print("### UBUNTU THEME  #########")
+        _console_manager.show_styles(theme="ubuntu")
+        print("### NEUTRON THEME #########")
+        _console_manager.show_styles(theme="neutron")
+        pass
 
 
 # def test_theme():
@@ -607,29 +722,3 @@ class ThemeConsole(ColorMapper):
 #     # console.print("Something terrible happened!", style="danger")
 
 #     # pass
-
-
-
-
-if __name__ == "__main__":
-    logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
-                        level=LOG_LEVEL, datefmt="%Y-%m-%d %H:%M:%S",
-                        handlers=[RichHandler(rich_tracebacks=True)])
-
-    # # show color themes
-    if False:
-        ColorMapper().show_themes()
-    # show color maps
-    if False:
-        ColorMapper().show_colors(num_colums=4)
-        ColorMapper().show_colors(colors=["red","pink","coral","salmon","orange","yellow","gold","green","cyan","turq","blue","violet","purple","gray"])
-        ColorMapper().show_colors(colors=["dark","medium","light","pale"])
-    # handling via console
-    if True:
-        theme_console = ThemeConsole(create_themes=True)
-        # theme_console._theme_manager.get()
-        theme_console.list_themes()
-        theme_console.preview_theme("ubuntu")
-        # theme_console.preview_themes()
-
-    # test_theme()

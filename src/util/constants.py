@@ -52,6 +52,9 @@ class ConfigBootstrap(AbstractEnum):
     CLI_CONFIG_HOME = "config_home"
     CLI_CONFIG_LOG_LEVEL = LOG_ERROR
     CLI_CONFIG_DEMO = "DEMO"
+    CLI_DEFAULT_THEME = "ubuntu"
+    CLI_THEME = "cli_theme"
+
 
 # type definitions
 
@@ -67,7 +70,7 @@ class DataType(AbstractEnum):
     PATH_CMD = "path_cmd" # path var representing a path for a command, eg with quotes in win
     PATH_UNC = "path_unc" # path var as unc
     PATH_WIN = "path_win" # path var as win
-    PATH_DOS = "path_dos" # path var as dos, eg without spaces and max 8 chars per path element
+    PATH_DOS = "path_dos" # path var as dos, eg without spaces and max 8 chars per path element 
 
 
 DATA_TYPES = DataType.get_values()
@@ -392,6 +395,47 @@ class Cmd(AbstractEnum):
     GIT = "git"
     VENV = "venv"
 
+# Default colors copied from the /sresources/colorthemes.json Ubuntu Schemes 
+DEFAULT_COLORS= {
+                "black":"#000000",
+                "blue":"#006fb8",
+                "bright_black":"#808080",
+                "bright_blue":"#0000ff",
+                "bright_cyan":"#00ffff",
+                "bright_green":"#00ff00",
+                "bright_magenta":"#ff00ff",
+                "bright_red":"#ff0000",
+                "bright_white":"#ffffff",
+                "bright_yellow":"#ffff00",
+                "cyan":"#2cb5e9",
+                "default":"#cccccc",
+                "green":"#39b54a",
+                "list_description":"#00ffff",
+                "list_key":"#ff0000",
+                "list_number":"#ffff00",
+                "lvl_err":"bold #ffffff on #ff0000",
+                "lvl_info":"bold #cccccc on #39b54a",
+                "lvl_warn":"bold #000000 on #ffff00",
+                "magenta":"#762671",
+                "out_path":"#ffc706",
+                "out_search":"#de382b",
+                "out_title":"#00ffff",
+                "pg_branch":"bold #00ff00",
+                "pg_path":"#ff0000",
+                "pg_venv":"#0000ff",
+                "pg_venv_active":"#ffffff",
+                "python":"#00ff00",
+                "red":"#de382b",
+                "text":"#cccccc",
+                "todo_context":"#ff00ff",
+                "todo_done":"strike #cccccc",
+                "todo_due":"#ffc706",
+                "todo_prio1":"#ff0000",
+                "todo_prio2":"#ffff00",
+                "todo_project":"#00ffff",
+                "white":"#cccccc",
+                "yellow":"#ffc706"
+}
 
 
 
