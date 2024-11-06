@@ -19,7 +19,7 @@ import shlex
 
 logger = logging.getLogger(__name__)
 
-# get log level from environment if given 
+# get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 # environemnt variables (either from DOS or bash)
@@ -38,16 +38,54 @@ class Utils():
     """ util collection """
 
     @staticmethod
+    def transpose_matrix(array:list)->list:
+        """" transpose a list of list aka matrix the good old way """
+        _rows = len(array)
+        _cols = len(array[0])
+        out = []
+        for _c in range(_cols):
+            _line=[]
+            for _r in range(_rows):
+                _line.append(array[_r][_c])
+            out.append(_line)
+        return out
+
+    @staticmethod
+    def get_base_int(num:int,base:int=16,inverse:bool=True,length:int=None)->list:
+        """ creates the  number representation to a given base
+            list will be sorted according to base (opposite to number representation)
+            num = i*1 + j*base + k*base^2 + ... if inverse is set result will be reversd
+        """
+        out = []
+        _num_left = num
+        _finished = False
+        while _finished is False:
+            _mod = _num_left % base
+            out.append(_mod)
+            _num_left = _num_left // base
+            if _num_left < base:
+                out.append(_num_left)
+                _finished = True
+        # get number of zeros to be appended
+        zeros = []
+        if length and len(out) < length:
+            zeros = [0] * (length - len(out) )
+            out.extend(zeros)
+        if inverse:
+            out.reverse()
+        return out
+
+    @staticmethod
     def split(args,platform:str=None):
-        """ shlex not really works on win so convert paths using a 
-            custom method, credit: 
+        """ shlex not really works on win so convert paths using a
+            custom method, credit:
             https://stackoverflow.com/questions/69909487/taming-shlex-split-behaviour
-            Like calling shlex.split, but sets `posix=` according to platform 
+            Like calling shlex.split, but sets `posix=` according to platform
             and unquotes previously quoted arguments on Windows
-            :param args: a command line string consisting of a command with arguments, 
-                         e.g. r'dir "C:\Program Files"'  
+            :param args: a command line string consisting of a command with arguments,
+                         e.g. r'dir "C:\Program Files"'
             :param platform: a value like os.name would return, e.g. 'nt'
-            :return: a list of arguments like shlex.split(args) would have returned            
+            :return: a list of arguments like shlex.split(args) would have returned
             TODO maybe switch to asyncio in the future ...
         """
         if platform is None:
@@ -55,15 +93,15 @@ class Utils():
                 platform = C.ENV_WINDOWS
             else:
                 platform = C.ENV_UNIX_STYLE
-        elif platform != C.ENV_WINDOWS:            
+        elif platform != C.ENV_WINDOWS:
             platform = C.ENV_UNIX_STYLE
-    
+
         if platform == C.ENV_WINDOWS:
             _arg_list = shlex.split(args,posix=False)
         else:
             _arg_list = shlex.split(args)
 
-        # there is a case to strip leading quotes 
+        # there is a case to strip leading quotes
         # _split_args = [a[1:-1].replace('""', '"') if a[0] == a[-1] == '"' else a for a in _arg_list]
         return _arg_list
 
@@ -91,13 +129,13 @@ class Utils():
             _path_types.append(C.FileFormat.UNC)
         if "\\" in _p_test:
             _path_types.append(C.FileFormat.WIN)
-        # if there is no slashes then it is a file in native format 
+        # if there is no slashes then it is a file in native format
         if not ( "\\" in _p_test or "/" in _p_test ):
             if Utils.is_windows():
                 _path_types.append(C.FileFormat.WIN)
             else:
                 _path_types.append(C.FileFormat.UNC)
-        
+
         # check for backslash indicating win type
         _elems_win = _p_test.split("\\")
         if len(_elems_win) > 1:
@@ -305,7 +343,7 @@ class Utils():
     def get_git(**kwargs)->str:
         """ gets availabe git versions with a preference for the version in cmd """
         # https://stackoverflow.com/questions/8947140/git-cmd-vs-git-exe-what-is-the-difference-and-which-one-should-be-used
-        # TODO 
+        # TODO
 
 
     @staticmethod

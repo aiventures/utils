@@ -41,16 +41,20 @@ def test_convert_methods():
                             file_conversion=C.CygPathCmd.WIN2DOS.name)
     assert isinstance(_python,str)
 
+def test_get_base_int():
+    """ testing the base number converter """
+    _num = 19
+    _base = 2
+    _base_num_list = Utils.get_base_int(_num,_base,inverse=False)
+    _sum = 0
+    for i in range(len(_base_num_list)):
+        _sum += _base_num_list[i]*(_base**i)
+    assert _num == _sum
 
-
-
-
-
-
-
-
-
-
-
-
+def test_transpose_matrix():
+    """ test the transpose method """#
+    m = [[1,4],[2,5],[3,6]]
+    t = Utils.transpose_matrix(m)
+    assert t[0] == [1,2,3]
+    assert t[1] == [4,5,6]
 

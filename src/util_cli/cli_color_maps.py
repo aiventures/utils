@@ -1,6 +1,12 @@
 """ Color Maps """
 
-# 256 color palette
+# 256 Values color palette / This also corresponds to the 
+# regular ANSI Palette ()
+# 000-015 => Regular Colors 
+# 016-231 => ANSI Colors
+# 232-255 => Grey Values
+# ANSI COLOR CHANNEL VALUES
+ANSI_VALUES = [0,95,135,175,215,255]
 RGB_COLORS = [
                 (0, 0, 0),
                 (128, 0, 0),

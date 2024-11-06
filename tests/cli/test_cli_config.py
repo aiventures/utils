@@ -6,7 +6,7 @@ from cli.cli_config import app as cli_config
 runner = CliRunner()
 
 def test_cli_config_show():
-    """ Testing  the config show variant"""
+    """ Testing the config show variant"""
     result = runner.invoke(cli_config,["show"])
     assert result.exit_code == 0
 

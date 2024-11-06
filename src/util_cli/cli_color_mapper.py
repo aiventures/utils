@@ -10,6 +10,7 @@ from pathlib import Path
 from enum import Enum
 from typing import Any
 from rich.table import Table
+from rich import box
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.style import Style
@@ -20,7 +21,8 @@ from copy import deepcopy
 from util import constants as C
 from util.const_local import LOG_LEVEL
 from util.persistence import Persistence
-from util_cli.cli_color_maps import RGB_COLORS,HEX_COLORS,COLOR_NAMES
+from util.utils import Utils
+from util_cli.cli_color_maps import RGB_COLORS,HEX_COLORS,COLOR_NAMES, ANSI_VALUES
 
 HEX = "hex"
 ANSI = "ansi" # ansi ciodes not implemented yet
@@ -184,10 +186,70 @@ class ColorMapper():
                 _table.add_row(*row)
             _console.print(_table)
 
+    @staticmethod
+    def _create_ansi_map():
+        """ creates ansi array for later display """
+        # https://hexdocs.pm/color_palette/color_table.html
+        tables = []
+        for _min_idx in [16,88,160]:
+            _table = []
+            for i in range(12):
+                _idx = _min_idx + i*6
+                _table.append(list(range(_idx,_idx+6)))
+            _table = Utils.transpose_matrix(_table)
+            tables.extend(_table)
+        # basic colors and grey values
+        _table=[[*list(range(8)),0,0,0,0],
+                [*list(range(8,16)),0,0,0,0],
+                list(range(232,244)),
+                list(range(244,256))]
+        tables.extend(_table)
+        return tables
+
+    @staticmethod
+    def get_ansi_table(with_names:bool=True)->Table:
+        """ creates map with ANSI codes  """
+
+        def _render_col(ansi_code):
+            if with_names:
+                _s = f"[black on {HEX_COLORS[ansi_code]}] \[{str(ansi_code).zfill(3)}] \n{HEX_COLORS[ansi_code]}\n{COLOR_NAMES[ansi_code]}"
+            else:
+                _s = f"[black on {HEX_COLORS[ansi_code]}] \[{str(ansi_code).zfill(3)}] \n{HEX_COLORS[ansi_code]}"
+
+            # _s = str(ansi_code)
+            return _s
+
+        _ansi_map = ColorMapper._create_ansi_map()
+        table = Table(title="ANSI CODES",box=None)
+        for _col in range(12):
+            table.add_column(f"({str(_col).zfill(2)})", no_wrap=True)
+        for _line in _ansi_map:
+            _rendered = [_render_col(_ansi_code) for _ansi_code in _line]
+            table.add_row(*_rendered)
+
+        return table
+
     def code2rgb(self,code:int)->str:
         """ convert code to rgb  """
         return self._rgb_colors[code]
 
+    @staticmethod
+    def _ansi2rgb(ansi_code:int)->tuple:
+        """ calculate the rgb tuple from ansi code """
+        # rgb value is according to a base value
+        # return default values for standard colors or grey values
+        if ansi_code < 16 or ansi_code > 231:
+            return RGB_COLORS[ansi_code]
+        # calculate the rgb value (based on 6 values on color cube)
+        ansi_code -= 16
+        _rgb=Utils.get_base_int(ansi_code,6,inverse=True,length=3)
+        _rgb=tuple([ANSI_VALUES[code] for code in _rgb])
+        return _rgb
+
+    @staticmethod
+    def ansi2rgb(ansi_code)->tuple:
+        """ get the rgb tuple for ansi code """
+        return RGB_COLORS[ansi_code]
 
     @staticmethod
     def rgb2ansi(rgb:tuple)->int:
@@ -461,7 +523,7 @@ class ThemeConsole(ColorMapper):
         out["reset"]="ESC[0m"
         # get the color map and the styles from current theme
         # https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
-        # We need to transform the RGB code into ANSI Code (otherwise it seems not to be working 
+        # We need to transform the RGB code into ANSI Code (otherwise it seems not to be working
         # for BAT FILES, even as it's running with Rich)
         _esc_color = "ESC[38;5;ANSIm"
         _esc_bgcolor = "ESC[48;5;ANSIm"

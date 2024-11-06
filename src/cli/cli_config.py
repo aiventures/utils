@@ -7,6 +7,7 @@ import os
 #import json
 import typer
 from rich import print as rprint
+from rich.console import Console
 # from rich.markup import escape as esc
 from rich.logging import RichHandler
 import json
@@ -18,6 +19,7 @@ from util.constants import DEFAULT_COLORS as CMAP
 # from util.config_env import ConfigEnv
 from cli.bootstrap_config import config_env
 from cli.bootstrap_env import OS_BOOTSTRAP_VARS
+from util_cli.cli_color_mapper import ColorMapper
 # from util_cli import 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +50,14 @@ def show_config_json():
 @app.command("color-themes")    
 def show_color_themes():
     """ shows the available color themes """
+    pass
+
+@app.command("ansi-colors")
+def show_ansi_colors(with_names:bool=False):
+    """ Show Table of ANSI COlors  """  
+    _console = Console()  
+    _ansi_table = ColorMapper.get_ansi_table(with_names)
+    _console.print(_ansi_table)
     
 # https://typer.tiangolo.com/tutorial/commands/callback/
 @app.callback()
@@ -61,3 +71,4 @@ if __name__ == "__main__":
                         level=log_level, datefmt="%Y-%m-%d %H:%M:%S",
                         handlers=[RichHandler(rich_tracebacks=True)])
     app()
+
