@@ -11,9 +11,9 @@ os_bootstrap_vars = OS_BOOTSTRAP_VARS
 config_env = ConfigEnv()
 
 # the console output to be used for coloring output
-# Note the Theme will be set in ThemeConsole Constructor in  
+# Note the Theme will be set in ThemeConsole Constructor in
 # the following order (theme is set in the bootstrap_env odule):
 # (1) environment env CLI_THEME
 # (2) environment env CLI_THEME_DEFAULT
 # (3) Hard Coded Variable util/constants.py/ConfigBootstrap.CLI_DEFAULT_THEME (ubuntu)
-console = ThemeConsole(theme=OS_BOOTSTRAP_VARS["CLI_THEME"])
+console_maker = ThemeConsole(theme=OS_BOOTSTRAP_VARS["CLI_THEME"])

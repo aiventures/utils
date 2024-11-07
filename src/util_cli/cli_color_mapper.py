@@ -109,7 +109,6 @@ class ColorMapper():
             out.append(group_list[_from:_to])
         return out
 
-
     @property
     def themes(self)->dict:
         """ returns themes with color codes """
@@ -148,7 +147,7 @@ class ColorMapper():
             if passed is False:
                 continue
 
-            s = f"[white on {_color[HEX]}]{str(_color[CODE]).zfill(3)} {_color[NAME]: <15}"
+            s = f"[black on {_color[HEX]}]{str(_color[CODE]).zfill(3)} {_color[NAME]: <15}"
             _color_list.append(s)
         # get a sorted list of items
         _keys = []
@@ -697,6 +696,8 @@ class ThemeConsole(ColorMapper):
             _theme_name = self._theme
         print(f"THEME {_theme_name}")
         _theme = self._theme_manager.get(_theme_name)
+        if theme is not None:
+            self._theme = theme
         return Console(theme=_theme)
 
     def show_styles(self,theme:str=None)->None:
@@ -727,7 +728,7 @@ if __name__ == "__main__":
         theme_console.preview_theme("ubuntu")
         # theme_console.preview_themes()
     # testing the themed console
-    if True:
+    if False:
         _console_manager = ThemeConsole()
         _esc_codes = _console_manager.get_esc_codes()
         _theme = _console_manager.theme

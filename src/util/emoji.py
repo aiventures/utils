@@ -51,7 +51,7 @@ def show_rich_emoji_codes(emoji_filter:str|list=None,only_meta:bool=True)->None:
             _out_list = []
             emoji_keys = sorted(emoji_info.keys())
             for _emoji_key in emoji_keys:
-                # check whether this is also contained in rich icon set 
+                # check whether this is also contained in rich icon set
                 if EMOJI.get(_emoji_key) is None:
                     continue
                 _meta = _emoji_meta.get(_emoji_key)
@@ -63,11 +63,11 @@ def show_rich_emoji_codes(emoji_filter:str|list=None,only_meta:bool=True)->None:
                     _add_info = ""
                 _out = f"[:{_emoji_key}:] {_emoji_key}"
                 _search = f"[:{_emoji_key}:] {_add_info} {_emoji_key}"
-        
+
                 if _emoji_filters:
                     _hits = [f for f in _emoji_filters if f.lower() in _search.lower()]
                     if len(_hits) == 0:
-                        continue                
+                        continue
                 _out_list.append(_out)
             if len(_out_list) == 0:
                 continue
@@ -77,9 +77,3 @@ def show_rich_emoji_codes(emoji_filter:str|list=None,only_meta:bool=True)->None:
 
 if __name__ == "__main__":
     show_rich_emoji_codes()
-
-
-
-
-
-
