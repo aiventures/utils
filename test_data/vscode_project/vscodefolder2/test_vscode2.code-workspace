@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "../../../CMD/githome"
+		},
+		{
+			"path": "../../..//CMD/docs"
+		}
+	],
+	"settings": {
+		"python.terminal.launchArgs": [
+			
+		]
+	}
+}
