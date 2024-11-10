@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
-app = typer.Typer(name="cli_config_client", add_completion=True, help="Configuration and Environment Settings")
+app = typer.Typer(name="cli_config_client", add_completion=True, help="Command Line Client Customizing (Colors, Locations, Envionment Setup)")
 
 @app.command("bootstrap")
 def show_bootstrap_config():

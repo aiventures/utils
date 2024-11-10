@@ -104,7 +104,7 @@ class BatHelper():
 
     def get_env_files(self,p:str=None,prefix:str="_tmp"):
         """ get the env file list """
-        _files = Persistence.find(_p_root_paths=p,root_path_only=True,include_files=f"^{prefix}.*.bat")
+        _files = Persistence.find(p_root_paths=p,root_path_only=True,include_files=f"^{prefix}.*.bat")
         return _files
 
     def read_env_files(self,p:str,prefix:str="_tmp",as_dict:bool=False)->dict|list:

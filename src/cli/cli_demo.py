@@ -4,6 +4,7 @@ import typer
 import time
 import sys
 import os
+from typing import List
 from rich import print
 from rich.prompt import Prompt
 from rich.progress import BarColumn,DownloadColumn
@@ -27,6 +28,8 @@ from util.persistence import Persistence
 # Password and repeat https://typer.tiangolo.com/tutorial/options/password/
 # Alternative Names / Short Names
 # https://typer.tiangolo.com/tutorial/parameter-types/bool/?h=short#alternative-names
+# Parameter Types: Boolean CLI Options,UUID,DateTime,Enum - Choices,Path,File,Custom Types
+# https://typer.tiangolo.com/tutorial/parameter-types/
 
 
 logger = logging.getLogger(__name__)
@@ -48,7 +51,7 @@ def demo_params1(param1:int,
           param2_annot: _annot_test,
           param3_opt:str="OPTIONALPARAM3",
           param4_opt_annot: Annotated[str, typer.Option()] = "OPTIONALPARAM4",
-          param5_opt_annot: Annotated[Optional[str], typer.Argument()]=None
+          param5_opt_annot: Annotated[Optional[str], typer.Argument(help="params5 opt help text")]=None
 ):
     """ Test Driving several options
 
@@ -66,7 +69,7 @@ def demo_demo1(param_str:str,param_out:str="Test"):
     """demo1 method summary
 
     Args:
-        xyz (str): xyz_description
+        param_str (str): xyz_description
         test (str, optional): test_description. Defaults to "Test".
     """
     print(f"Hello Share Parser CLI {param_str} param_opt {param_out}")
@@ -108,6 +111,7 @@ def demo_prompt2(
         bool, typer.Option(prompt="Are you sure you want to do this?")
     ],
 ):
+    """ testing promp """
     # this is an option to ask for values in case not given at the command line
     if force:
         print(f"FORCE was chosen")
@@ -235,6 +239,11 @@ def demo_open_file():
     typer.launch(_file, locate=False)
     print(f"OPENING FILE LOCATION [{_file}]")
     typer.launch(_file, locate=True)
+
+@app.command("demo_list")
+def demo_list(params: Optional[List[str]]=typer.Option(None)):
+    """ Lists as input (needs to be comma separated list of args eg args1,args2) """
+    print(f"HELLO {params}")
 
 if __name__ == "__main__":
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
