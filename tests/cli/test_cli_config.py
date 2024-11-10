@@ -1,7 +1,7 @@
 """ Unit Tests for command line features """
 
 from typer.testing import CliRunner
-from cli.cli_config import app as cli_config
+from cli.cli_customizing import app as cli_config
 
 runner = CliRunner()
 

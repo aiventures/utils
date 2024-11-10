@@ -1,11 +1,14 @@
 """ collection of utils """
 
+
 import shlex
 import sys
 import os
 import logging
 import subprocess
 import platform
+import configparser
+from configparser import Error as ConfigParserError
 from enum import Enum
 from datetime import datetime as DateTime
 from pathlib import Path
@@ -36,6 +39,23 @@ P_SAVE = "p_save"
 
 class Utils():
     """ util collection """
+
+    @staticmethod
+    def read_ini_config(f_config:str)->dict:
+        """ reads configuration from a config file in INI format """
+        # https://docs.python.org/3/library/configparser.html
+        # https://stackoverflow.com/questions/1773793/convert-configparser-items-to-dictionary
+        if not os.path.isfile(f_config):
+            logger.warning(f"[UTILS] File [{f_config}] is not a file to be used for INI Configuration")
+            return
+        _config = configparser.ConfigParser()
+        try:
+            _config.read(f_config)
+        except ConfigParserError:
+            logger.warning(f"[UTILS] File [{f_config}] can't be parsed as INI Configuration)")
+            return
+        
+        return {_section_name: dict(_config[_section_name]) for _section_name in _config.sections()}
 
     @staticmethod
     def transpose_matrix(array:list)->list:

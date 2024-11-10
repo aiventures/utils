@@ -191,7 +191,8 @@ class Persistence():
                    re_include_abspaths:list = None,
                    re_exclude_abspaths:list = None,
                    match_all:bool=False,
-                   show_progress:bool=False )->int:
+                   show_progress:bool=False,
+                   max_path_depth:int=None)->int:
         """ walks the path in a given root directory
             is used in find method as a way to get objects without rendering
             progress bars, returns number of processed files
@@ -200,9 +201,14 @@ class Persistence():
 
         if show_progress:
             rprint(f"[deep_sky_blue1]### Path  [orange3][{p_root}]")
+        # determine depth of root path
+        _depth_root_path = len(Path(os.path.abspath(p_root)).parts)
         for _subpath,_,_files in os.walk(p_root):
             _cur_path = Path(_subpath).absolute()
             if root_path_only and str(_cur_path) != p_root:
+                continue
+            _depth_sub_path = len(_cur_path.parts)
+            if max_path_depth is not None and (_depth_sub_path - _depth_root_path) > max_path_depth:
                 continue
             # check for path is there are criteria
             _passed = True
@@ -246,14 +252,15 @@ class Persistence():
         return out
 
     @staticmethod
-    def find(_p_root_paths:list|str=None,
+    def find(p_root_paths:list|str=None,
              include_abspaths:list|str=None,exclude_abspaths:list|str=None,
              include_files:list|str=None,exclude_files:list|str=None,
              include_paths:list|str=None,exclude_paths:list|str=None,
              paths:bool=False,files:bool=True,as_dict:bool=False,
              root_path_only:bool=False,
              match_all:bool=False,ignore_case:bool=True,
-             show_progress:bool=True)->list|dict:
+             show_progress:bool=True,
+             max_path_depth:int=None)->list|dict:
         """ finds files and paths according to path names / a slightly slimmer version than the FileAnalyzer
             regex can be used (differewntly for filename only, path only or abs path)
             match all or anxy determines whethwer all or any crieteria need to match
@@ -267,14 +274,14 @@ class Persistence():
         _re_include_paths = Persistence._re_list(include_paths,ignore_case)
         _re_exclude_paths =Persistence._re_list(exclude_paths,ignore_case)
 
-        if isinstance(_p_root_paths,str):
-            _p_root_paths = _p_root_paths.split(",")
+        if isinstance(p_root_paths,str):
+            p_root_paths = p_root_paths.split(",")
 
         _paths_out = []
         _files_out = []
         _path_dict = {}
 
-        for _root_path in _p_root_paths:
+        for _root_path in p_root_paths:
             logger.debug(f"[Persistence] Checking files and paths for [{_root_path}]")
             if not os.path.isdir(_root_path):
                 logger.warning(f"[Persistence] Path [{_root_path}] doesn't exist")
@@ -293,7 +300,8 @@ class Persistence():
                        "re_include_abspaths":_re_include_abspaths,
                        "re_exclude_abspaths":_re_exclude_abspaths,
                        "match_all":match_all,
-                       "show_progress":show_progress}
+                       "show_progress":show_progress,
+                       "max_path_depth":max_path_depth}
 
             # do the analysis
             _num_files = Persistence._walk_path(**_params)
@@ -301,7 +309,7 @@ class Persistence():
             logger.debug(f"[Persistence] Found [{_num_files}] in Path [{_root_path}]")
 
         if show_progress:
-            rprint(f"[deep_sky_blue1]### ({str(_num_total).zfill(3)}) Files found in [gold1]{_p_root_paths}")
+            rprint(f"[deep_sky_blue1]### ({str(_num_total).zfill(3)}) Files found in [gold1]{p_root_paths}")
 
         # either return dict or list of files
         if as_dict:

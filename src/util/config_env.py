@@ -872,10 +872,22 @@ class ConfigEnv():
             return str(_path.absolute())
 
     @config_key
-    def get_ref(self,key:str,fallback_value:bool=False)->str:
-        """ returns the constructed reference from Configuration
-            if fallback_value is set it will be tried to get the value field
-        """
+    def get_ref(self,key:str,fallback_value:bool=False,fallback_default:any=None)->str:
+        """returns the constructed reference from Configuration
+
+        Args:
+            key (str): Key (assumed to be present in configration)
+            fallback_default (any): If no ref will be resolved, instead of None this value will be returned
+            fallback_value (bool, optional): Is True, it will be used to determin the value of the configuration. Defaults to False.
+
+        Returns:
+            str: resolved value
+        """        
+
+        # if no key is passed return default fallback value
+        if key is None:
+            return fallback_default
+
         # treat special case with where variables where the excutable is stored
         # in the where attribute
         if C.ConfigKey.get_configtype(key) == C.ConfigKey.WHERE:
@@ -884,6 +896,9 @@ class ConfigEnv():
             _ref = self._config.get(key,{}).get(C.ConfigAttribute.REFERENCE.value)
         if _ref is None and fallback_value is True:
             _ref = self._config.get(key,{}).get(C.ConfigAttribute.VALUE.value)
+        if _ref is None and fallback_default is not None:
+            logger.info(f"[CONFIG] Key [{key}] is invalid, using fallback_default [{fallback_default}]")
+            _ref = fallback_default
         if _ref is None:
             logger.warning(f"[CONFIG] Key [{key}] is invalid")
         return _ref

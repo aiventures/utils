@@ -119,7 +119,7 @@ def create_testcases_find()->list:
     out = []
     _p_testpath = str(C.PATH_ROOT.joinpath("test_data","test_path"))
 
-    _kwargs = {"_p_root_paths":_p_testpath,
+    _kwargs = {"p_root_paths":_p_testpath,
                "include_abspaths":None,
                "exclude_abspaths":None,
                "include_files":None,
