@@ -5,9 +5,12 @@ import logging
 from enum import Enum
 import os
 from copy import deepcopy
+from typing import List,Optional,Union,Dict
 from util import constants as C
+from util.utils import Utils
 from util.persistence import Persistence
 from cli.bootstrap_config import config_env,console_maker
+from model.model_code_artifacts import CodeArtifactEnum as ARTIFACT,ArtifactMeta
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -18,25 +21,39 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=loglevel, stream=sys.stdout, datefmt="%Y-%m-%d %H:%M:%S")
 
-ARTIFACT_FILTER = {"git":   {"include_paths":".git$"},
-                   "vscode":{"include_files":".code-workspace"},
-                   "venv":  {"include_abspaths":f"scripts{os.sep}activate"}}
+#ARTIFACT_GIT = "git"
+#ARTIFACT_VENV = "venv"
+#ARTIFACT_VSCODE = "vscode"
+# default filter for most common artifact files
+# os dependent paths definition
+venv_regex = "scripts\\\\activate" if Utils.is_windows() else "scripts\/activate"
+ARTIFACT_FILTER = { ARTIFACT.GIT:   {"include_paths":".git$"},
+                   ARTIFACT.VSCODE:{"include_files":".code-workspace"},
+                   ARTIFACT.VENV:  {"include_abspaths":venv_regex}}
+
+# COPY TEMPLATE FOR INSTANCIATING 
+ARTIFACT_INPUT_TEMPLATE={"p_root":None,"max_path_depth":3,"artifact_type":ARTIFACT.GIT,"show_progress":False}
 
 class CodeArtifact():
     """ Reading Code Artifacts from environment or files such as git, venv,... """
-    def __init__(self,p_root:str|list=None,max_path_depth:int=None,
-                 artifact_type:str|None="git",
-                 artifact_filter:dict=None,
-                 show_progress:bool=False) -> None:
-        """Constructor
+    def __init__(self,artifact_meta:ArtifactMeta=ArtifactMeta()):
+        """_summary_
 
         Args:
+            artifact_meta (ArtifactMeta, optional): Constructor. Defaults to ArtifactMeta().
+            Params Infos
             p_root (str|list): Entry Path (single or list) containing all entry paths. If initial,
             it will default to current directory
             max_path_depth (int, optional): max folder depth to search from root path. Defaults to None.
             artifact: filter to be applied to capture siognature of a certain code artifact
-            show_progress (bool, optional): showing search indicator. Defaults to False.
-        """
+            show_progress (bool, optional): showing search indicator. Defaults to False.            
+        """        
+
+        p_root = artifact_meta.p_root
+        max_path_depth = artifact_meta.max_path_depth
+        artifact_type = artifact_meta.artifact_type
+        artifact_filter = artifact_meta.artifact_filter
+        show_progress = artifact_meta.show_progress
 
         # initalize / resolve paths
         if p_root is None:
@@ -88,6 +105,69 @@ class CodeArtifact():
     def artifact_type(self):
         """ returns artifact type """
         return self._artifact_type
+    
+class GitArtifact(CodeArtifact):
+    """  Git Code Artifact Parsing """
+    def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
+        super().__init__(artifact_meta)
+        self._artifact_type = ARTIFACT.GIT
+
+class VenvArtifact(CodeArtifact):
+    """  Virtual Environment Code Artifact Parsing """
+    def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
+        super().__init__(artifact_meta)
+        self._artifact_type = ARTIFACT.VENV
+
+class VsCodeArtifact(CodeArtifact):
+    """  VS Code Project Code Artifact Parsing """
+    def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
+        super().__init__(artifact_meta)    
+        self._artifact_type = ARTIFACT.VSCODE
+
+ARTIFACT_CLASS = { ARTIFACT.GIT:   GitArtifact,
+                   ARTIFACT.VSCODE:VsCodeArtifact,
+                   ARTIFACT.VENV:  VenvArtifact }
+
+class CodeArtifacts():
+    """ handling all Code Artifacts Types in one class """
+
+    def __init__(self,artifacts_meta:List[ArtifactMeta]) -> None:
+        """Constructor to handle any of the Code Artifact Types
+
+        Args:
+            artifact_metas (List[Dict[ARTIFACT,ArtifactMeta]]): 
+        """
+        self._artifacts = {}
+
+        # instanciate classes 
+        for _artifact_meta in artifacts_meta:
+            _type = _artifact_meta.artifact_type
+            try:
+                self._artifacts[_type] = ARTIFACT_CLASS[_type](_artifact_meta)
+            except AttributeError:
+                logger.warning(f"[CodeArtifacts] unknown type [{_type}]")
+        pass
+    
+    @property
+    def vscode_artifact(self)->VsCodeArtifact:
+        """ returns VS Code artifact """
+        return self._artifacts.get(ARTIFACT.VSCODE,None)
+
+    @property
+    def git_artifact(self)->GitArtifact:
+        """ returns VS Code artifact """
+        return self._artifacts.get(ARTIFACT.GIT,None)
+
+    @property
+    def venv_artifact(self)->VenvArtifact:
+        """ returns VS Code artifact """
+        return self._artifacts.get(ARTIFACT.VENV,None)        
+    
+
+    
+    
+        
+        
 
 
 

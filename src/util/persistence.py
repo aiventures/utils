@@ -313,7 +313,13 @@ class Persistence():
 
         # either return dict or list of files
         if as_dict:
-            return _path_dict
+            # clean up empty paths 
+            _out = {}
+            for _path,_file_list in _path_dict.items():
+                if len(_file_list)==0:
+                    continue
+                _out[_path]=_file_list
+            return _out
         # depending on input return proper file objects
         else:
             if paths and files:
