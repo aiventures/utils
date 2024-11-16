@@ -20,5 +20,9 @@
     "todo_due":{"color":"yellow","bat":"C_DUE"},
     "todo_context":{"color":"bright_magenta","bat":"C_CTX"},
     "todo_project":{"color":"bright_cyan","bat":"C_PRJ"},
-    "todo_done":{"color":"white","strike":true,"bat":"C_DONE"}
+    "todo_done":{"color":"white","strike":true,"bat":"C_DONE"},
+    "bar.back":{"color":"grey23","bat":"C_BAR_BACK"},
+    "bar.complete":{"color":"orange_red1","bat":"C_BAR_COMPLETE"},
+    "bar.finished":{"color":"green","bat":"C_BAR_FINISHED"},
+    "bar.pulse":{"color":"orange_red1","bat":"C_BAR_PULSE"}    
 }

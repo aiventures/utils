@@ -11,10 +11,23 @@ class CodeArtifactEnum(Enum):
 
 class ArtifactMeta(BaseModel):
     """ Code artifact structure """
+    # root folder
     p_root: Union[str|list]=None
+    # search up to macx depth
     max_path_depth: Optional[int]=None
+    # type of code artifact
     artifact_type: CodeArtifactEnum = CodeArtifactEnum.GIT
+    # filtering search results 
     artifact_filter: Optional[Dict]=None
+    # show progress bar 
     show_progress: Optional[bool]=False
+    # find only paths not files 
+    paths_only: Optional[bool]=False
 
+class VsCodeMeta(BaseModel):
+    """ VsCodeFile Representation """
+    # absolute path to a vscode file
+    f_vscode : str
+    # project folders stored in VSCode project file 
+    p_folders:List[str] = []
 

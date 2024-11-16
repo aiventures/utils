@@ -505,6 +505,7 @@ class ThemeConsole(ColorMapper):
         # todo handle themes / instanciate theme manager
         self._theme_manager = None
         if create_themes:
+
             self._theme_manager = self.create_rich_themes()
         if not self._theme_manager:
             self._theme_manager = ThemeManager(theme_dir=self._p_rich_themes)
@@ -676,6 +677,7 @@ class ThemeConsole(ColorMapper):
 
             logger.debug(f"[ThemeConsole] Creating Theme [{_theme_name}]")
             _rich_themes.append(Theme(**_theme))
+        print(f"CREATED RICH STYLE THEMES IN [{self._p_rich_themes}]")
         return ThemeManager(theme_dir=self._p_rich_themes, themes=_rich_themes,overwrite=True)
 
     def _set_rich_themes_path(self):
@@ -694,7 +696,6 @@ class ThemeConsole(ColorMapper):
         if not _theme_name in self._themes:
             logging.debug(f"[ThemeConsole] No theme was transferred, using initital theme")
             _theme_name = self._theme
-        print(f"THEME {_theme_name}")
         _theme = self._theme_manager.get(_theme_name)
         if theme is not None:
             self._theme = theme

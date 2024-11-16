@@ -9,9 +9,13 @@ from typing import List,Optional,Union,Dict
 from util import constants as C
 from util.utils import Utils
 from util.persistence import Persistence
-from cli.bootstrap_config import config_env,console_maker
-from model.model_code_artifacts import CodeArtifactEnum as ARTIFACT,ArtifactMeta
-
+from cli.bootstrap_config import config_env,console
+from model.model_code_artifacts import ( CodeArtifactEnum as ARTIFACT,
+                                         ArtifactMeta,
+                                         VsCodeMeta )
+from pathlib import Path
+# from typer import progressbar as t_progressbar
+from rich.progress import Progress,TaskID
 logger = logging.getLogger(__name__)
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
@@ -26,10 +30,10 @@ if __name__ == '__main__':
 #ARTIFACT_VSCODE = "vscode"
 # default filter for most common artifact files
 # os dependent paths definition
-venv_regex = "scripts\\\\activate" if Utils.is_windows() else "scripts\/activate"
-ARTIFACT_FILTER = { ARTIFACT.GIT:   {"include_paths":".git$"},
+venv_regex = "Lib\\\\site-packages$" if Utils.is_windows() else "Lib\/site-packages$"
+ARTIFACT_FILTER = { ARTIFACT.GIT:   {"include_paths":".git$","paths_only":True},
                    ARTIFACT.VSCODE:{"include_files":".code-workspace"},
-                   ARTIFACT.VENV:  {"include_abspaths":venv_regex}}
+                   ARTIFACT.VENV:  {"include_paths":venv_regex,"paths_only":True} }
 
 # COPY TEMPLATE FOR INSTANCIATING 
 ARTIFACT_INPUT_TEMPLATE={"p_root":None,"max_path_depth":3,"artifact_type":ARTIFACT.GIT,"show_progress":False}
@@ -45,7 +49,7 @@ class CodeArtifact():
             p_root (str|list): Entry Path (single or list) containing all entry paths. If initial,
             it will default to current directory
             max_path_depth (int, optional): max folder depth to search from root path. Defaults to None.
-            artifact: filter to be applied to capture siognature of a certain code artifact
+            artifact: filter to be applied to capture signature of a certain code artifact
             show_progress (bool, optional): showing search indicator. Defaults to False.            
         """        
 
@@ -54,6 +58,7 @@ class CodeArtifact():
         artifact_type = artifact_meta.artifact_type
         artifact_filter = artifact_meta.artifact_filter
         show_progress = artifact_meta.show_progress
+        paths_only = artifact_meta.paths_only
 
         # initalize / resolve paths
         if p_root is None:
@@ -63,9 +68,10 @@ class CodeArtifact():
             self._p_root_list = [p_root]
         self._max_path_depth = max_path_depth
         self._show_progress = show_progress
+        self._paths_only = paths_only
         _path_refs = []
         for _p_root in  self._p_root_list:
-            # checkl if it is a path other wise try toresolve reference
+            # checkl if it is a path other wise try to resolve reference
             _ref = None
             if os.path.isdir(_p_root):
                 _ref = _p_root
@@ -85,9 +91,12 @@ class CodeArtifact():
             return 
         self._artifact_filter["as_dict"]=True
         self._artifact_filter["p_root_paths"]=_path_refs
-        if self._max_path_depth is not None:
-            self._artifact_filter["max_path_depth"] = self._max_path_depth
-        self._artifact_filter["show_progress"] = self._show_progress   
+        # value in filter takes over priotity over supplied value 
+        _flt = self._artifact_filter 
+        if _flt.get("max_path_depth") is None and self._max_path_depth is not None:
+            _flt["max_path_depth"] = self._max_path_depth        
+        self._artifact_filter["show_progress"] = _flt.get("show_progress",self._show_progress)
+        self._artifact_filter["paths_only"] = _flt.get("paths_only",self._paths_only)         
         self._artifacts = {}
         self._read_artifacts()        
    
@@ -117,12 +126,53 @@ class VenvArtifact(CodeArtifact):
     def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
         super().__init__(artifact_meta)
         self._artifact_type = ARTIFACT.VENV
+        self._content = {}
 
 class VsCodeArtifact(CodeArtifact):
     """  VS Code Project Code Artifact Parsing """
     def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
         super().__init__(artifact_meta)    
         self._artifact_type = ARTIFACT.VSCODE
+        self._info_dict = {}
+
+    @staticmethod
+    def parse_vscode_folders(f_vscode:str)->list:
+        """ parse the folders section in vs code configuration """
+        _vs_config = Persistence.read_json(f_vscode)
+        _folder_list = _vs_config.get("folders",[])
+        _project_folders = []
+        for _folder in _folder_list:
+            _rel_path = _folder.get("path")
+            if _rel_path is None:
+                continue
+            p_vscode = str(Path(f_vscode).absolute().parent)
+            _project_folders.append(Persistence.get_abspath_from_relpath(p_vscode,_rel_path))
+        return _project_folders
+        
+    def read_content(self)->None:
+        """ reads the content  """
+        # define as pydantic
+
+        def _read_vscode_files(task_id:TaskID,progress:Progress)->dict:
+            """ reads the content od vscode files """            
+            # flatten all vscode file refs into a list 
+            _vs_code_files=[]
+            for _vs_code_file_list in self.artifacts.values():
+                _vs_code_files.extend(_vs_code_file_list)
+            for _f_artifact in _vs_code_files:
+                _vscode_meta = VsCodeMeta(f_vscode=_f_artifact)
+                _vscode_meta.p_folders = VsCodeArtifact.parse_vscode_folders(_f_artifact)
+                self._info_dict[_f_artifact] = _vscode_meta
+                progress.update(task_id,advance=1)
+
+        # #TODO https://github.com/Textualize/rich/issues/2399 Change theme add bar.complete
+        # => look in progress    style: StyleType = "bar.back",/ bar.complete / bar.finished / bar-pulse
+        # defined in default_styles.py
+        console.style
+        with Progress(disable=(not self._show_progress),console=console) as progress:
+            task = progress.add_task("[out_path]Parsing VS Code Files", total=len(self.artifacts))
+            _read_vscode_files(task,progress)           
+    
 
 ARTIFACT_CLASS = { ARTIFACT.GIT:   GitArtifact,
                    ARTIFACT.VSCODE:VsCodeArtifact,

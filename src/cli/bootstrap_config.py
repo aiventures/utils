@@ -17,3 +17,6 @@ config_env = ConfigEnv()
 # (2) environment env CLI_THEME_DEFAULT
 # (3) Hard Coded Variable util/constants.py/ConfigBootstrap.CLI_DEFAULT_THEME (ubuntu)
 console_maker = ThemeConsole(theme=OS_BOOTSTRAP_VARS["CLI_THEME"])
+# getting a default console 
+console = console_maker.get_console()
+

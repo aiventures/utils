@@ -18,16 +18,45 @@ logger = logging.getLogger(__name__)
 # get log level from environment if given 
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
-def test_code_artifact(fixture_path_testdata):
+def test_git_artifact(fixture_path_testdata):
     """ Basic Test of Code Artifact Constructor, get the git artifacts root folder """
     artifact_meta = ArtifactMeta()
     artifact_meta.p_root = fixture_path_testdata
     artifact_meta.max_path_depth = 5
-    artifact_meta.artifact_type = ARTIFACT.VSCODE
-    git_artifact = CodeArtifact(artifact_meta)
-    artifact_type = git_artifact.artifact_type
-    artifacts = git_artifact.artifacts
+    artifact_meta.artifact_type = ARTIFACT.GIT
+    # artifact_meta.paths_only = True
+    _artifact = GitArtifact(artifact_meta)
+    artifact_type = _artifact.artifact_type
+    artifacts = _artifact.artifacts
     assert isinstance(artifacts,dict)
+    assert len(artifacts) > 0
+
+def test_venv_artifact(fixture_path_testdata):
+    """ Basic Test of Code Artifact Constructor, get the git artifacts root folder """
+    artifact_meta = ArtifactMeta()
+    artifact_meta.p_root = fixture_path_testdata
+    artifact_meta.max_path_depth = 6
+    artifact_meta.artifact_type = ARTIFACT.VENV
+    # artifact_meta.paths_only = True
+    _artifact = VenvArtifact(artifact_meta)
+    artifact_type = _artifact.artifact_type
+    artifacts = _artifact.artifacts
+    assert isinstance(artifacts,dict)
+    assert len(artifacts) > 0    
+
+def test_vscode_artifact(fixture_path_testdata):
+    """ Basic Test of Code Artifact Constructor, get the git artifacts root folder """
+
+    artifact_meta = ArtifactMeta()
+    artifact_meta.p_root = fixture_path_testdata
+    artifact_meta.max_path_depth = 5
+    artifact_meta.artifact_type = ARTIFACT.VSCODE
+    artifact_meta.show_progress = True
+    _artifact = VsCodeArtifact(artifact_meta)    
+    _artifact_type = _artifact.artifact_type
+    assert _artifact_type == ARTIFACT.VSCODE
+    _artifact.read_content()    
+    pass
 
 def test_code_artifacts(fixture_path_testdata):
     """ Basic Test of Code Artifacts Constructor, that gets  """    

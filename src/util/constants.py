@@ -1,4 +1,5 @@
 """ constants file """
+import os
 from copy import deepcopy
 from pathlib import Path
 # from typing import Any
@@ -55,6 +56,43 @@ class ConfigBootstrap(AbstractEnum):
     CLI_DEFAULT_THEME = "ubuntu"
     CLI_THEME = "cli_theme"
 
+
+class ColorDefault(AbstractEnum):
+    """ hard coded color defaults for the case of circular import of config_env
+        the colors represent the ubuntu theme """
+    BLACK = "#000000"
+    RED = "#de382b"
+    WHITE = "#cccccc"
+    YELLOW = "#ffc706"
+    CYAN = "#2cb5e9"
+    BLUE = "#006fb8"
+    GREEN = "#39b54a"
+    MAGENTA = "#762671"
+    BRIGHT_BLACK = "#808080"
+    BRIGHT_BLUE = "#0000ff"
+    BRIGHT_CYAN = "#00ffff"
+    BRIGHT_GREEN = "#00ff00"
+    BRIGHT_MAGENTA = "#ff00ff"
+    BRIGHT_RED = "#ff0000"
+    BRIGHT_WHITE = "#ffffff"
+    BRIGHT_YELLOW = "#ffff00"
+    DEFAULT = "#cccccc"
+    LIST_DESCRIPTION = "#00ffff"
+    LIST_KEY = "#ff0000"
+    LIST_NUMBER = "#ffff00"
+    PYTHON = "#00ff00"
+    TEXT = "#cccccc"
+    LVL_ERR = "bold #ffffff on #ff0000"
+    LVL_INFO = "bold #cccccc on #39b54a"
+    LVL_WARN = "bold #000000 on #ffff00"
+    OUT_PATH = "#ffc706"
+    OUT_SEARCH = "#de382b"
+    OUT_TITLE = "#00ffff"
+    PG_BRANCH = "bold #00ff00"
+    PG_PATH = "#ff0000"
+    PG_VENV = "#0000ff"
+    PG_VENV_ACTIVE = "#ffffff"    
+    PROGRESS_BAR = os.environ.get("COL_PROGRESS_BAR","#ff5f00") #orange
 
 # type definitions
 

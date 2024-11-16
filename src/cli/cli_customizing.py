@@ -20,7 +20,7 @@ from util.emoji import show_rich_emoji_codes
 # from util.config_env import ConfigEnv
 from cli.bootstrap_config import config_env,console_maker
 from cli.bootstrap_env import OS_BOOTSTRAP_VARS
-from util_cli.cli_color_mapper import ColorMapper
+from util_cli.cli_color_mapper import ColorMapper,ThemeConsole
 # from util_cli import
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,16 @@ def show_ansi_colors(with_names:bool=False):
     _console = console_maker.get_console()
     _ansi_table = ColorMapper.get_ansi_table(with_names)
     _console.print(_ansi_table)
+
+@app.command("create-themes")
+def create_themes(p_resources:str|None=None)->None:
+    """ Create Rich Color Theme Styles to be used in console
+
+    Args:
+        p_resources (str): Path To Style Configuration (defaults to ../resources in the repo)
+    """
+    _ = ThemeConsole(create_themes=True,p_resources=p_resources)
+
 
 @app.command("themes")
 def show_themes_and_styles(theme:str=None):

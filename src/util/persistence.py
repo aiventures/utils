@@ -9,6 +9,10 @@ from rich.progress import track
 from rich import print as rprint
 import json
 from util import constants as C
+from util.constants import ColorDefault as Color
+# circular import 
+# from cli.bootstrap_config import console
+
 
 # when doing tests add this to reference python path
 if __name__ == "__main__":
@@ -71,6 +75,16 @@ class Persistence():
         else:
             return None
 
+    @staticmethod
+    def get_abspath_from_relpath(p_abs:str,p_rel:str)->str:
+        """ parses a rel path to an abs path """
+        # count the number of up folders in rel ../../path
+        _p_rel_parts = Path(p_rel).parts
+        _up_levels = len([p for p in _p_rel_parts if p==".."])
+        p_root = Path(os.path.abspath(p_abs)).parts[:-_up_levels]
+        p_sub_path = _p_rel_parts[_up_levels:]
+        return os.path.join(*p_root,*p_sub_path)
+        
     @staticmethod
     def replace_file_suffix(f_name:str,new_suffix:str)->str:
         """ Replaces file suffix """
@@ -182,7 +196,7 @@ class Persistence():
         return passed
 
     @staticmethod
-    def _walk_path(path_dict:dict,paths_out:list,files_out:list,
+    def _walk_paths(path_dict:dict,paths_out:list,files_out:list,
                    p_root:str,root_path_only:bool=False,
                    re_include_paths:list=None,
                    re_exclude_paths:list=None,
@@ -192,7 +206,8 @@ class Persistence():
                    re_exclude_abspaths:list = None,
                    match_all:bool=False,
                    show_progress:bool=False,
-                   max_path_depth:int=None)->int:
+                   max_path_depth:int=None,
+                   paths_only:bool=False)->int:
         """ walks the path in a given root directory
             is used in find method as a way to get objects without rendering
             progress bars, returns number of processed files
@@ -200,7 +215,7 @@ class Persistence():
         out = 0
 
         if show_progress:
-            rprint(f"[deep_sky_blue1]### Path  [orange3][{p_root}]")
+            rprint(f"[{Color['OUT_TITLE']}]### Path  [{Color['OUT_PATH']}][{p_root}]")
         # determine depth of root path
         _depth_root_path = len(Path(os.path.abspath(p_root)).parts)
         for _subpath,_,_files in os.walk(p_root):
@@ -217,8 +232,13 @@ class Persistence():
                 _passed = Persistence._passes(_p,re_include_paths,re_exclude_paths,match_all)
             if _passed is False:
                 continue
+            
             paths_out.append(_p)
             path_dict[_p]=[]
+
+            # skip file processing
+            if paths_only:
+                continue
 
             _file_params = {"f_abs":None,
                         "path":_p,
@@ -230,24 +250,15 @@ class Persistence():
                         "re_exclude_abspaths":re_exclude_abspaths,
                         "match_all":match_all}
 
-            # use progress bar
-            if show_progress is False:
-                for _f in _files:
-                    _file_params["f_abs"]=os.path.join(_p,_f)
-                    _passed = Persistence._passes_filecheck(**_file_params)
-                    if _passed is False:
-                        continue
-                    out += 1
-            else:
-                # only show relative portion
-                _p_rel=os.path.relpath(_p,p_root)
-                _s = f"[deep_sky_blue1]  - ({str(len(_files)).zfill(3)}) [gold3].\{_p_rel:<60}"
-                for _f in track(_files,description=_s,style="orange3",refresh_per_second=2):
-                    _file_params["f_abs"]=os.path.join(_p,_f)
-                    _passed = Persistence._passes_filecheck(**_file_params)
-                    if _passed is False:
-                        continue
-                    out += 1
+            _p_rel=os.path.relpath(_p,p_root)
+            _s = f"[{Color['OUT_TITLE']}]  - ({str(len(_files)).zfill(3)}) [{Color['OUT_PATH']}].\{_p_rel:<60}"
+            for _f in track(_files,description=_s,style=Color["PROGRESS_BAR"],refresh_per_second=2,
+                            disable=(not show_progress)):
+                _file_params["f_abs"]=os.path.join(_p,_f)
+                _passed = Persistence._passes_filecheck(**_file_params)
+                if _passed is False:
+                    continue
+                out += 1
 
         return out
 
@@ -260,7 +271,8 @@ class Persistence():
              root_path_only:bool=False,
              match_all:bool=False,ignore_case:bool=True,
              show_progress:bool=True,
-             max_path_depth:int=None)->list|dict:
+             max_path_depth:int=None,
+             paths_only:bool=False)->list|dict:
         """ finds files and paths according to path names / a slightly slimmer version than the FileAnalyzer
             regex can be used (differewntly for filename only, path only or abs path)
             match all or anxy determines whethwer all or any crieteria need to match
@@ -301,22 +313,24 @@ class Persistence():
                        "re_exclude_abspaths":_re_exclude_abspaths,
                        "match_all":match_all,
                        "show_progress":show_progress,
-                       "max_path_depth":max_path_depth}
+                       "max_path_depth":max_path_depth,
+                       "paths_only":paths_only}
 
             # do the analysis
-            _num_files = Persistence._walk_path(**_params)
+            _num_files = Persistence._walk_paths(**_params)
             _num_total += _num_files
             logger.debug(f"[Persistence] Found [{_num_files}] in Path [{_root_path}]")
 
         if show_progress:
-            rprint(f"[deep_sky_blue1]### ({str(_num_total).zfill(3)}) Files found in [gold1]{p_root_paths}")
+            rprint(f"[{Color['OUT_TITLE']}]### ({str(_num_total).zfill(3)}) Files found in [{Color['OUT_PATH']}]{p_root_paths}")
 
         # either return dict or list of files
         if as_dict:
             # clean up empty paths 
             _out = {}
             for _path,_file_list in _path_dict.items():
-                if len(_file_list)==0:
+                # only skip paths if files are expected
+                if paths_only is False and len(_file_list)==0:
                     continue
                 _out[_path]=_file_list
             return _out
