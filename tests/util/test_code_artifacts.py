@@ -26,7 +26,7 @@ def test_git_artifact(fixture_path_testdata):
     # artifact_meta.paths_only = True
     _artifact = GitArtifact(artifact_meta)
     artifact_type = _artifact.artifact_type
-    artifacts = _artifact.artifacts
+    artifacts = _artifact.f_artifacts
     _artifact.read_content()
     assert isinstance(artifacts,dict)
     assert len(artifacts) > 0
@@ -41,7 +41,7 @@ def test_venv_artifact(fixture_path_testdata):
     # artifact_meta.paths_only = True
     _artifact = VenvArtifact(artifact_meta)
     artifact_type = _artifact.artifact_type
-    artifacts = _artifact.artifacts
+    artifacts = _artifact.f_artifacts
     _artifact.read_content()
     assert isinstance(artifacts,dict)
     assert len(artifacts) > 0
@@ -71,6 +71,11 @@ def test_code_artifacts(fixture_path_testdata):
     _artifacts = CodeArtifacts(_artifact_meta_list)
     # load content
     _artifacts.read_content()
-    # test the link
-    _artifacts.link_vscode2git(True)
+    # test the references / links
+    _vscode2git = _artifacts.link_vscode2git()
+    assert len(_vscode2git) > 0
+    _git2vscode = _artifacts.link_git2vscode()
+    assert len(_git2vscode) > 0
+    _git2venv = _artifacts.link_git2venv()
+    assert len(_git2venv) > 0
     pass

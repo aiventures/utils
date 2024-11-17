@@ -100,23 +100,29 @@ class CodeArtifact(ABC):
             _flt["max_path_depth"] = self._max_path_depth
         self._artifact_filter["show_progress"] = _flt.get("show_progress",self._show_progress)
         self._artifact_filter["paths_only"] = _flt.get("paths_only",self._paths_only)
-        self._artifacts = {}
-        self._read_artifacts()
+        self._f_artifacts = {}
+        self._info_dict =  {}
+        self._read_artifacts()        
 
     def _read_artifacts(self)->dict:
         """ reads the artifact files according to filter """
-        self._artifacts  = Persistence.find(**self._artifact_filter)
-        return self._artifacts
+        self._f_artifacts  = Persistence.find(**self._artifact_filter)
+        return self._f_artifacts
 
     @property
-    def artifacts(self):
-        """ returns read artifacts """
-        return self._artifacts
+    def f_artifacts(self):
+        """ returns read artifacts file names """
+        return self._f_artifacts
 
     @property
     def artifact_type(self):
         """ returns artifact type """
         return self._artifact_type
+    
+    @property
+    def info_dict(self):
+        """ returns the content per artifact type """
+        return self._info_dict
 
     @abstractmethod
     def read_content(self)->None:
@@ -128,7 +134,6 @@ class GitArtifact(CodeArtifact):
     def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
         super().__init__(artifact_meta)
         self._artifact_type = ARTIFACT.GIT
-        self._info_dict = {}
 
     @staticmethod
     def read_meta(p_git:str)->GitMeta:
@@ -172,16 +177,21 @@ class GitArtifact(CodeArtifact):
                            branch_list_local=_local_branches,
                            repo_url=_url_repo)
         return git_meta
+    
+    def get_git_meta(self,f_git:str)->GitMeta:
+        """ gets the GitMeta for a given file reference """
+        return self._info_dict.get(f_git)
 
     def read_content(self) -> None:
         """ reading content: configuration and current branch """
-        num_artifacts = len(self._artifacts)
+        num_artifacts = len(self._f_artifacts)
 
         def _read_git_metadata(task_id:TaskID,progress:Progress)->None:
-            """ reads the content od git files """
-            for _f_artifact in list(self._artifacts.keys()):
+            """ reads the content of git files """
+            for _f_artifact in list(self._f_artifacts.keys()):
                 _git_meta = GitArtifact.read_meta(_f_artifact)
-                self._info_dict[_f_artifact]=_git_meta
+                _f_repo = str(Path(_f_artifact).parent)
+                self._info_dict[_f_repo]=_git_meta
                 progress.update(task_id,advance=1)
 
         with Progress(disable=(not self._show_progress),console=console) as progress:
@@ -200,7 +210,6 @@ class VenvArtifact(CodeArtifact):
     def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
         super().__init__(artifact_meta)
         self._artifact_type = ARTIFACT.VENV
-        self._info_dict = {}
 
     @staticmethod
     def parse_venv_cfg(f_cfg:str)->dict:
@@ -249,18 +258,34 @@ class VenvArtifact(CodeArtifact):
                               executable=_executable)
         return _venv_meta
 
+    def get_venv_meta(self,f_venv:str)->VenvMeta:
+        """ gets the GitMeta for a given file reference """
+        return self._info_dict.get(f_venv)
+    
+    def get_venv_name_refs(self)->dict:
+        """ gets the VENV paths refered by it VENV Name """
+        out = {}
+        for _p_venv,_venv_info in self._info_dict.items():
+            _venv_name = _venv_info.venv_name
+            _paths = out.get(_venv_name,[])
+            if not _p_venv in _paths:
+                _paths.append(_p_venv)
+            out[_venv_name]=_paths
+        return out
+
     def read_content(self) -> None:
         """ reads the venv content  """
 
         def _read_venvs(task_id:TaskID,progress:Progress)->None:
             """ reads the content of venv paths """
-            for _p_venv in list(self._artifacts.keys()):
-                _venv_meta = VenvArtifact.read_meta(_p_venv)
+            for _p_venv_site in list(self._f_artifacts.keys()):
+                _venv_meta = VenvArtifact.read_meta(_p_venv_site)
+                _p_venv = str(Path(_p_venv_site).parent.parent)
                 self._info_dict[_p_venv] = _venv_meta
                 progress.update(task_id,advance=1)
 
         with Progress(disable=(not self._show_progress),console=console) as progress:
-            task = progress.add_task("[out_path]Parsing VS Code Files", total=len(self.artifacts))
+            task = progress.add_task("[out_path]Parsing VS Code Files", total=len(self.f_artifacts))
             _read_venvs(task,progress)
 
 class VsCodeArtifact(CodeArtifact):
@@ -268,7 +293,6 @@ class VsCodeArtifact(CodeArtifact):
     def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
         super().__init__(artifact_meta)
         self._artifact_type = ARTIFACT.VSCODE
-        self._info_dict = {}
 
     @staticmethod
     def parse_vscode_folders(f_vscode:str)->list:
@@ -292,7 +316,7 @@ class VsCodeArtifact(CodeArtifact):
             """ reads the content od vscode files """
             # flatten all vscode file refs into a list
             _vs_code_files=[]
-            for _vs_code_file_list in self.artifacts.values():
+            for _vs_code_file_list in self.f_artifacts.values():
                 _vs_code_files.extend(_vs_code_file_list)
             for _f_artifact in _vs_code_files:
                 _vscode_meta = VsCodeMeta(f_vscode=_f_artifact)
@@ -301,11 +325,15 @@ class VsCodeArtifact(CodeArtifact):
                 progress.update(task_id,advance=1)
 
         with Progress(disable=(not self._show_progress),console=console) as progress:
-            task = progress.add_task("[out_path]Parsing VS Code Files", total=len(self.artifacts))
+            task = progress.add_task("[out_path]Parsing VS Code Files", total=len(self.f_artifacts))
             _read_vscode_files(task,progress)
-    
-    def get_path_refs(self)->Dict[str,Dict[str,VsCodeMeta]]:
-        """ returns the paths with reference to the VScode File and the metadata 
+
+    def get_vscode_meta(self,f_vscode:str)->VsCodeMeta:
+        """ gets the GitMeta for a given file reference """
+        return self._info_dict.get(f_vscode)
+
+    def get_path_refs(self)->Dict[str,List[str]]:
+        """ returns the project paths referred by the vscode projects 
             method read_content needs to be called prior to call this method
         """
         out = {}
@@ -313,9 +341,9 @@ class VsCodeArtifact(CodeArtifact):
             # _out_folder = out.get()
             _p_folders = _vs_code_meta.p_folders
             for _p_folder in _p_folders:
-                _p_info = out.get(_p_folder,{})
-                _p_info[_f_vs_code]=_vs_code_meta
-                out[_p_folder] = _p_info
+                _f_vscode_list = out.get(_p_folder,[])
+                _f_vscode_list.append(_f_vs_code)
+                out[_p_folder] = _f_vscode_list
         return out
 
 
@@ -363,39 +391,76 @@ class CodeArtifacts():
         """ returns VS Code artifact """
         return self._artifacts.get(ARTIFACT.VENV,None)
     
-    def link_vscode2git(self,git2vscode:bool=False)->None:
+    def link_vscode2git(self)->Dict[str,List[str]]:
         """ links VSCODE Projects To GIT Objects based on name equality of refered path and name of git repo 
-            if git2vscode is True git_refs will be linked to existing vs code projects
         """
+
         out = {}
         _vscode = self.vscode_artifact
         _git = self.git_artifact
         if _vscode is None and _git is None:
             return {}
+        # vscode refs  => repo
         _vscode_path_refs = _vscode.get_path_refs()
-        _vscode_paths = list(_vscode_path_refs.keys())
-        _git_refs = _git.get_repo_refs()
-        _git_ref_paths = list(_git_refs.keys())
-        if git2vscode is False:
-            _source_paths = _vscode_paths
-            _target_paths = _git_ref_paths
-        else:
-            _source_paths = _git_ref_paths
-            _target_paths = _vscode_paths            
+        # go over each git project and check whether it is in vscode path ref
+        for _f_repo in list(_git.info_dict.keys()):
+            _f_vscode_list = _vscode_path_refs.get(_f_repo)
+            if _f_vscode_list is None:
+                continue
+            for _f_vscode in _f_vscode_list:
+                _repo_list = out.get(_f_vscode,[])
+                _repo_list.append(_f_repo)
+                out[_f_vscode]=_repo_list
+        return out    
+    
+    def link_git2vscode(self)->Dict[str,List[str]]:
+        """ links GIT to vscode Objects based on name equality of refered path and name of git repo 
+        """
 
-        _match_paths = [_p for _p in _source_paths if _p in _target_paths]
-        for match_path in _match_paths:            
-            out_info = {}
-            if git2vscode is False:
-                out_info["match"] = "vscode2git"
-            else:
-                out_info["match"] = "git2vscode"
-            out_info[ARTIFACT["VSCODE"]]=_vscode_path_refs[match_path]
-            out_info[ARTIFACT["GIT"]]=_git_refs[match_path]
-            out[match_path]=out_info
+        out = {}
+        _vscode = self.vscode_artifact
+        _git = self.git_artifact
+        if _vscode is None and _git is None:
+            return {}
+        # repo => vscode refs
+        _vscode_path_refs = _vscode.get_path_refs()
+        # go over each git project and check whether it is in vscode path ref        
+        for _f_repo in list(_git.info_dict.keys()):            
+            _f_vscode_list = _vscode_path_refs.get(_f_repo)            
+            if _f_vscode_list is None:
+                continue
+            out[_f_repo] = _f_vscode_list
+        return out        
+    
+    def link_git2venv(self)->Dict[str,List[str]]:
+        """ links git 2 venv objects based on name equality of name of venv
+            and repo name
+        """
 
+        out = {}
+        _venv = self.venv_artifact
+        _git = self.git_artifact
+
+        if _venv is None and _git is None:
+            return {}    
+        _venv_refs = _venv.get_venv_name_refs()
+        for _f_git,_git_meta in _git.info_dict.items():
+            repo_name = _git_meta.p_name
+            _venv_list = _venv_refs.get(repo_name)
+            if _venv_list is None:
+                continue
+            out[_f_git]=_venv_list
         return out
+    
+    def link_gitrefs(self)->dict:
+        """ gets an all in one Dict containing object references to corresponding git, venv and vscde objects """
+        out = {}
+        _git = self.git_artifact
+        for _f_git,_git_meta in _git.info_dict.items():
+            pass
 
 
+        return out        
+    
 
 
