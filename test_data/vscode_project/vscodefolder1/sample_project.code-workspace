@@ -2,7 +2,10 @@
 	"folders": [
 		{
 			"path": "../../..//test_data/sample_git_project"
-		}
+		},
+		{
+			"path": "../../..//test_data/sample_git_project2"
+		}		
 	],
 	"settings": {
 		"python.terminal.launchArgs": [

@@ -5,7 +5,10 @@
 		},
 		{
 			"path": "../../..//CMD/docs"
-		}
+		},
+		{
+			"path": "../../..//test_data/sample_git_project"
+		}		
 	],
 	"settings": {
 		"python.terminal.launchArgs": [
