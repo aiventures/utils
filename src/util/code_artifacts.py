@@ -2,7 +2,9 @@
 
 import sys
 import logging
+import re
 from enum import Enum
+from abc import ABC,abstractmethod
 import os
 from copy import deepcopy
 from typing import List,Optional,Union,Dict
@@ -11,8 +13,7 @@ from util.utils import Utils
 from util.persistence import Persistence
 from cli.bootstrap_config import config_env,console
 from model.model_code_artifacts import ( CodeArtifactEnum as ARTIFACT,
-                                         ArtifactMeta,
-                                         VsCodeMeta )
+                                         ArtifactMeta, VenvMeta, VsCodeMeta, GitMeta )
 from pathlib import Path
 # from typer import progressbar as t_progressbar
 from rich.progress import Progress,TaskID
@@ -35,10 +36,12 @@ ARTIFACT_FILTER = { ARTIFACT.GIT:   {"include_paths":".git$","paths_only":True},
                    ARTIFACT.VSCODE:{"include_files":".code-workspace"},
                    ARTIFACT.VENV:  {"include_paths":venv_regex,"paths_only":True} }
 
-# COPY TEMPLATE FOR INSTANCIATING 
+# COPY TEMPLATE FOR INSTANCIATING
 ARTIFACT_INPUT_TEMPLATE={"p_root":None,"max_path_depth":3,"artifact_type":ARTIFACT.GIT,"show_progress":False}
 
-class CodeArtifact():
+REGEX_BRANCH = re.compile('\"(.+)\"',re.IGNORECASE)
+
+class CodeArtifact(ABC):
     """ Reading Code Artifacts from environment or files such as git, venv,... """
     def __init__(self,artifact_meta:ArtifactMeta=ArtifactMeta()):
         """_summary_
@@ -50,8 +53,8 @@ class CodeArtifact():
             it will default to current directory
             max_path_depth (int, optional): max folder depth to search from root path. Defaults to None.
             artifact: filter to be applied to capture signature of a certain code artifact
-            show_progress (bool, optional): showing search indicator. Defaults to False.            
-        """        
+            show_progress (bool, optional): showing search indicator. Defaults to False.
+        """
 
         p_root = artifact_meta.p_root
         max_path_depth = artifact_meta.max_path_depth
@@ -78,7 +81,7 @@ class CodeArtifact():
             else:
                 _ref = config_env.get_ref(key=_p_root)
             if _ref is not None:
-                _path_refs.append(_ref)        
+                _path_refs.append(_ref)
         self._p_root_list = _path_refs
         # initialize filter
         self._artifact_type = artifact_type
@@ -88,50 +91,182 @@ class CodeArtifact():
             self._artifact_filter = deepcopy(artifact_filter)
         else:
             logger.warning(f"[CodeArtifact] No Filter Dict or Artifact type {list(ARTIFACT_FILTER.keys())} was transferred")
-            return 
+            return
         self._artifact_filter["as_dict"]=True
         self._artifact_filter["p_root_paths"]=_path_refs
-        # value in filter takes over priotity over supplied value 
-        _flt = self._artifact_filter 
+        # value in filter takes over priotity over supplied value
+        _flt = self._artifact_filter
         if _flt.get("max_path_depth") is None and self._max_path_depth is not None:
-            _flt["max_path_depth"] = self._max_path_depth        
+            _flt["max_path_depth"] = self._max_path_depth
         self._artifact_filter["show_progress"] = _flt.get("show_progress",self._show_progress)
-        self._artifact_filter["paths_only"] = _flt.get("paths_only",self._paths_only)         
+        self._artifact_filter["paths_only"] = _flt.get("paths_only",self._paths_only)
         self._artifacts = {}
-        self._read_artifacts()        
-   
+        self._read_artifacts()
+
     def _read_artifacts(self)->dict:
         """ reads the artifact files according to filter """
         self._artifacts  = Persistence.find(**self._artifact_filter)
         return self._artifacts
-    
+
     @property
     def artifacts(self):
         """ returns read artifacts """
         return self._artifacts
-    
+
     @property
     def artifact_type(self):
         """ returns artifact type """
         return self._artifact_type
-    
+
+    @abstractmethod
+    def read_content(self)->None:
+        """ abstract method to read content from subclasses """
+        pass
+
 class GitArtifact(CodeArtifact):
     """  Git Code Artifact Parsing """
     def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
         super().__init__(artifact_meta)
         self._artifact_type = ARTIFACT.GIT
+        self._info_dict = {}
 
+    @staticmethod
+    def read_meta(p_git:str)->GitMeta:
+        """ reading the git metadata from a root path """
+
+        if not p_git.endswith(".git"):
+            p_git = os.path.join(p_git,".git")
+
+        if not os.path.isdir(p_git):
+            logger.warning(f"[GitArtifact] Path [{p_git}] is not a valid git path")
+            return
+
+        path_git =  Path(p_git)
+        path_repo = path_git.parent
+
+        _config = Utils.read_ini_config(str(path_git.joinpath("config")))
+        _head = Persistence.read_txt_file(str(path_git.joinpath("HEAD")))
+
+        if _config is None or _head is None:
+            logger.warning(f"[GitArtifact] Couldn't find config or HEAD in [{p_git}]")
+            return
+
+        # current branch
+        _branch = _head[0].split("/")[-1]
+        # parse the git config file
+        _local_branches = []
+        _url_repo = None
+        for _config_key,config_meta in _config.items():
+            if "branch" in _config_key:
+                # parse the branch key branch "<branch_name>"
+                _branch = REGEX_BRANCH.search(_config_key)
+                if _branch:
+                    _branch = _branch.group().replace('"','')
+                    _local_branches.append(_branch)
+            elif "origin"  in _config_key:
+                _url_repo = config_meta.get("url")
+
+        git_meta = GitMeta(p_repo=str(path_repo),
+                           p_name=path_repo.name,
+                           branch_current=_branch,
+                           branch_list_local=_local_branches,
+                           repo_url=_url_repo)
+        return git_meta
+
+    def read_content(self) -> None:
+        """ reading content: configuration and current branch """
+        num_artifacts = len(self._artifacts)
+
+        def _read_git_metadata(task_id:TaskID,progress:Progress)->None:
+            """ reads the content od git files """
+            for _f_artifact in list(self._artifacts.keys()):
+                _git_meta = GitArtifact.read_meta(_f_artifact)
+                self._info_dict[_f_artifact]=_git_meta
+                progress.update(task_id,advance=1)
+
+        with Progress(disable=(not self._show_progress),console=console) as progress:
+            task = progress.add_task("[out_path]Parsing Git Files", total=num_artifacts)
+            _read_git_metadata(task,progress)
+    
+    def get_repo_refs(self) -> Dict[str,GitMeta]:
+        """ returns the git repo references (read_content needs to be called prior to use this method) """
+        out = {}
+        for _git_meta in list(self._info_dict.values()):
+            out[_git_meta.p_repo] = _git_meta
+        return out
+            
 class VenvArtifact(CodeArtifact):
     """  Virtual Environment Code Artifact Parsing """
     def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
         super().__init__(artifact_meta)
         self._artifact_type = ARTIFACT.VENV
-        self._content = {}
+        self._info_dict = {}
+
+    @staticmethod
+    def parse_venv_cfg(f_cfg:str)->dict:
+        """ parse the pyvenv.cfg file """
+        if not os.path.isfile(f_cfg):
+            return {}
+
+        _lines = Persistence.read_txt_file(f_cfg)
+        _config_list = []
+        for _line in _lines:
+            # split into key value pairs
+            _config = _line.split("=")
+            _config = [c.strip() for c in _config]
+            if len(_config) == 2:
+                _config_list.append(_config)
+        return dict(_config_list)
+
+    @staticmethod
+    def read_meta(p_venv:str)->None|VenvMeta:
+        """ reading the git metadata from a root path """
+
+        if not p_venv.endswith("site-packages"):
+            logger.warning(f"[VenvArtifact] Path [{p_venv}] is not a site-package")
+            return
+
+        # get paths and packages of the VENV
+        _path_site_packages = Path(p_venv)
+        _path_venv = _path_site_packages.parent.parent
+        _venv_name = _path_venv.name
+        # assert there is a Scripts Folder
+        if not (_path_venv.joinpath("Scripts")).is_dir():
+            logger.warning(f"[VenvArtifact] Path [{p_venv}] doesn't contain a /Scripts subfolder")
+            return
+
+        _package_list = [Path(_p).name for _p in os.listdir(_path_site_packages) if os.path.isdir(os.path.join(_path_site_packages,_p))]
+        # parse the config folder
+        _f_cfg = _path_venv.joinpath("pyvenv.cfg")
+        _venv_cfg = VenvArtifact.parse_venv_cfg(_f_cfg)
+        _python_version = _venv_cfg.get("version")
+        _executable = _venv_cfg.get("executable")
+
+        _venv_meta = VenvMeta(p_venv=str(_path_venv),
+                              venv_name=_venv_name,
+                              package_list=_package_list,
+                              python_version=_python_version,
+                              executable=_executable)
+        return _venv_meta
+
+    def read_content(self) -> None:
+        """ reads the venv content  """
+
+        def _read_venvs(task_id:TaskID,progress:Progress)->None:
+            """ reads the content of venv paths """
+            for _p_venv in list(self._artifacts.keys()):
+                _venv_meta = VenvArtifact.read_meta(_p_venv)
+                self._info_dict[_p_venv] = _venv_meta
+                progress.update(task_id,advance=1)
+
+        with Progress(disable=(not self._show_progress),console=console) as progress:
+            task = progress.add_task("[out_path]Parsing VS Code Files", total=len(self.artifacts))
+            _read_venvs(task,progress)
 
 class VsCodeArtifact(CodeArtifact):
     """  VS Code Project Code Artifact Parsing """
     def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
-        super().__init__(artifact_meta)    
+        super().__init__(artifact_meta)
         self._artifact_type = ARTIFACT.VSCODE
         self._info_dict = {}
 
@@ -146,16 +281,16 @@ class VsCodeArtifact(CodeArtifact):
             if _rel_path is None:
                 continue
             p_vscode = str(Path(f_vscode).absolute().parent)
-            _project_folders.append(Persistence.get_abspath_from_relpath(p_vscode,_rel_path))
+            _p_abspath = Persistence.get_abspath_from_relpath(p_vscode,_rel_path)
+            _project_folders.append(_p_abspath)
         return _project_folders
-        
+
     def read_content(self)->None:
         """ reads the content  """
-        # define as pydantic
 
-        def _read_vscode_files(task_id:TaskID,progress:Progress)->dict:
-            """ reads the content od vscode files """            
-            # flatten all vscode file refs into a list 
+        def _read_vscode_files(task_id:TaskID,progress:Progress)->None:
+            """ reads the content od vscode files """
+            # flatten all vscode file refs into a list
             _vs_code_files=[]
             for _vs_code_file_list in self.artifacts.values():
                 _vs_code_files.extend(_vs_code_file_list)
@@ -165,14 +300,24 @@ class VsCodeArtifact(CodeArtifact):
                 self._info_dict[_f_artifact] = _vscode_meta
                 progress.update(task_id,advance=1)
 
-        # #TODO https://github.com/Textualize/rich/issues/2399 Change theme add bar.complete
-        # => look in progress    style: StyleType = "bar.back",/ bar.complete / bar.finished / bar-pulse
-        # defined in default_styles.py
-        console.style
         with Progress(disable=(not self._show_progress),console=console) as progress:
             task = progress.add_task("[out_path]Parsing VS Code Files", total=len(self.artifacts))
-            _read_vscode_files(task,progress)           
+            _read_vscode_files(task,progress)
     
+    def get_path_refs(self)->Dict[str,Dict[str,VsCodeMeta]]:
+        """ returns the paths with reference to the VScode File and the metadata 
+            method read_content needs to be called prior to call this method
+        """
+        out = {}
+        for _f_vs_code,_vs_code_meta in self._info_dict.items():
+            # _out_folder = out.get()
+            _p_folders = _vs_code_meta.p_folders
+            for _p_folder in _p_folders:
+                _p_info = out.get(_p_folder,{})
+                _p_info[_f_vs_code]=_vs_code_meta
+                out[_p_folder] = _p_info
+        return out
+
 
 ARTIFACT_CLASS = { ARTIFACT.GIT:   GitArtifact,
                    ARTIFACT.VSCODE:VsCodeArtifact,
@@ -185,11 +330,11 @@ class CodeArtifacts():
         """Constructor to handle any of the Code Artifact Types
 
         Args:
-            artifact_metas (List[Dict[ARTIFACT,ArtifactMeta]]): 
+            artifact_metas (List[Dict[ARTIFACT,ArtifactMeta]]):
         """
         self._artifacts = {}
 
-        # instanciate classes 
+        # instanciate classes
         for _artifact_meta in artifacts_meta:
             _type = _artifact_meta.artifact_type
             try:
@@ -197,7 +342,12 @@ class CodeArtifacts():
             except AttributeError:
                 logger.warning(f"[CodeArtifacts] unknown type [{_type}]")
         pass
-    
+
+    def read_content(self)->None:
+        """ reads the content of all loaded classes """
+        for _artifact_cls in list(self._artifacts.values()):
+            _artifact_cls.read_content()
+
     @property
     def vscode_artifact(self)->VsCodeArtifact:
         """ returns VS Code artifact """
@@ -211,78 +361,41 @@ class CodeArtifacts():
     @property
     def venv_artifact(self)->VenvArtifact:
         """ returns VS Code artifact """
-        return self._artifacts.get(ARTIFACT.VENV,None)        
+        return self._artifacts.get(ARTIFACT.VENV,None)
     
+    def link_vscode2git(self,git2vscode:bool=False)->None:
+        """ links VSCODE Projects To GIT Objects based on name equality of refered path and name of git repo 
+            if git2vscode is True git_refs will be linked to existing vs code projects
+        """
+        out = {}
+        _vscode = self.vscode_artifact
+        _git = self.git_artifact
+        if _vscode is None and _git is None:
+            return {}
+        _vscode_path_refs = _vscode.get_path_refs()
+        _vscode_paths = list(_vscode_path_refs.keys())
+        _git_refs = _git.get_repo_refs()
+        _git_ref_paths = list(_git_refs.keys())
+        if git2vscode is False:
+            _source_paths = _vscode_paths
+            _target_paths = _git_ref_paths
+        else:
+            _source_paths = _git_ref_paths
+            _target_paths = _vscode_paths            
 
-    
-    
-        
-        
+        _match_paths = [_p for _p in _source_paths if _p in _target_paths]
+        for match_path in _match_paths:            
+            out_info = {}
+            if git2vscode is False:
+                out_info["match"] = "vscode2git"
+            else:
+                out_info["match"] = "git2vscode"
+            out_info[ARTIFACT["VSCODE"]]=_vscode_path_refs[match_path]
+            out_info[ARTIFACT["GIT"]]=_git_refs[match_path]
+            out[match_path]=out_info
 
-
-
-
-
-        # param for the din filter depending on the Code Artifact Type
-        # HEAD / config
-        #for _p_root in self._p_root_list:
-        # include_abspaths
-    #     _kwargs = {
-    #     }
-    # def find(_p_root_paths:list|str=None,
-    #          include_abspaths:list|str=None,exclude_abspaths:list|str=None,
-    #          include_files:list|str=None,exclude_files:list|str=None,
-    #          include_paths:list|str=None,exclude_paths:list|str=None,
-    #          paths:bool=False,files:bool=True,as_dict:bool=False,
-    #          root_path_only:bool=False,
-    #          match_all:bool=False,ignore_case:bool=True,
-    #          show_progress:bool=True,
-    #          max_path_depth:int=None)->list|dict:
-
-        # _params = {"path_dict":_path_dict,
-        #             "paths_out":_paths_out,
-        #             "files_out":_files_out,
-        #             "p_root":_root_path,
-        #             "root_path_only":root_path_only,
-        #             "re_include_paths":_re_include_paths,
-        #             "re_exclude_paths":_re_exclude_paths,
-        #             "re_include_files":_re_include_files,
-        #             "re_exclude_files":_re_exclude_files,
-        #             "re_include_abspaths":_re_include_abspaths,
-        #             "re_exclude_abspaths":_re_exclude_abspaths,
-        #             "match_all":match_all,
-        #             "show_progress":show_progress,
-        #             "max_path_depth":max_path_depth}
+        return out
 
 
-
-
-
-        # self._p_root_work_list = p_work
-        # if isinstance(self._p_root_work_list,str):
-        #     self._p_root_work_list = [p_work]
-
-
-        # self._p_venv = config_env.get_ref(key=p_venv,fallback_default=os.getcwd())
-        # self._p_work = config_env.get_ref(key=p_work,fallback_default=os.getcwd())
-
-# class VirtualEnvironment():
-#     """ Abstaction of the virutal environment """
-#     def __init__(self) -> None:
-#         """ Constructor """
-#         return
-
-# class Git():
-#     """ Abstraction of Git """
-#     def __init__(self,p_git:list|str) -> None:
-#         """ Constructor """
-#         _p_list = []
-#         if isinstance(p_git,str):
-#             _p_list = [p_git]
-#         else:
-#             _p_list = p_git
-#         return
-
-# classs
 
 

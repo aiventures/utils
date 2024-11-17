@@ -535,19 +535,37 @@ class ThemeConsole(ColorMapper):
         for _style_name in _style_names:
             _esc_out=[]
             _style = _styles.get(_style_name)
+
+            # resolve color to RGB values (convert ANSI Codes)
+            _col_codes = []
+            for _col in [_style.color,_style.bgcolor]:
+                _col_code = None
+                if _col is not None:
+                    if _col.number is not None:
+                        _col_code = _col.number
+                    elif _col.triplet is not None:
+                        _col_code = _col.triplet
+                _col_codes.append(_col_code)
+            _col = _col_codes[0]
+            _col_bg = _col_codes[1]
+
             # add formattings
 
             # add front and back colors
             _style_cols = []
-            if _style.color:
-                _style_cols.append([_esc_color,_style.color.triplet])
-            if _style.bgcolor:
-                _style_cols.append([_esc_bgcolor,_style.bgcolor.triplet])
+            if _col:
+                _style_cols.append([_esc_color,_col])
+            if _col_bg:
+                _style_cols.append([_esc_bgcolor,_col_bg])
+
             for _style_col in _style_cols:
                 _esc = _style_col[0]
                 _col = _style_col[1]
-                _rgb = (_col.red,_col.green,_col.blue)
-                _ansi = str(ColorMapper.rgb2ansi(_rgb))
+                if isinstance(_col,int):
+                    _ansi = str(_col)
+                else:
+                    _rgb = (_col.red,_col.green,_col.blue)
+                    _ansi = str(ColorMapper.rgb2ansi(_rgb))
                 _col_esc = _esc.replace("ANSI",_ansi)
                 _esc_out.append(_col_esc)
 
