@@ -1,5 +1,5 @@
 """ Pydantic model for the code_artifacts class """
-from pydantic import BaseModel
+from pydantic import BaseModel,RootModel
 from typing import List,Optional,Union,Dict
 from enum import Enum
 
@@ -56,4 +56,20 @@ class VenvMeta(BaseModel):
     executable : str = None
     # list of installed modules
     package_list : List[str]=None
+
+class CodeMeta(BaseModel):
+    """ all meta models colldected in a single model """
+    vscode_meta_list: List[VsCodeMeta]
+    venv_meta_list : List[VenvMeta]
+    git_meta : GitMeta
+
+class CodeMetaDict(RootModel):
+    """ CodeMeta Dict  """
+    root: Dict[str,CodeMeta] = {}
+
+    def __getitem__(self, key: str):
+        return self.root[key]
+
+    def __setitem__(self, key: str, value: CodeMeta):
+        self.root[key] = value    
 

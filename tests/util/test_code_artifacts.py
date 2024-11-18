@@ -78,4 +78,6 @@ def test_code_artifacts(fixture_path_testdata):
     assert len(_git2vscode) > 0
     _git2venv = _artifacts.link_git2venv()
     assert len(_git2venv) > 0
+    _code_meta = _artifacts.link_code_meta()
+    assert len(_code_meta.root) > 0
     pass

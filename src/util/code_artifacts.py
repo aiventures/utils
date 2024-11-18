@@ -13,7 +13,8 @@ from util.utils import Utils
 from util.persistence import Persistence
 from cli.bootstrap_config import config_env,console
 from model.model_code_artifacts import ( CodeArtifactEnum as ARTIFACT,
-                                         ArtifactMeta, VenvMeta, VsCodeMeta, GitMeta )
+                                         ArtifactMeta, VenvMeta, VsCodeMeta, GitMeta,
+                                         CodeMeta,CodeMetaDict )
 from pathlib import Path
 # from typer import progressbar as t_progressbar
 from rich.progress import Progress,TaskID
@@ -102,7 +103,7 @@ class CodeArtifact(ABC):
         self._artifact_filter["paths_only"] = _flt.get("paths_only",self._paths_only)
         self._f_artifacts = {}
         self._info_dict =  {}
-        self._read_artifacts()        
+        self._read_artifacts()
 
     def _read_artifacts(self)->dict:
         """ reads the artifact files according to filter """
@@ -118,7 +119,7 @@ class CodeArtifact(ABC):
     def artifact_type(self):
         """ returns artifact type """
         return self._artifact_type
-    
+
     @property
     def info_dict(self):
         """ returns the content per artifact type """
@@ -177,7 +178,7 @@ class GitArtifact(CodeArtifact):
                            branch_list_local=_local_branches,
                            repo_url=_url_repo)
         return git_meta
-    
+
     def get_git_meta(self,f_git:str)->GitMeta:
         """ gets the GitMeta for a given file reference """
         return self._info_dict.get(f_git)
@@ -197,14 +198,14 @@ class GitArtifact(CodeArtifact):
         with Progress(disable=(not self._show_progress),console=console) as progress:
             task = progress.add_task("[out_path]Parsing Git Files", total=num_artifacts)
             _read_git_metadata(task,progress)
-    
+
     def get_repo_refs(self) -> Dict[str,GitMeta]:
         """ returns the git repo references (read_content needs to be called prior to use this method) """
         out = {}
         for _git_meta in list(self._info_dict.values()):
             out[_git_meta.p_repo] = _git_meta
         return out
-            
+
 class VenvArtifact(CodeArtifact):
     """  Virtual Environment Code Artifact Parsing """
     def __init__(self, artifact_meta:ArtifactMeta=ArtifactMeta()) -> None:
@@ -261,7 +262,7 @@ class VenvArtifact(CodeArtifact):
     def get_venv_meta(self,f_venv:str)->VenvMeta:
         """ gets the GitMeta for a given file reference """
         return self._info_dict.get(f_venv)
-    
+
     def get_venv_name_refs(self)->dict:
         """ gets the VENV paths refered by it VENV Name """
         out = {}
@@ -333,7 +334,7 @@ class VsCodeArtifact(CodeArtifact):
         return self._info_dict.get(f_vscode)
 
     def get_path_refs(self)->Dict[str,List[str]]:
-        """ returns the project paths referred by the vscode projects 
+        """ returns the project paths referred by the vscode projects
             method read_content needs to be called prior to call this method
         """
         out = {}
@@ -390,9 +391,9 @@ class CodeArtifacts():
     def venv_artifact(self)->VenvArtifact:
         """ returns VS Code artifact """
         return self._artifacts.get(ARTIFACT.VENV,None)
-    
+
     def link_vscode2git(self)->Dict[str,List[str]]:
-        """ links VSCODE Projects To GIT Objects based on name equality of refered path and name of git repo 
+        """ links VSCODE Projects To GIT Objects based on name equality of refered path and name of git repo
         """
 
         out = {}
@@ -411,10 +412,10 @@ class CodeArtifacts():
                 _repo_list = out.get(_f_vscode,[])
                 _repo_list.append(_f_repo)
                 out[_f_vscode]=_repo_list
-        return out    
-    
+        return out
+
     def link_git2vscode(self)->Dict[str,List[str]]:
-        """ links GIT to vscode Objects based on name equality of refered path and name of git repo 
+        """ links GIT to vscode Objects based on name equality of refered path and name of git repo
         """
 
         out = {}
@@ -424,14 +425,14 @@ class CodeArtifacts():
             return {}
         # repo => vscode refs
         _vscode_path_refs = _vscode.get_path_refs()
-        # go over each git project and check whether it is in vscode path ref        
-        for _f_repo in list(_git.info_dict.keys()):            
-            _f_vscode_list = _vscode_path_refs.get(_f_repo)            
+        # go over each git project and check whether it is in vscode path ref
+        for _f_repo in list(_git.info_dict.keys()):
+            _f_vscode_list = _vscode_path_refs.get(_f_repo)
             if _f_vscode_list is None:
                 continue
             out[_f_repo] = _f_vscode_list
-        return out        
-    
+        return out
+
     def link_git2venv(self)->Dict[str,List[str]]:
         """ links git 2 venv objects based on name equality of name of venv
             and repo name
@@ -442,7 +443,7 @@ class CodeArtifacts():
         _git = self.git_artifact
 
         if _venv is None and _git is None:
-            return {}    
+            return {}
         _venv_refs = _venv.get_venv_name_refs()
         for _f_git,_git_meta in _git.info_dict.items():
             repo_name = _git_meta.p_name
@@ -451,16 +452,44 @@ class CodeArtifacts():
                 continue
             out[_f_git]=_venv_list
         return out
-    
-    def link_gitrefs(self)->dict:
-        """ gets an all in one Dict containing object references to corresponding git, venv and vscde objects """
-        out = {}
+
+    def link_code_meta(self)->CodeMetaDict:
+        """ gets an all in one Dict containing object references 
+            to corresponding git, venv and vscde objects 
+            key is the git repo location"""
+        code_meta_dict = CodeMetaDict()
         _git = self.git_artifact
+        _vscode = self.vscode_artifact
+        _venv = self.venv_artifact        
+        _link_vscode = self.link_git2vscode()        
+        _link_venv = self.link_git2venv()
         for _f_git,_git_meta in _git.info_dict.items():
-            pass
+            _venv_meta_list = []
+            _vscode_meta_list = []
+            if _venv:
+                _f_venv_list = _link_venv.get(_f_git,[])
+                for _f_venv in _f_venv_list:
+                    _venv_meta = _venv.get_venv_meta(_f_venv)
+                    if _venv_meta:
+                        _venv_meta_list.append(_venv_meta)
+            if _vscode:
+                _f_vscode_list = _link_vscode.get(_f_git,[])
+                for _f_vscode in _f_vscode_list:
+                    _vscode_meta = _vscode.get_vscode_meta(_f_vscode)
+                    if _vscode_meta:
+                        _vscode_meta_list.append(_vscode_meta)
+                
+            code_meta_dict[_f_git] = CodeMeta(vscode_meta_list=_vscode_meta_list,
+                                              venv_meta_list=_venv_meta_list,
+                                              git_meta=_git_meta)
 
+        return code_meta_dict
 
-        return out        
+    # todo save and load 
     
+
+    
+
+
 
 
