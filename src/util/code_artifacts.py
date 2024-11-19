@@ -151,7 +151,9 @@ class GitArtifact(CodeArtifact):
         path_repo = path_git.parent
 
         _config = Utils.read_ini_config(str(path_git.joinpath("config")))
-        _head = Persistence.read_txt_file(str(path_git.joinpath("HEAD")))
+        _f_head = str(path_git.joinpath("HEAD"))
+        _head = Persistence.read_txt_file(_f_head)
+        _changed = Persistence.get_changed_time(_f_head,C.DATEFORMAT_DD_MM_JJJJ_HH_MM_SS)
 
         if _config is None or _head is None:
             logger.warning(f"[GitArtifact] Couldn't find config or HEAD in [{p_git}]")
@@ -176,7 +178,8 @@ class GitArtifact(CodeArtifact):
                            p_name=path_repo.name,
                            branch_current=_branch,
                            branch_list_local=_local_branches,
-                           repo_url=_url_repo)
+                           repo_url=_url_repo,
+                           changed_on=_changed)
         return git_meta
 
     def get_git_meta(self,f_git:str)->GitMeta:
@@ -463,23 +466,28 @@ class CodeArtifacts():
         _venv = self.venv_artifact        
         _link_vscode = self.link_git2vscode()        
         _link_venv = self.link_git2venv()
-        for _f_git,_git_meta in _git.info_dict.items():
+        for _p_git,_git_meta in _git.info_dict.items():
             _venv_meta_list = []
             _vscode_meta_list = []
+            _p_venv_list = []
+            _f_vscode_list = []
             if _venv:
-                _f_venv_list = _link_venv.get(_f_git,[])
-                for _f_venv in _f_venv_list:
+                _p_venv_list = _link_venv.get(_p_git,[])
+                for _f_venv in _p_venv_list:
                     _venv_meta = _venv.get_venv_meta(_f_venv)
                     if _venv_meta:
                         _venv_meta_list.append(_venv_meta)
             if _vscode:
-                _f_vscode_list = _link_vscode.get(_f_git,[])
+                _f_vscode_list = _link_vscode.get(_p_git,[])
                 for _f_vscode in _f_vscode_list:
                     _vscode_meta = _vscode.get_vscode_meta(_f_vscode)
                     if _vscode_meta:
                         _vscode_meta_list.append(_vscode_meta)
                 
-            code_meta_dict[_f_git] = CodeMeta(vscode_meta_list=_vscode_meta_list,
+            code_meta_dict[_p_git] = CodeMeta(p_git=_p_git,
+                                              p_venv_list=_p_venv_list,
+                                              f_vscode_list=_f_vscode_list,
+                                              vscode_meta_list=_vscode_meta_list,
                                               venv_meta_list=_venv_meta_list,
                                               git_meta=_git_meta)
 

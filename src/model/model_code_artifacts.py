@@ -43,6 +43,8 @@ class GitMeta(BaseModel):
     branch_list_local : List[str]=None
     # remote url
     repo_url : str=None
+    # last change of HEAD file 
+    changed_on : str=None
 
 class VenvMeta(BaseModel):
     """ Virtual Venv Metadata Representation """
@@ -59,6 +61,11 @@ class VenvMeta(BaseModel):
 
 class CodeMeta(BaseModel):
     """ all meta models colldected in a single model """
+    # PAths to git, venvs and vscode files
+    p_git : str
+    p_venv_list : List[str]
+    f_vscode_list : List[str]
+    # List of meta objects
     vscode_meta_list: List[VsCodeMeta]
     venv_meta_list : List[VenvMeta]
     git_meta : GitMeta

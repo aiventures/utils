@@ -12,9 +12,9 @@ config_env_sample.json
 playground/
 # ignore test bat files
 **/test_data/bat/*.bat
+**/test_output/*.json
 # rich theme resources will be created 
 **/rich_themes/
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

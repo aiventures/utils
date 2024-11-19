@@ -6,7 +6,9 @@ import pytest
 from pathlib import Path
 
 from util import constants as C
+from util.persistence import Persistence
 from util.code_artifacts import ( CodeArtifacts,
+                                  CodeMetaDict,
                                   VsCodeArtifact,
                                   GitArtifact,
                                   VenvArtifact )
@@ -80,4 +82,11 @@ def test_code_artifacts(fixture_path_testdata):
     assert len(_git2venv) > 0
     _code_meta = _artifacts.link_code_meta()
     assert len(_code_meta.root) > 0
+    # save the model as json
+    _f_model_json = os.path.join(fixture_path_testdata,"test_output","code_meta.json")
+    Persistence.save_txt_file(_f_model_json,_code_meta.model_dump_json(indent=4))    
+    # retrieve the model from json again
+    _json_dict = Persistence.read_json(_f_model_json)
+    _loaded_artifact = CodeMetaDict.parse_obj(_json_dict)
+    assert isinstance(_loaded_artifact,CodeMetaDict)
     pass

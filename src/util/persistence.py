@@ -76,6 +76,19 @@ class Persistence():
             return None
 
     @staticmethod
+    def get_changed_time(f:str,dateformat:str=None)->DateTime|str:
+        """ determines changed time of a file and returns datetime,
+            if dateformat is None, the datetime object will be returned,
+            the formatted date time string otherwie 
+        """
+        _file_changed_timestamp = os.path.getmtime(f)
+        _datetime = DateTime.fromtimestamp(int(_file_changed_timestamp))
+        if dateformat is None:
+            return _datetime
+        return _datetime.strftime(dateformat)
+    
+
+    @staticmethod
     def get_abspath_from_relpath(p_abs:str,p_rel:str)->str:
         """ parses a rel path to an abs path """
         # count the number of up folders in rel ../../path
