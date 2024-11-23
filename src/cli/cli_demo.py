@@ -5,11 +5,13 @@ import time
 import sys
 import os
 from typing import List
-from rich import print
+from rich import print as rprint
 from rich.prompt import Prompt
 from rich.progress import BarColumn,DownloadColumn
 from rich.progress import track
+from rich.console import Console
 from util import constants as C
+import subprocess
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from typing_extensions import Annotated,Optional
 from util.const_local import LOG_LEVEL
@@ -174,7 +176,7 @@ def demo_progress_nested():
         def get_renderables(self):
             for task in self.tasks:
                 if task.fields.get("progress_type") == "mygreenbar":
-                    # self.columns = ("[green]Rich is awesome!", BarColumn(bar_width=20,style="bar.back"))                    
+                    # self.columns = ("[green]Rich is awesome!", BarColumn(bar_width=20,style="bar.back"))
                     self.columns = ("[green1]Rich is awesome!", BarColumn(bar_width=20,style="green1"))
                 if task.fields.get("progress_type") == "mybluebar":
                     self.columns = (
@@ -244,6 +246,29 @@ def demo_open_file():
 def demo_list(params: Optional[List[str]]=typer.Option(None)):
     """ Lists as input (needs to be comma separated list of args eg args1,args2) """
     print(f"HELLO {params}")
+
+@app.command("demo_cmd1")
+def demo_cmd1():
+    """ Capturing Output via rich client """
+
+    # Note the force_terminal=False option to deactivate esc code
+    console = Console(record=True,force_terminal=False)
+
+    # Run the long-running process and capture its output
+    with console.capture() as capture:
+        process = subprocess.Popen(["git","branch"],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                text=True)
+
+        for line in process.stdout:
+            console.print(line, end='')
+
+    # Get the captured output as a string
+    captured_output = capture.get()
+
+    print(f"Captured output: [{captured_output.strip()}]")
+    rprint(f"[red]{captured_output}")
 
 if __name__ == "__main__":
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',

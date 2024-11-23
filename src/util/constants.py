@@ -377,7 +377,7 @@ class Env(AbstractEnum):
 
 class EnvType(AbstractEnum):
     """" Environment types determine how these are handled
-         (only used internally, as OS environment, as Cofig Valu to be
+         (only used internally, as OS environment, as Cofig Value to be
          saved on filesystem)
     """
     # as env attribute of a config key
