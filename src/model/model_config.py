@@ -4,7 +4,7 @@ from util.constants import ( EnvType,ConfigStatus,RuleFileAttribute, RuleFile, D
                             )
 from pydantic import BaseModel
 from typing import List,Optional,Union,Dict,Any,Literal
-from enum import Enum
+from enum import Enum,StrEnum
 
 # TAXONOMY
 # ALL:      d, k et
@@ -17,25 +17,25 @@ from enum import Enum
 # note there's even more fields after processing / validation
 class ConfigItem(BaseModel):
     """ base class definition of a config item (P_,F_,W_,E_) """
-    k   : Optional[str]               # key (i dict is not used)
-    v   : Optional[Any]               # value
-    t   : Optional[str]               # type
-    d   : Optional[str]               # description
-    g   : Optional[List[str]] = []    # assignment to configuration group
-    p   : Optional[str]               # path
-    f   : Optional[str]               # file
-    ref : Optional[str]               # dereferenced path object
-    ff  : Literal["dos","win","unc"]  # file format
-    et  : Optional[List[EnvType]]     # assignment to an environment type
+    k   : Optional[str]                         # key (i dict is not used)
+    v   : Optional[Any] = None                  # value
+    t   : Optional[str] = None                  # type
+    d   : Optional[str] = None                  # description
+    g   : Optional[List[str]] = []              # assignment to configuration group
+    p   : Optional[str] = None                  # path
+    f   : Optional[str] = None                  # file
+    ff  : Optional[Literal["dos","win","unc"]] = "win" # file format
+    et  : Optional[List[EnvType]] = []          # assignment to an environment type
 
 class ConfigItemProcessed(ConfigItem):
     """ Config Items that were processed """
-    kk  : Optional[str]                         # This is the configuration json dictionary key. 
+    kk  : Optional[str] = None                  # This is the configuration json dictionary key.
                                                 # if k is not supplied in values dictionary key will be used instead
-    dep : Optional[List[str]]                   # List of dependencies to other keys in config
-    st  : Optional[ConfigStatus]                # status whether an entry could be validated
-    o   : Optional[str]                         # original value
-    w   : Optional[str]                         # where field used to dereference commands 
+    ref : Optional[str] = None                  # dereferenced path object
+    dep : Optional[List[str]] = None            # List of dependencies to other keys in config
+    st  : Optional[ConfigStatus] = None         # status whether an entry could be validated
+    o   : Optional[str] = None                  # original value
+    w   : Optional[str] = None                  # where field used to dereference commands
 
 # Rule as defined in Util.constants RULEDICT
 class RuleDict(BaseModel):
@@ -67,16 +67,16 @@ class ConfigCommandLine(ConfigItemProcessed):
     c  : Dict[str,Union[str,CommandDict]]       # Dict of Commands, eihter plain string or as dict
 
 class DataExportType(BaseModel):
-    """ exporting data either to CSV as plain str or as formatted string """    
-    k : str                    # Export key 
+    """ exporting data either to CSV as plain str or as formatted string """
+    k : str                    # Export key
     t : Optional[DataType]     # Data Type
 
 class DataDefinition(BaseModel):
-    """ Data Definitions to be used for parsing tablular data to from csv 
-        it's best to look ath the sample file in 
-        utils > test_data > test_config > config_env_termplate.json 
-        and the corresponding unit tests 
-        to comprehend what's going on 
+    """ Data Definitions to be used for parsing tablular data to from csv
+        it's best to look ath the sample file in
+        utils > test_data > test_config > config_env_termplate.json
+        and the corresponding unit tests
+        to comprehend what's going on
     """
     d   : Optional[str]                    # description
     x   : Optional[str]                    # regex to identify parts in text
@@ -88,3 +88,22 @@ class DataDefinition(BaseModel):
     env : Optional[Dict[str,Any]]          # setting up default environment values (eg Date Format, separator, others ...)
 
 # for model validation: use option union mode left to right
+class SourceEnum(StrEnum):
+    """ origin definitions of data as used by bootstrapping methods """
+    PATH = "path"                 # directly from path
+    FILE = "file"                 # directly from file path
+    ENVIRONMENT = "environment"   # retrieved from os environment
+    CONFIG_VALUE = "config_value" # retrieved from configuration value section
+    CONFIG_REF = "config_ref"     # retrieved from ref section in configuration
+    CWD = "cwd"                   # current work directory
+    REF = "ref"                   # reference value to be used 
+
+
+class SourceRef(BaseModel):
+    """ Model of File Refs """
+    key : str
+    value : Optional[Any] = None
+    ref_type : Optional[SourceEnum] = None
+    is_file : Optional[bool] = None
+    is_path : Optional[bool] = None
+    cwd : Optional[str] = None

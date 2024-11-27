@@ -475,5 +475,7 @@ DEFAULT_COLORS= {
                 "yellow":"#ffc706"
 }
 
-
-
+# default order for bootdstrapping vars 
+# can also be mapped to Source Enum in 
+# model/model_config.py 
+BOOTSTRAP_VARS_ORDER = ["environment","config_ref","config_value","path","file","cwd"]

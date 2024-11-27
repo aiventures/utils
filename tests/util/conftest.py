@@ -39,7 +39,7 @@ def fixture_battest_path()->str:
 @pytest.fixture(scope="module")
 def fixture_testpath_withspace(fixture_testpath)->Path:
     """ Sample Path """
-    
+
     p_testpath = str(Path(fixture_testpath).joinpath("path with space"))
     return p_testpath
 
@@ -58,7 +58,7 @@ def fixture_win_paths(fixture_testpath,fixture_testpath_withspace)->list:
 
 @pytest.fixture(scope="module")
 def fixture_unc_paths(fixture_win_paths)->list:
-    """ fixture contianing several path combinations for unc """    
+    """ fixture contianing several path combinations for unc """
     out = []
     for _win_path in fixture_win_paths:
         _unc = Utils.resolve_path(p=_win_path,check_exist=False,transform_rule="UNC")
@@ -67,7 +67,7 @@ def fixture_unc_paths(fixture_win_paths)->list:
 
 @pytest.fixture(scope="module")
 def fixture_paths(fixture_win_paths,fixture_unc_paths)->list:
-    """ fixture contianing several path combinations for unc and win """    
+    """ fixture contianing several path combinations for unc and win """
     out = deepcopy(fixture_win_paths)
     out.extend(fixture_unc_paths)
     return out
@@ -246,9 +246,9 @@ def fixture_sample_config_json(fixture_config_env_testpath,fixture_config_env_te
     # # populate path
     # _sample_dict["P_CONFIGTEST"]["p"]=str(fixture_config_env_testpath)
     # # populate configfile 1 file with absolute path
-    # p_config_test1 = os.path.join(fixture_config_env_testpath,"file1_config.txt")    
+    # p_config_test1 = os.path.join(fixture_config_env_testpath,"file1_config.txt")
     # _sample_dict["F_CONFIGTEST1"]["f"]=str(p_config_test1)
-    # # populate configfile3 with absolute path and file 
+    # # populate configfile3 with absolute path and file
     # _sample_dict["F_CONFIGTEST3"]["p"]=str(fixture_config_env_testpath)
     # Persistence.save_json(_sample_config_json,_sample_dict)
     return create_demo_config()

@@ -6,6 +6,7 @@ import re
 import json
 import logging
 from functools import wraps
+from typing import List,Optional,Union,Dict,Any,Literal
 from pathlib import Path
 from rich import print_json
 from rich import print as rprint
@@ -18,12 +19,13 @@ from copy import deepcopy
 from util.persistence import Persistence
 from util.colors import col
 from util import constants as C
-from util.constants import DEFAULT_COLORS as CMAP
+from util.constants import DEFAULT_COLORS as CMAP, ConfigStatus
+from model.model_config import (SourceEnum, SourceRef,ConfigItemProcessed)
 from util.utils import Utils
 from demo.demo_config import create_demo_config
 
 logger = logging.getLogger(__name__)
-# get log level from environment if given 
+# get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 def config_key(func):
@@ -882,7 +884,7 @@ class ConfigEnv():
 
         Returns:
             str: resolved value
-        """        
+        """
 
         # if no key is passed return default fallback value
         if key is None:
@@ -1162,7 +1164,7 @@ class Environment():
         """
         if bat_env_dict is None:
             bat_env_dict = {}
-            
+
         if f_out is None:
             f_out = str(C.PATH_HOME.joinpath(C.F_BAT_SET_VARS))
         else:
@@ -1175,7 +1177,7 @@ class Environment():
             return None
         _bat_template = Persistence.read_txt_file(C.PATH_RESOURCE.joinpath("bat",C.F_BAT_SET_VARS_TEMPLATE))
 
-        _bat_keys = self.get_envs_by_type(C.EnvType.BAT)        
+        _bat_keys = self.get_envs_by_type(C.EnvType.BAT)
         _bat_set = []
         if isinstance(bat_set_list,list):
             _bat_set.extend(bat_set_list)
@@ -1184,7 +1186,7 @@ class Environment():
             _bat_echo.extend(bat_echo_list)
         for _bat_key,_bat_value in bat_env_dict.items():
             _bat_set.append(f'SET "{_bat_key}={_bat_value}"')
-            _bat_echo.append(f'ECHO "{_bat_key}={_bat_value}"')            
+            _bat_echo.append(f'ECHO "{_bat_key}={_bat_value}"')
 
         _timestamp = _date_s = DateTime.now().strftime(C.DATEFORMAT_DD_MM_JJJJ_HH_MM_SS)
         _comment = f"rem created using config_env.py on {_timestamp}"
@@ -1294,6 +1296,289 @@ class Environment():
                         continue
                     _env_type = C.EnvType(_config_env_type)
                     self._env_dict[_env_type].append(_key)
+
+    @staticmethod
+    def bootstrap_config(   ref:str,
+                            config_env:ConfigEnv=None,
+                            origin_list:List[str]=[],
+                            cwd:str=None
+                        )->Dict[SourceEnum,SourceRef]|None:
+        """ try to bootstrap from the config env file  """
+        out = {}
+
+        # this is the first validated item to be used from the bootstrapping sequence
+        _ref_item = None
+        # try to get the configuration information and transform it to a model
+        _config_item = None
+        if config_env:
+            _config_item_dict = config_env.get_config_by_key(ref)
+            if isinstance(_config_item_dict,dict):
+                _config_item_dict["k"] = ref # adding the key
+                _config_item = ConfigItemProcessed(**_config_item_dict)
+            else:
+                return
+
+        _value = None
+        _ref = None
+        if _config_item.f is not None:
+            _value = _config_item.f
+        elif _config_item.p is not None:
+            _value = _config_item.p
+        else:
+            _value = _config_item.v
+        if _config_item.ref is not None:
+            _ref = _config_item.ref
+
+        _config = {"config_ref":_ref,"config_value":_value}
+        _ref_item = None
+        for _ref_source,_ref_value in _config.items():
+            if not _ref_source in origin_list:
+                continue
+            _is_file = True if (_ref_value is not None and os.path.isfile(_ref_value)) else False
+            _is_path = True if (_ref_value is not None and os.path.isdir(_ref_value)) else False
+            _ref_type = SourceEnum(_ref_source)
+            _source_ref = SourceRef(key=ref,
+                                value=_ref_value,
+                                ref_type=_ref_type,
+                                is_file=_is_file,
+                                is_path=_is_path,
+                                cwd=cwd)
+            out[_ref_type]=_source_ref
+            if _ref_item is None and _ref_value is not None:
+                _ref_item = _source_ref
+                out[SourceEnum.REF] = _ref_item
+
+        return out
+
+    @staticmethod
+    def bootstrap_ref(ref:str,
+                      config_env:ConfigEnv=None,
+                      as_value:bool=False,
+                      as_sourceref:bool=False,
+                      strict:bool= False,
+                      origin_list:List[str] = C.BOOTSTRAP_VARS_ORDER
+                      )->Dict[SourceEnum,SourceRef]|str|None:
+        """ try to bootstrap a given reference in given order from various sources
+            Default sequence:
+            (1)  Set from OS
+            (2)  Set from Config
+            (3)  Set as Value in Config Ref
+            (4)  Set as Path / File (if is_path is true)
+            (5)  Set as File  (if is_file is true)
+            (6)  Set from Current Direrctory ()
+                 if ref is "cwd" then the current path is returned otherwise it will be tried to
+                 get a file from current work directory
+                 strict = found file needs to be a valid file object not just a value
+        """
+
+        if ref is None:
+            return None
+
+        _cwd = os.getcwd()
+
+        _ref_item = None
+        _config_ref = Environment.bootstrap_config(ref,config_env,origin_list,_cwd)        
+        if _config_ref is not None:
+            _ref_item = _config_ref.get(SourceEnum.REF)
+
+        out = {}
+        if _config_ref:
+            out.update(_config_ref)
+
+        for _ref_source in origin_list:
+            # return ref item if found 
+            if ( as_sourceref or as_value ) and _ref_item is not None:
+                if as_sourceref:
+                    return _ref_item
+                else:
+                    return _ref_item.value
+            
+            if _ref_source in ["ref","config_ref","config_value"]:
+                continue
+            _value = None
+            _is_file = None
+            _is_path = None
+            _ref_type = None
+            try:
+                _ref_type = SourceEnum(_ref_source)
+            except ValueError as e:
+                logger.warning(f"[Environment] Invalid SourceEnum Enum [{_ref_source}],{e}")
+                return None
+            if _ref_type == SourceEnum.ENVIRONMENT:
+                _value = os.environ.get(ref)
+            elif _ref_type == SourceEnum.CWD:
+                if ref == "cwd":
+                    _value = _cwd
+                else:
+                    _value = os.path.join(_cwd,ref)
+            elif ( _ref_type == SourceEnum.PATH or
+                   _ref_type == SourceEnum.FILE ):
+                _value = ref
+
+            if _value:
+                if os.path.isfile(_value):
+                    _value = os.path.abspath(_value)
+                    _is_file = True
+                    _is_path = False
+                elif os.path.isdir(_value):
+                    _value = os.path.abspath(_value)
+                    _is_file = False
+                    _is_path = True
+
+            # strict validation
+            if ( _value is not None and strict and 
+                ( _is_file is False and _is_path is False ) ):
+                _value = None
+
+            _source_ref = SourceRef(key=ref,
+                                value=_value,
+                                ref_type=_ref_type,
+                                is_file=_is_file,
+                                is_path=_is_path,
+                                cwd=_cwd)
+            
+            if _ref_item is None and _value is not None:
+                _ref_item = _source_ref
+                if as_sourceref:
+                    return _ref_item
+                else:
+                    return _ref_item.value
+  
+            out[_ref_type] = _source_ref
+        
+        if _ref_item:
+            out[SourceEnum.REF] = _ref_item
+        
+        return out
+        
+    @staticmethod
+    def bootstrap_ref_old(ref:str,
+                      config_env:ConfigEnv=None,
+                      as_dict:bool=False,
+                      as_sourceref:bool = False,
+                      strict:bool= False,
+                      origin_list:List[str] = C.BOOTSTRAP_VARS_ORDER
+                      )->Dict[SourceEnum,SourceRef]|str|None:
+        """ try to bootstrap a given reference in given order from various sources
+            Default sequence:
+            (1)  Set from OS
+            (2)  Set from Config
+            (3)  Set as Value in Config Ref
+            (4)  Set as Path / File (if is_path is true)
+            (5)  Set as File  (if is_file is true)
+            (6)  Set from Current Direrctory ()
+                 if ref is "cwd" then the current path is returned otherwise it will be tried to
+                 get a file from current work directory
+                 strict = found file needs to be a valid file object not just a value
+        """
+
+        if ref is None:
+            return None
+
+        # this is the first validated item to be used from the bootstrapping sequence
+        _ref_item = None
+        # try to get the configuration information and transform it to a model
+        _config_item = None
+        if config_env:
+            _config_item_dict = config_env.get_config_by_key(ref)
+            if isinstance(_config_item_dict,dict):
+                _config_item_dict["k"] = ref # adding the key
+                _config_item = ConfigItemProcessed(**_config_item_dict)
+
+        _cwd = os.getcwd()
+        _out = {}
+        for _ref_source in origin_list:
+            _value = None
+            _is_file = None
+            _is_path = None
+            _ref_type = None
+            try:
+                _ref_type = SourceEnum(_ref_source)
+            except ValueError as e:
+                logger.warning(f"[Environment] Invalid SourceEnum Enum [{_ref_source}],{e}")
+                return
+            _source = SourceRef(key=ref,
+                                ref_type=_ref_type,
+                                is_file=None,
+                                is_path=None,
+                                cwd=_cwd)
+
+            # process according to settings in env config
+            if ( _ref_type in [SourceEnum.CONFIG_VALUE,SourceEnum.CONFIG_REF] and
+                   _config_item is not None ):
+                if _ref_type == SourceEnum.CONFIG_VALUE:
+                    if _config_item.f is not None:
+                        _value = _config_item.f
+                    elif _config_item.p is not None:
+                        _value = _config_item.p
+                    else:
+                        _value = _config_item.v
+                else:
+                    _value = _config_item.ref
+
+                if _value:
+                    if os.path.isfile(_value):
+                        _source.is_file = True
+                        _source.is_path = False
+                    elif os.path.isdir(_value):
+                        _source.is_file = False
+                        _source.is_path = True
+                    # neither path or file, but is type ref
+                    elif _ref_type == SourceEnum.CONFIG_REF:
+                        _value = None
+                _source.value = _value
+                if _value is not None and as_dict is False and as_sourceref is False:
+                    return _value
+                _out[_ref_type]=_source
+                if _ref_item is None and _value is not None:
+                    _ref_item=_source
+                    if as_sourceref:
+                        return _ref_item
+                continue
+            # value from environment
+            elif _ref_type == SourceEnum.ENVIRONMENT:
+                _value = os.environ.get(ref)
+            # value from current work dir
+            elif _ref_type == SourceEnum.CWD:
+                if ref == "cwd":
+                    _value = _cwd
+                else:
+                    _value = os.path.join(_cwd,ref)
+            else:
+                _value = ref
+
+            if _value:
+                _is_file = os.path.isfile(_value)
+                _is_path = os.path.isdir(_value)
+
+            if _ref_type != SourceEnum.ENVIRONMENT:
+                if _is_file is False and _is_path is False:
+                    _value = None
+
+            if as_dict is False and _value is not None and as_sourceref is False:
+                return _value
+
+            _source.is_file = _is_file
+            _source.is_path = _is_path
+            _source.value = _value
+
+            # set the 1st valid occurence as ref item
+            if _value is not None and _ref_item is not None:
+                _ref_item = _source
+                if as_sourceref:
+                    return _ref_item
+            # do not set a value in case this is not a file or path
+            # (with the exception of an env variable)
+            _out[_ref_type]=_source
+
+        _out[SourceEnum.REF] = _ref_item
+
+        if _ref_item is None:
+            return None
+        else:
+            return _out
+
+
 
 if __name__ == "__main__":
     loglevel = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)

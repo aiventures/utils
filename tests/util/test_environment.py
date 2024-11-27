@@ -3,6 +3,7 @@
 import os
 import logging
 import pytest
+from unittest import mock
 from pathlib import Path
 # import inspect
 # from unittest.mock import MagicMock
@@ -10,12 +11,13 @@ from copy import deepcopy
 import re
 # import shlex
 from util import constants as C
-from util.config_env import Environment
+from util.config_env import Environment,ConfigEnv
 from util.config_env import logger as util_logger
 from util.utils import Utils
+from model.model_config import SourceRef
 
 logger = logging.getLogger(__name__)
-# get log level from environment if given 
+# get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 def test_environment(fixture_environment):
@@ -53,7 +55,7 @@ def test_get_config_environments(fixture_environment,env_key):
 
     # some basic checks
     if "WRONG" in env_key.upper():
-        assert value == None
+        assert value is None
     elif "REF" in env_key.upper() or "WHERE" in env_key.upper():
         # assert any references are resolved
         bracket_expressions = re.findall(C.REGEX_BRACKET_CONTENT,value)
@@ -109,7 +111,51 @@ def test_create_set_vars_bat(fixture_battest_path,fixture_environment):
     # clean up previous test file
     if os.path.isfile(_f_bat_set_vars):
         os.remove(_f_bat_set_vars)
-    
+
     f_ref = fixture_environment.create_env_vars_bat(_f_bat_set_vars)
     assert os.path.isfile(f_ref),"SET Vars file in HOME path could not be created"
+
+
+def _bootstrap_examples()->list:
+    """ testcase for test_bootstrap_ref """
+    out = []
+    _tc = {"ref":"F_CONFIGTEST1"}
+    out.append(pytest.param("suc dict",_tc,id="A.01 Successful retrieve of a file ref as dict"))
+    _tc = {"ref":"F_CONFIGTEST1","as_value":True}    
+    out.append(pytest.param("suc str",_tc,id="A.02 Successful retrieve of a file ref as string"))
+    _tc = {"ref":"F_CONFIGTEST1","as_sourceref":True}    
+    out.append(pytest.param("suc sourceref",_tc,id="A.03 Successful retrieve of a file ref as Source Ref"))
+    _tc = {"ref":"ENV_VAR_TEST","as_value":True}      
+    out.append(pytest.param("suc str",_tc,id="A.04 Successful retrieve of an environment value")) 
+    _tc = {"ref":"CMD_EXAMPLE3","as_value":True}      
+    out.append(pytest.param("config str",_tc,id="A.05 Case returning config value"))      
+    _tc = {"ref":"CMD_EXAMPLE3"}  
+    out.append(pytest.param("config dict",_tc,id="A.06 Case returning config value"))       
+    _tc = {"ref":"HUGO4711"}  
+    out.append(pytest.param("err env",_tc,id="B.01 Error case no valid environment"))    
+    return out
+
+@mock.patch.dict(os.environ, {"ENV_VAR_TEST": "ENVVARTEST_VALUE"}, clear=True)
+@pytest.mark.parametrize("tc_signature,bootstrap_example",_bootstrap_examples())
+def test_bootstrap_ref(fixture_environment,tc_signature,bootstrap_example):
+    """ testing the bootstrap ref method  """
+    env_value = os.environ.get("ENV_VAR_TEST")
+    _config_env = fixture_environment.config_env
+    bootstrap_example["config_env"] = _config_env
+    _bootstrap_value = fixture_environment.bootstrap_ref(**bootstrap_example)
+    _type = None
+    if _bootstrap_value:
+        _type = type(_bootstrap_value)
+    if "dict" in tc_signature:
+        assert isinstance(_bootstrap_value,dict),f"Expected types don't match, got [{_type}], expected dict"
+    elif "str" in tc_signature:
+        assert isinstance(_bootstrap_value,str),f"Expected types don't match, got [{_type}], expected str"
+    elif "sourceref" in tc_signature:
+        assert isinstance(_bootstrap_value,SourceRef),f"Expected types don't match, got [{_type}], expected SourceRef"
+    elif "err" in tc_signature:
+        assert _bootstrap_value is None,f"Expected None but got {_bootstrap_value}"
+
+    # evaluate signature
+    # assert isinstance(_bootstrap_value,expected_type),f"Type doesn't match, expected [{str(expected_type)}], got [{_type}]"
+    pass
 

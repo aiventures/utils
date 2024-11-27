@@ -13,7 +13,7 @@ from util.config_env import logger as util_logger
 from util.utils import Utils
 
 logger = logging.getLogger(__name__)
-# get log level from environment if given 
+# get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 def test_config_setup(fixture_sample_config_json):
@@ -161,3 +161,4 @@ def test_get_ref(fixture_config_env,valid_config,ref_exists,file_ref):
         assert _ref_exists is None,"Invalid Configuration should be None"
         if _ref is not None:
             assert not os.path.isfile(_ref) or not os.path.isdir(_ref),"There should be no real OS Object"
+
