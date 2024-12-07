@@ -2,6 +2,7 @@
 
 import os
 import logging
+import json
 import pytest
 from unittest import mock
 from pathlib import Path
@@ -9,12 +10,18 @@ from pathlib import Path
 # from unittest.mock import MagicMock
 from copy import deepcopy
 import re
+from typing import List,Optional,Union,Dict,Any,Literal
+from pydantic import ValidationError,TypeAdapter,Field
 # import shlex
 from util import constants as C
 from util.config_env import Environment,ConfigEnv
 from util.config_env import logger as util_logger
 from util.utils import Utils
-from model.model_config import SourceRef
+from model.model_config import ( ConfigValidator,
+                                 SourceRef,ConfigItemProcessed,
+                                 ConfigRule, ConfigItemAdapter,
+                                 DataDefinition,ConfigItemType,
+                                 ConfigModelAdapter,ConfigModelType)
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -115,24 +122,25 @@ def test_create_set_vars_bat(fixture_battest_path,fixture_environment):
     f_ref = fixture_environment.create_env_vars_bat(_f_bat_set_vars)
     assert os.path.isfile(f_ref),"SET Vars file in HOME path could not be created"
 
-
 def _bootstrap_examples()->list:
     """ testcase for test_bootstrap_ref """
     out = []
     _tc = {"ref":"F_CONFIGTEST1"}
     out.append(pytest.param("suc dict",_tc,id="A.01 Successful retrieve of a file ref as dict"))
-    _tc = {"ref":"F_CONFIGTEST1","as_value":True}    
+    _tc = {"ref":"F_CONFIGTEST1","as_value":True}
     out.append(pytest.param("suc str",_tc,id="A.02 Successful retrieve of a file ref as string"))
-    _tc = {"ref":"F_CONFIGTEST1","as_sourceref":True}    
+    _tc = {"ref":"F_CONFIGTEST1","as_sourceref":True}
     out.append(pytest.param("suc sourceref",_tc,id="A.03 Successful retrieve of a file ref as Source Ref"))
-    _tc = {"ref":"ENV_VAR_TEST","as_value":True}      
-    out.append(pytest.param("suc str",_tc,id="A.04 Successful retrieve of an environment value")) 
-    _tc = {"ref":"CMD_EXAMPLE3","as_value":True}      
-    out.append(pytest.param("config str",_tc,id="A.05 Case returning config value"))      
-    _tc = {"ref":"CMD_EXAMPLE3"}  
-    out.append(pytest.param("config dict",_tc,id="A.06 Case returning config value"))       
-    _tc = {"ref":"HUGO4711"}  
-    out.append(pytest.param("err env",_tc,id="B.01 Error case no valid environment"))    
+    _tc = {"ref":"ENV_VAR_TEST","as_value":True}
+    out.append(pytest.param("suc str",_tc,id="A.04 Successful retrieve of an environment value"))
+    _tc = {"ref":"CMD_EXAMPLE3","as_value":True}
+    out.append(pytest.param("config str",_tc,id="A.05 Case returning config value"))
+    _tc = {"ref":"CMD_EXAMPLE3"}
+    out.append(pytest.param("config dict",_tc,id="A.06 Case returning config value"))
+    _tc = {"ref":"HUGO4711","strict":True,"as_value":True}
+    out.append(pytest.param("err env value",_tc,id="B.01 Error case no valid environment,strict path checking"))
+    _tc = {"ref":"HUGO4711","strict":True,"as_sourceref":True}
+    out.append(pytest.param("err env SOURCEREF",_tc,id="B.01 Error case no valid environment, return sourceref, strict path checking"))
     return out
 
 @mock.patch.dict(os.environ, {"ENV_VAR_TEST": "ENVVARTEST_VALUE"}, clear=True)
@@ -155,7 +163,53 @@ def test_bootstrap_ref(fixture_environment,tc_signature,bootstrap_example):
     elif "err" in tc_signature:
         assert _bootstrap_value is None,f"Expected None but got {_bootstrap_value}"
 
-    # evaluate signature
-    # assert isinstance(_bootstrap_value,expected_type),f"Type doesn't match, expected [{str(expected_type)}], got [{_type}]"
-    pass
+def test_env_model(fixture_environment):
+    """ test the parsing of the env json into a pydantic model """
+    _config_env = fixture_environment.config_env
+    _config = _config_env.config
+    # Prefixes
+    _config_item_types = ["F","P","E","W",]
 
+    # try to parse each item with a fitting model
+    for _key,_config_item in _config.items():
+        _prefix = _key.split("_")[0]
+        _model = None
+        try:
+            # parse dependening from path type
+            if ( _prefix in _config_item_types ):
+                _model = ConfigItemProcessed(**_config_item)
+                _model.k = _key
+            elif  _prefix == "R":
+                _model = ConfigRule(**_config_item)
+                _model.k = _key
+            elif _prefix == "D":
+                _model = DataDefinition(**_config_item)
+                _model.k = _key
+        except ValidationError as e:
+            if "WRONG" in _key:
+                continue
+            _errors = e.errors()
+            assert False,f"Key [{_key}], couldn't parse as Pydantic Model, {repr(_errors)}"
+
+    _valid_config = {}
+    for _key,_config_item in _config.items():
+        try:
+            _ = ConfigItemAdapter.validate_python(_config_item)
+            _valid_config[_key]=_config_item
+        except ValidationError as e:
+            if "WRONG" in _key:
+                continue
+            _errors = e.errors()
+            assert False,f"Key [{_key}], couldn't parse as Pydantic Model, {repr(_errors)}"
+
+    # try to parse correct and incorrect configurations
+    _validated = ConfigValidator.validate_config(_config)
+    # if it is a dict, then some error occured
+    # this is true for the original configuration
+    _is_invalid_config = isinstance(_validated,dict) and _validated.get(C.ERROR) is not None
+    assert _is_invalid_config,"Original Sample Config should contain validation errors"
+
+    # try to parse the correct config (=the one with WRONG_... Keys dropped)
+    _validated = ConfigValidator.validate_config(_valid_config)
+    _is_valid_config = isinstance(_validated,dict) and _validated.get(C.ERROR) is None
+    assert _is_valid_config,"Original Sample Config should be valid"

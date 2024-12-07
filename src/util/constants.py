@@ -28,6 +28,7 @@ EXAMPLE = "example"
 # SUFFIX FOR CSV EXPORTS TO CREATE A DATE
 DATEXLS = "_N"
 INVALID = "INVALID"
+ERROR = "error"
 F_BAT_SET_VARS="bat_set_vars.bat"
 F_BAT_SET_VARS_TEMPLATE="bat_set_vars_template.bat"
 CLI_LOG_LEVEL = "CLI_LOG_LEVEL"
