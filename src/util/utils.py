@@ -1,12 +1,16 @@
 """ collection of utils """
 
-
 import shlex
 import sys
 import os
 import logging
 import subprocess
 import platform
+import re
+from math import inf
+from math import log
+from math import floor
+
 import configparser
 from configparser import Error as ConfigParserError
 from enum import Enum
@@ -15,7 +19,6 @@ from pathlib import Path
 from util import constants as C
 from util.persistence import Persistence
 # from util.cmd_runner import CmdRunner
-import re
 from util.abstract_enum import AbstractEnum
 from util.constants import CygPathCmd
 import shlex
@@ -41,6 +44,116 @@ class Utils():
     """ util collection """
 
     @staticmethod
+    def byte_info(x:int,short:bool=True,num_decimals:int=1):
+        """ returns formatted size in bytes
+            Parameters
+            ----------
+            x : int
+                Byte size (integer)
+            short: boolean, optional (default True)
+                output as string or dictionary
+            num_decimals: int, optional (default 1)
+                number of decimals
+            Returns
+            -------
+            str,dict
+                depending on short flag, formatted string or dictionary with all conversion details
+        """
+
+        if x == 0:
+            r = {}
+            r["value_int"] = x
+            r["power_int_1024"] = (-1) * inf
+            r["power_frac_1024"] = 1
+            r["value"] = 0
+            r["units"] = ""
+            r["text"] = "0 bytes"
+            if short:
+                return r["text"]
+            else:
+                return r
+
+        ld_x = log(x,2**10) # exponent to base 1024
+        exp_int = floor(ld_x)
+        exp_frac = ld_x - exp_int
+        units = ("","Kilo","Mega","Giga","Tera","Peta","Exa","Zetta","Yotta")
+        value = (2**10)**exp_frac
+        text = str(round(value,num_decimals))+" "+units[exp_int]+"bytes"
+        if short:
+            r = text
+        else:
+            r = {}
+            r["value_int"] = x
+            r["power_int_1024"] = exp_int
+            r["power_frac_1024"] = exp_frac
+            r["value"] = round(value,num_decimals)
+            r["units"] = units[exp_int]
+            r["text"] = text
+
+        return r
+
+    @staticmethod
+    def trunc_string(s,start=19,end=19,s_length=40):
+        """ will format string and cut off in the middle parts if it exceeds length.
+            will return a string of length s_length"""
+        s_new = s
+        fill_s = ".."
+        len_fill = len(fill_s)
+        len_s = len(s)
+        # cut string
+        if (len_s+len_fill) > s_length:
+            s_start = s[:start]
+            i_start_end = max([(len_s - end),start])
+            s_end = s[i_start_end:]
+            s_new = s_start + fill_s + s_end
+            s_new = s_new[:s_length]
+
+        return s_new.ljust(s_length)
+
+    @staticmethod
+    def get_nearby_index(value,sorted_list:list,debug=False):
+        """ returns index for closest value in a sorted list for a given input value,
+            uses binary search
+        """
+
+        idx = -1
+        idx_min = 0
+        idx_max = len(sorted_list)
+        idx_old = -2
+
+        if ((value is None) or
+           (isinstance(sorted_list,list) and len(sorted_list) == 0)):
+            return None
+
+        finished = False
+
+        logger.debug(f"[Utils] Sorting List containing [{len(sorted_list)}] elements")
+
+        # out of bounds will return a negative value
+        if ( ( sorted_list[idx_max-1] < value ) or ( sorted_list[0] > value ) ) :
+            finished = True
+
+        while not finished:
+            idx = idx_min + ( idx_max - idx_min ) // 2
+
+            # converged / exact value not found
+            if ( idx == idx_old ):
+                finished = True
+
+            val_idx = sorted_list[idx]
+            if ( val_idx < value ):
+                idx_min = idx
+            elif ( val_idx > value ):
+                idx_max = idx
+            else:
+                finished = True
+
+            idx_old = idx
+            logger.debug(f"[Utils] Current Index [{idx}]")
+
+        return idx
+
+    @staticmethod
     def read_ini_config(f_config:str)->dict:
         """ reads configuration from a config file in INI format """
         # https://docs.python.org/3/library/configparser.html
@@ -54,7 +167,7 @@ class Utils():
         except ConfigParserError:
             logger.warning(f"[UTILS] File [{f_config}] can't be parsed as INI Configuration)")
             return
-        
+
         return {_section_name: dict(_config[_section_name]) for _section_name in _config.sections()}
 
     @staticmethod

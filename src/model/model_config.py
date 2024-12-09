@@ -1,17 +1,13 @@
 """ model for the configuration environment """
 import logging
 import os
+from enum import StrEnum
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union
+from pydantic import (BaseModel, Discriminator, RootModel, Tag,
+                      TypeAdapter, ValidationError)
 from util import constants as C
-
-
-from util.abstract_enum import AbstractEnum
-from util.constants import ( EnvType,ConfigStatus,RuleFileAttribute, RuleFile, DataType
-                            )
-from pydantic import BaseModel,Field,TypeAdapter,Discriminator,Tag,ValidationError,RootModel
-from pydantic.config import ConfigDict
-from pydantic.dataclasses import dataclass
-from typing import List,Optional,Union,Dict,Any,Literal, Annotated
-from enum import Enum,StrEnum
+from util.constants import (ConfigStatus, DataType, EnvType, 
+                            RuleFileAttribute)
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
