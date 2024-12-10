@@ -29,6 +29,7 @@ class CalendarDayType(BaseModel):
     isoweeknum    : int
     holiday       : Optional[str]=None
     day_type      : DayTypeEnum
+    info          : Optional[str]=None # Additional Info
 
 # derived models
 MonthModel = Dict[str,CalendarDayType]

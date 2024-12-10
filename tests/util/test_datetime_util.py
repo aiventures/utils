@@ -3,7 +3,7 @@ from util.datetime_util import ( DateTimeUtil as DTU,
                                  Calendar, DayTypeEnum as DT )
 
 from model.model_datetime import MonthAdapter,MonthModelType
-from util.datetime_renderer import CalendarRenderer
+from util_cli.cli_datetime_renderer import CalendarRenderer
 from pydantic import ValidationError
 
 def test_get_holiday_dates():
@@ -56,5 +56,5 @@ def test_calendar2():
     _stats = _calendar.stats
     pass
     _calender_table = _calendar.get_calendar_table(4)
-    CalendarRenderer.render_calendar(_calendar)
+    # CalendarRenderer.render_calendar(_calendar)
 

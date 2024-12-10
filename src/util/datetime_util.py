@@ -443,7 +443,8 @@ class Calendar():
 
         if week_info["weekday"]>5:
             day_type = DayTypeEnum.WEEKEND
-        elif holiday is not None:
+        
+        if holiday is not None:
             day_type = DayTypeEnum.HOLIDAY
 
         return day_type
@@ -490,6 +491,8 @@ class Calendar():
                          "day_type":_day_type}
             out[_dt_s] = CalendarDayType(**_day_info)
         return out
+    
+    
 
     @staticmethod
     def get_year_info(year:int)->YearModelType:
@@ -583,6 +586,10 @@ class Calendar():
             out[_daytype] = _num_type
 
         return out
+    
+    def get_day_info(self,month:int,day:int)->CalendarDayType:
+        """ returns the calendar info """
+        return self._year_info[month][day]
     
     def get_calendar_table(self,num_months:int=6)->list:
         """ creates tabular format """
