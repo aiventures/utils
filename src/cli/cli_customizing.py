@@ -7,7 +7,6 @@ import os
 #import json
 import typer
 from rich import print as rprint
-from rich.console import Console
 # from rich.markup import escape as esc
 from rich.logging import RichHandler
 import json

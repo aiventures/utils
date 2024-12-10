@@ -12,9 +12,10 @@ class DayTypeEnum(StrEnum):
     WORKDAY = "workday"
     WORKDAY_HOME = "workday_home"
     VACATION = "vacation"
-    HOLIDAY = "holiday"
+    HOLIDAY  = "holiday"
     FLEXTIME = "flextime" # Gleitzeit
-    PARTTIME = "parttime"
+    PARTTIME = "parttime"   
+    INFO     = "info"  # information attribute
 
 class CalendarDayType(BaseModel):
     """ Calendar Day Model """

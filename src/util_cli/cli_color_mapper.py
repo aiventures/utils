@@ -23,6 +23,7 @@ from util.const_local import LOG_LEVEL
 from util.persistence import Persistence
 from util.utils import Utils
 from util_cli.cli_color_maps import RGB_COLORS,HEX_COLORS,COLOR_NAMES, ANSI_VALUES
+from util.matrix_list import MatrixList
 
 HEX = "hex"
 ANSI = "ansi" # ansi ciodes not implemented yet
@@ -195,7 +196,7 @@ class ColorMapper():
             for i in range(12):
                 _idx = _min_idx + i*6
                 _table.append(list(range(_idx,_idx+6)))
-            _table = Utils.transpose_matrix(_table)
+            _table = MatrixList.transpose_matrix(_table)
             tables.extend(_table)
         # basic colors and grey values
         _table=[[*list(range(8)),0,0,0,0],

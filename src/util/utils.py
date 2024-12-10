@@ -171,19 +171,6 @@ class Utils():
         return {_section_name: dict(_config[_section_name]) for _section_name in _config.sections()}
 
     @staticmethod
-    def transpose_matrix(array:list)->list:
-        """" transpose a list of list aka matrix the good old way """
-        _rows = len(array)
-        _cols = len(array[0])
-        out = []
-        for _c in range(_cols):
-            _line=[]
-            for _r in range(_rows):
-                _line.append(array[_r][_c])
-            out.append(_line)
-        return out
-
-    @staticmethod
     def get_base_int(num:int,base:int=16,inverse:bool=True,length:int=None)->list:
         """ creates the  number representation to a given base
             list will be sorted according to base (opposite to number representation)

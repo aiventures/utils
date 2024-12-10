@@ -391,34 +391,6 @@ class DateTimeUtil():
             _date = _date + timedelta(days=1)
         return out
 
-    # @staticmethod
-    # def add_daytype(year_model:YearModelType,day_list:list,day_type:DayTypeEnum=DayTypeEnum.VACATION)->int:
-    #     """ adds daytype returns number of vacation days added
-    #         only works with yearmodel of month type
-    #     """
-    #     num_days = 0
-    #     for _day in day_list:
-    #         _date_range = _day.split("-")
-    #         _date_from = DateTime.strptime(_date_range[0],"%Y%m%d")
-    #         _date_to = DateTime.now()
-    #         if len(_date_range)==1:
-    #             _date_to   = DateTime.strptime(_date_range[0],"%Y%m%d")
-    #         elif len(_date_range)==2:
-    #             _date_to   = DateTime.strptime(_date_range[1],"%Y%m%d")
-    #         _date = _date_from
-
-    #         while _date <= _date_to:
-    #             _month = _date.month
-    #             _day = _date.day
-    #             _day_info = year_model[_month][_day]
-    #             # only overwrite workdays
-    #             if _day_info.day_type in ["workday","workday_home"]:
-    #                 _day_info.day_type = day_type
-    #             _date += timedelta(days=1)
-    #             num_days += 1
-
-    #     return num_days
-
 class Calendar():
     """ Calendar Object """
     def __init__(self,year:int,daytype_list:DayTypeListType=None):
@@ -431,7 +403,10 @@ class Calendar():
         self._daytype_list = {}
         if daytype_list:
             self._daytype_list = daytype_list
+        # adds daytpe info 
         self._set_daytypes()
+        # adds information
+        self._add_info()
 
     @staticmethod
     def _get_day_type(week_info:dict,holiday:str,workday_home:bool=False)->DayTypeEnum:
@@ -492,7 +467,6 @@ class Calendar():
             out[_dt_s] = CalendarDayType(**_day_info)
         return out
     
-    
 
     @staticmethod
     def get_year_info(year:int)->YearModelType:
@@ -524,10 +498,13 @@ class Calendar():
                     out.append(day_info.datetime)
         return out
 
-    def _get_daytype_dates(self,daytype:DayTypeEnum)->list:
+    def _get_daytype_dates(self,daytype:DayTypeEnum,date_s:str=None)->list:
         """ get datetype_dates """
         # get all dates in one string and apply regexes from there
-        _date_s = " ".join(self._daytype_list.get(daytype,[]))
+        if date_s:
+            _date_s = date_s
+        else:
+            _date_s = " ".join(self._daytype_list.get(daytype,[]))
         _date_ranges =  REGEX_DATE_RANGE.findall(_date_s)
         dates = [DateTimeUtil.get_dates_from_range(_dr) for _dr in _date_ranges]
         dates = [_d for _daterange_list in dates for _d in _daterange_list]
@@ -539,6 +516,22 @@ class Calendar():
         dates = list(tuple(sorted(dates)))
         return dates
 
+    def _add_info(self)->None:
+        """ adds information  """
+        _info_list = self._daytype_list.get(DayTypeEnum.INFO,[])
+        for _info in _info_list:
+            _day_list = self._get_daytype_dates(DayTypeEnum.INFO,_info)
+            for _day in _day_list:
+                if _day.year != self._year:
+                    continue
+                _day_info = self._year_info[_day.month][_day.day]
+                _info_value = _day_info.info
+                if isinstance(_info_value,list):
+                    _info_value.append(_info)
+                else:
+                    _info_value = [_info]
+                _day_info.info = _info_value
+            
     def _set_daytype(self,daytype:DayTypeEnum)->None:
         """ setting a specific daytype """
         _days_list = self._get_daytype_dates(daytype)
@@ -575,16 +568,42 @@ class Calendar():
 
     @property
     def stats(self)->dict:
-        """ get number of days in stats """
-        out = {}
+        """ get number of days in stats """        
+        out = {}        
         _num_total = 0
-        _day_infos = list(self._get_calendar365().values())
-        for _day_info in _day_infos:
-            _daytype = _day_info.day_type.value
-            _num_type = out.get(_daytype,0) + 1
-            _num_total += 1
-            out[_daytype] = _num_type
+        for _month,_month_info in self._year_info.items():
+            _month_out={"weekday_s":{},"day_type":{},"holiday":[]}
+            for _day,_day_info in _month_info.items():
+                _day_type = _day_info.day_type.value          
+                _num_days = _month_out["day_type"].get(_day_type,0)+1
+                _month_out["day_type"][_day_type] = _num_days
+                _weekday_s = _day_info.weekday_s
+                _num_days = _month_out["weekday_s"].get(_weekday_s,0)+1
+                _month_out["weekday_s"][_weekday_s] = _num_days                
+                _holiday = _day_info.holiday
+                if _holiday:
+                    _d = f" ({_weekday_s}, {_day_info.datetime.strftime('%d.%m')})"
+                    _month_out["holiday"].append(_holiday+_d)
+            out[_month]=_month_out
+        return out
 
+    @property
+    def stats_sum(self)->dict:
+        """ Cumulated stats per year """
+        out = {"weekday_s":{},"day_type":{},"holiday":[]}
+        _stats_month = self.stats
+        for _,_month_info in _stats_month.items():
+            _weekday_info = _month_info["weekday_s"]
+            for _day,_num in _weekday_info.items():
+                _num_total = out["weekday_s"].get(_day,0)
+                out["weekday_s"][_day] = _num_total + _num
+            _day_type_info = _month_info["day_type"]
+
+            for _daytype,_num in _day_type_info.items():
+                _num_total = out["day_type"].get(_daytype,0)
+                out["day_type"][_daytype] = _num_total + _num    
+
+            out["holiday"].extend(_month_info["holiday"])
         return out
     
     def get_day_info(self,month:int,day:int)->CalendarDayType:

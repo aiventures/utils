@@ -5,6 +5,7 @@ from datetime import datetime as DateTime
 import os
 from util import constants as C
 from util.utils import Utils
+from util.matrix_list import MatrixList
 
 def test_date2xls_timestamp():
     """ convert to XLS int """
@@ -54,7 +55,18 @@ def test_get_base_int():
 def test_transpose_matrix():
     """ test the transpose method """#
     m = [[1,4],[2,5],[3,6]]
-    t = Utils.transpose_matrix(m)
+    t = MatrixList.transpose_matrix(m)
     assert t[0] == [1,2,3]
     assert t[1] == [4,5,6]
+
+def test_reshape2rows():
+    """ test the reshape method
+        (to be used for rich tables)
+        a|b|c => [a,b,c]
+        d|e|f    [d,e,f]
+    """
+    m = [["a","d"],["b","e"],["c","f"]]
+    t = MatrixList.reshape2rows(m)
+    assert t[0] == ["a","b","c"]
+    assert t[1] == ["d","e","f"]
 

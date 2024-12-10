@@ -49,11 +49,13 @@ def test_calendar2():
     """ testing creation of calendar """
     # adding some additional daytypes
     _year = 2024
-    _daytype_list = {DT.WORKDAY_HOME:[],
+    _daytype_list = {DT.WORKDAY_HOME:["20240520-20240608"],
                      DT.FLEXTIME:[],
-                     DT.VACATION:["20240919-20240923","20240927"]}
+                     DT.VACATION:["20240919-20240923","20240927"],
+                     DT.INFO:["20240929-20241004 Test Info ","20240901 MORE INFO"]}
     _calendar = Calendar(_year,_daytype_list)
     _stats = _calendar.stats
+    _stats_sum = _calendar.stats_sum
     pass
     _calender_table = _calendar.get_calendar_table(4)
     # CalendarRenderer.render_calendar(_calendar)
