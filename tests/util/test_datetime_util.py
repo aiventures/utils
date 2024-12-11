@@ -52,11 +52,17 @@ def test_calendar2():
     _daytype_list = {DT.WORKDAY_HOME:["20240520-20240608"],
                      DT.FLEXTIME:[],
                      DT.VACATION:["20240919-20240923","20240927"],
-                     DT.INFO:["20240929-20241004 Test Info ","20240901 MORE INFO"]}
+                     DT.INFO:["20240929-20241004 Test Info ","20240901 MORE INFO",
+                              "20240501 :brain: :maple_leaf: Testing with icons"]}
     _calendar = Calendar(_year,_daytype_list)
     _stats = _calendar.stats
+    assert isinstance(_stats,dict)
     _stats_sum = _calendar.stats_sum
-    pass
+    assert isinstance(_stats,dict)
+    # render calendar table
     _calender_table = _calendar.get_calendar_table(4)
+    # get markdown
+    # console python -m rich.markdown test.md
+    # _markdown = _calendar.get_markdown()    
     # CalendarRenderer.render_calendar(_calendar)
 

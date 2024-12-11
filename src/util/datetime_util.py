@@ -25,11 +25,12 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 DAYS_IN_MONTH = {1:31,2:28,3:31,4:30,5:31,6:30,
                  7:31,8:31,9:30,10:31,11:30,12:31}
 WEEKDAY = {1:"Mo",2:"Di",3:"Mi",4:"Do",5:"Fr",6:"Sa",7:"So"}
+
 MONTHS_SHORT = {1:"JAN",2:"FEB",3:"MRZ",
                 4:"APR",5:"MAI",6:"JUN",
                 7:"JUL",8:"AUG",9:"SEP",
                 10:"OKT",11:"NOV",12:"DEZ"}
-                
+
 # Patterns for Date Identification
 # regex match any 8 Digit Groups preceded by space or start of line
 # and not followed by a dash
@@ -403,7 +404,7 @@ class Calendar():
         self._daytype_list = {}
         if daytype_list:
             self._daytype_list = daytype_list
-        # adds daytpe info 
+        # adds daytpe info
         self._set_daytypes()
         # adds information
         self._add_info()
@@ -418,7 +419,7 @@ class Calendar():
 
         if week_info["weekday"]>5:
             day_type = DayTypeEnum.WEEKEND
-        
+
         if holiday is not None:
             day_type = DayTypeEnum.HOLIDAY
 
@@ -466,7 +467,7 @@ class Calendar():
                          "day_type":_day_type}
             out[_dt_s] = CalendarDayType(**_day_info)
         return out
-    
+
 
     @staticmethod
     def get_year_info(year:int)->YearModelType:
@@ -531,7 +532,7 @@ class Calendar():
                 else:
                     _info_value = [_info]
                 _day_info.info = _info_value
-            
+
     def _set_daytype(self,daytype:DayTypeEnum)->None:
         """ setting a specific daytype """
         _days_list = self._get_daytype_dates(daytype)
@@ -555,8 +556,8 @@ class Calendar():
         for _daytype in _all_daytypes:
             if _daytype not in _daytypes:
                 continue
-            self._set_daytype(_daytype)    
-    
+            self._set_daytype(_daytype)
+
     def _get_calendar365(self)->Dict[int,CalendarDayType]:
         """ gets the calendar as dict """
         out = {}
@@ -568,18 +569,18 @@ class Calendar():
 
     @property
     def stats(self)->dict:
-        """ get number of days in stats """        
-        out = {}        
+        """ get number of days in stats """
+        out = {}
         _num_total = 0
         for _month,_month_info in self._year_info.items():
             _month_out={"weekday_s":{},"day_type":{},"holiday":[]}
             for _day,_day_info in _month_info.items():
-                _day_type = _day_info.day_type.value          
+                _day_type = _day_info.day_type.value
                 _num_days = _month_out["day_type"].get(_day_type,0)+1
                 _month_out["day_type"][_day_type] = _num_days
                 _weekday_s = _day_info.weekday_s
                 _num_days = _month_out["weekday_s"].get(_weekday_s,0)+1
-                _month_out["weekday_s"][_weekday_s] = _num_days                
+                _month_out["weekday_s"][_weekday_s] = _num_days
                 _holiday = _day_info.holiday
                 if _holiday:
                     _d = f" ({_weekday_s}, {_day_info.datetime.strftime('%d.%m')})"
@@ -601,15 +602,15 @@ class Calendar():
 
             for _daytype,_num in _day_type_info.items():
                 _num_total = out["day_type"].get(_daytype,0)
-                out["day_type"][_daytype] = _num_total + _num    
+                out["day_type"][_daytype] = _num_total + _num
 
             out["holiday"].extend(_month_info["holiday"])
         return out
-    
+
     def get_day_info(self,month:int,day:int)->CalendarDayType:
         """ returns the calendar info """
         return self._year_info[month][day]
-    
+
     def get_calendar_table(self,num_months:int=6)->list:
         """ creates tabular format """
         num_tables = 12 // num_months
@@ -620,7 +621,7 @@ class Calendar():
             _table = []
             for _day in range(1,32):
                 _row = [str(_day).zfill(2)]
-                for _month in range(_first_month,_last_month):                
+                for _month in range(_first_month,_last_month):
                     _info = self._year_info[_month].get(_day)
                     _value = None
                     if _info is not None:
