@@ -41,6 +41,8 @@ class CalendarDayType(BaseModel):
     isoweeknum    : int
     holiday       : Optional[str]=None
     day_type      : DayTypeEnum
+    duration      : Optional[float]=None # durations derived from info
+    overtime      : Optional[float]=None # Overtime Calculation
     info          : Optional[str]=None # Additional Info
 
 # derived models

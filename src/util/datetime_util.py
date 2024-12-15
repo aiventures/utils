@@ -57,7 +57,7 @@ MONTHS_SHORT_EN = {1:"JAN",2:"FEB",3:"MAR",
 # and not followed by a dash
 REGEX_YYYYMMDD = re.compile(r"((?<=\s)|(?<=^))(\d{8})(?!-)")
 REGEX_DATE_RANGE = re.compile(r"\d{8}-\d{8}")
-REGEX_TIME_RANGE = re.compile(r"\d{4}-\d{4}")
+REGEX_TIME_RANGE = re.compile(r"\s(\d{4}-\d{4})")
 REGEX_WEEKDAY = re.compile(r"[MDFS][oira]")
 
 class DateTimeUtil():
@@ -69,12 +69,18 @@ class DateTimeUtil():
             also sums up multiple occurences
         """
         _durations = re.findall(REGEX_TIME_RANGE,s)
+        if len(_durations) == 0:
+            return None
+        
         _total_duration = 0
         for _duration in _durations:
             _from,_to = [DateTime.strptime(_t, '%H%M') for _t in  _duration.split("-")]
             # duration in minutes
             _total_duration += ( _to - _from ).seconds // 60
         _hours = round(float(_total_duration) / 60,2)
+        # no durations found return None
+        if _hours == 0.0:
+            return None
         if as_str:
             _hours_s = str(int(_hours // 1)).zfill(2)
             _minutes_s = str(round(( _hours % 1 ) * 60)).zfill(2)
@@ -434,9 +440,11 @@ class DateTimeUtil():
 
 class Calendar():
     """ Calendar Object """
-    def __init__(self,year:int,daytype_list:DayTypeListType=None):
+    def __init__(self,year:int,worktime:float,daytype_list:DayTypeListType=None):
         """ Constructor """
         self._year : int  = year
+        # regular working time, used for calculating overtime 
+        self._working_time : float = worktime
         # get first monday of isoweek
         self._isoweek_info : dict  = DateTimeUtil.get_isoweekyear(year)
         self._year_info : YearModelType = None
@@ -514,7 +522,9 @@ class Calendar():
                          "weekday_s":_week_day_s,
                          "isoweeknum":_calendar_week,
                          "holiday":_holiday,
-                         "day_type":_day_type}
+                         "day_type":_day_type,
+                         "duration":0.0,
+                         "overtime":0.0}
             out[_dt_s] = CalendarDayType(**_day_info)
         return out
 
@@ -566,7 +576,7 @@ class Calendar():
         dates.extend(_week_dates)
         dates = list(tuple(sorted(dates)))
         return dates
-
+    
     def _add_info(self)->None:
         """ adds information  """
         _info_list = self._daytype_list.get(DayTypeEnum.INFO,[])
@@ -581,7 +591,12 @@ class Calendar():
                     _info_value.append(_info)
                 else:
                     _info_value = [_info]
+                # calculate durations
+                if isinstance(_info_value,list) and len(_info_value) > 0:
+                    _s_info = " ".join(_info_value)
+                    _day_info.duration = DateTimeUtil.duration_from_str(_s_info)                
                 _day_info.info = _info_value
+
 
     def _set_daytype(self,daytype:DayTypeEnum)->None:
         """ setting a specific daytype """
@@ -623,7 +638,8 @@ class Calendar():
         out = {}
         _num_total = 0
         for _month,_month_info in self._year_info.items():
-            _month_out={"weekday_s":{},"day_type":{},"holiday":[]}
+            _month_out={"weekday_s":{},"day_type":{},"holiday":[],
+                        "days_with_info":[],"duration":{}}
             for _day,_day_info in _month_info.items():
                 _day_type = _day_info.day_type.value
                 _num_days = _month_out["day_type"].get(_day_type,0)+1
@@ -635,14 +651,20 @@ class Calendar():
                 if _holiday:
                     _d = f" ({_weekday_s}, {_day_info.datetime.strftime('%d.%m')})"
                     _month_out["holiday"].append(_holiday+_d)
+                if isinstance(_day_info.info,list):
+                    _month_out["days_with_info"].append(_day)
+                _duration = _day_info.duration
+                if isinstance(_duration,float) and _duration > 0:
+                    _month_out["duration"][_day]=_duration
             out[_month]=_month_out
         return out
 
     @property
     def stats_sum(self)->dict:
         """ Cumulated stats per year """
-        out = {"weekday_s":{},"day_type":{},"holiday":[]}
+        out = {"weekday_s":{},"day_type":{},"holiday":[],"duration":0,"year":self.year}
         _stats_month = self.stats
+        _duration = 0
         for _,_month_info in _stats_month.items():
             _weekday_info = _month_info["weekday_s"]
             for _day,_num in _weekday_info.items():
@@ -655,6 +677,8 @@ class Calendar():
                 out["day_type"][_daytype] = _num_total + _num
 
             out["holiday"].extend(_month_info["holiday"])
+            _duration += sum(list(_month_info["duration"].values()))
+        out["duration"] = _duration
         return out
 
     def get_day_info(self,month:int,day:int)->CalendarDayType:

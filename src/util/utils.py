@@ -45,17 +45,17 @@ class Utils():
 
     @staticmethod
     def split_string(s:str,n:int,fill:str=None)->list:
-        """ splits a string into same length strings 
+        """ splits a string into same length strings
             optionally fills up the last string with fill chars
-            to match the same string length 
+            to match the same string length
         """
-        num_chars = len(s)        
+        num_chars = len(s)
         if fill:
             mod_s = num_chars % n
             s += [fill] * (n-mod_s)
             num_chars = len(s)
         return [s[i:i+n] for i in range(0, num_chars, n)]
-        
+
     @staticmethod
     def byte_info(x:int,short:bool=True,num_decimals:int=1):
         """ returns formatted size in bytes
@@ -124,7 +124,7 @@ class Utils():
         return s_new.ljust(s_length)
 
     @staticmethod
-    def get_nearby_index(value,sorted_list:list,debug=False):
+    def get_nearby_index(value,sorted_list:list,debug=False)->int:
         """ returns index for closest value in a sorted list for a given input value,
             uses binary search
         """
@@ -143,8 +143,13 @@ class Utils():
         logger.debug(f"[Utils] Sorting List containing [{len(sorted_list)}] elements")
 
         # out of bounds will return a negative value
-        if ( ( sorted_list[idx_max-1] < value ) or ( sorted_list[0] > value ) ) :
+        if  value > sorted_list[idx_max-1] :
             finished = True
+            idx = idx_max -1
+
+        elif value < sorted_list[0] :
+            finished = True
+            idx = 0
 
         while not finished:
             idx = idx_min + ( idx_max - idx_min ) // 2

@@ -796,8 +796,6 @@ if __name__ == "__main__":
 #     console = Console(theme=_theme)
 #     # console.print("[info] this is a hugo test [warning] WARNING")
 #     console.print("this is a hugo test WARNING",style="info")
-
-
 #     # print("\n")
 
 #     # console.print("This is information", style="info")

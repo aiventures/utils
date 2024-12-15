@@ -72,6 +72,19 @@ Configuration should be OS independent, but only tested on Win Os.
 
 ## Todos / Ideas
 
+* `20241215` Create gliding overtime 
+* `20241215` Create a directive / mapping for recording template
+* `20241215` Create a time recording template and a parsing method 
+* `20241215` Override an Office Time by Home Office 
+* `20241215` Add an Over/UnderTime Indicator in calendar and markdown and Tree 
+* `20241215` Add Duration separated by Office / Homeoffice to Stats  
+* `20241215` Create Icon List with search capabilities based on keywords  
+* `20241215` Calculate Total Durations per Month / and Delta to Working Times / directly in calendar model 
+* `20241215` Use Rich Text to highlight text searches 
+* `20241215` Create a Tree explorer view 
+* `20241215` Render Calendar as Tree
+* `20241215` Create Pydantic Model to render the Calendar markdown list with different options such as  
+             only certain types of days to be rendered 
 * `20241003` Set Environment from Configuration / optionally save it as well as env file / create a bat file
 * ~~`20241002` Parse Placeholder in [...] as links to config in command parser~~
 * `20240929` Parsing links, add numbers and allow to launch links from CLI
@@ -79,10 +92,10 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20240929` Add a logic to update a value in a configuration in any case (for example when the config is not build up from scratch )
 * `20240927` Create an Utility to create Markdown with Date Lines 
 * `20240923` Additional attribute to indicate file path conversions (with no info implicitly leading to no conversion)
-* `20240923` Move Constants to enums 
+* ~~`20240923` Move Constants to enums~~
 * `20240923` Generate envs to export Configuration as shell / batch setup scripts 
-* `20240923` Create Config validation features (Config.json > CHECK > Errors/Warnings > Automatical Clean Up)
-* `20240923` Create a Config schema (idea: create a yaml with comments and convwert it as json), so that configs can also be validated 
+* ~~`20240923` Create Config validation features (Config.json > CHECK > Errors/Warnings > Automatical Clean Up)~~
+* ~~`20240923` Create a Config schema (idea: create a yaml with comments and convwert it as json), so that configs can also be validated ~~
 * `20240923` Enable `Yaml` 
 * ~~`20240923` Create `Typer` SubCommands~~
 * ~~`20240923` Link Executables to Configuration~~

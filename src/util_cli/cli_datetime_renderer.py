@@ -4,7 +4,6 @@ import logging
 import os
 import re
 from enum import StrEnum
-
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.markdown import Markdown
@@ -17,11 +16,29 @@ from model.model_datetime import CalendarDayType
 from model.model_datetime import DayTypeEnum as DTE,CellRenderOptionType
 from util.const_local import LOG_LEVEL
 from util.datetime_util import ( MONTHS_SHORT, Calendar,
-                                 WEEKDAY, MONTHS )
+                                 WEEKDAY, MONTHS, REGEX_DATE_RANGE,
+                                 REGEX_YYYYMMDD, REGEX_TIME_RANGE )
+from util.utils import Utils
 from pydantic import ValidationError
 
 
 REGEX_ICON_STR = ":[a-zA-Z0-9_]+:" # alphanum chars embraced in colons
+EMOJI_INFO = ":pencil:"
+
+MONTH_EMOJIS = {1:":snowman:",2:":umbrella_with_rain_drops:",3:":seedling:",
+               4:":leafy_green:",5:":man_biking:",6:":smiling_face_with_sunglasses:",
+               7:":sun_with_face:",8:":beach_with_umbrella:",9:":sunflower:",
+               10:":fallen_leaf:",11:":umbrella_with_rain_drops:",12:":zzz:",}
+
+# OVERTIME THRESHOLD INDICATOR
+OVERTIME_LEVELS = [-3.2,-2.8,-2,-1.,-0.4,0.,0.5,0.7,0.9,1.1,1.3,1.5,1.8,2.0,2.2]
+OVERTIME_EMOJI_CODES = ["black_circle","zzz","blue_square","blue_circle",
+                        "green_circle","green_square","yellow_circle",
+                        "yellow_square","orange_circle",
+                        "orange_square","red_circle","red_square","purple_circle",
+                        "purple_square","skull"]
+OVERTIME_EMOJIS = [Emoji.replace(f":{e}:") for e in OVERTIME_EMOJI_CODES]
+
 
 class DAYTYPE_ICONS(StrEnum):
     """ ICONS For Rich Table """
@@ -50,8 +67,7 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 class CalendarRenderer():
     """ Rendering some datetime utils """
 
-    def __init__(self,calendar:Calendar,num_months_in_table:int=12,icon_render:CellRenderOptionType="all",
-                 force_terminal:bool=None):
+    def __init__(self,calendar:Calendar,num_months_in_table:int=12,icon_render:CellRenderOptionType="all"):
 
         try:
             _ = CellRenderOptionType.model_validate(icon_render)
@@ -63,8 +79,26 @@ class CalendarRenderer():
 
         self._calendar = calendar
         self._num_month = num_months_in_table
-        self._console = console_maker.get_console(force_terminal=force_terminal)
+        self._console = console_maker.get_console()
         self._icon_render = icon_render
+
+    @staticmethod
+    def get_overtime_indicator(overtime:float)->str:
+        """ calculates and renders overtime indicator """
+        _idx = Utils.get_nearby_index(overtime,OVERTIME_LEVELS)
+        return OVERTIME_EMOJIS[_idx]
+
+    @staticmethod
+    def show_overtime_indicator()->None:
+        """ displays the overtime indicator """
+        _finished = False
+        _overtime = -3.
+        while not _finished:
+            _emoji = CalendarRenderer.get_overtime_indicator(_overtime)
+            print(f"[OVERTIME INDICATOR] {_emoji} [{round(_overtime,1)}]")
+            _overtime += 0.1
+            if _overtime > 2.5:
+                _finished = True
 
     @property
     def console(self)->Console:
@@ -91,13 +125,13 @@ class CalendarRenderer():
             if len(_icons) > 0:
                 out = _icons
                 if icon_render == "info":
-                    out = ":dizzy:"
+                    out = EMOJI_INFO
                 elif icon_render == "first":
                     out = _icons[0]
                 elif icon_render == "all":
                     out = "".join(_icons)
             else: # no icons in infos add default icon for info
-                out = ":dizzy:"
+                out = EMOJI_INFO
 
         return out
 
@@ -136,17 +170,19 @@ class CalendarRenderer():
                     _rendered_cell = self._render_cell(month=_day_index[0],day=_day_index[1])
                     _rendered_row.append(_rendered_cell)
                 _richtable.add_row(*_rendered_row)
-
-
-                # _tmp = [str(_elem) for _elem in _row]
-                # _richtable.add_row(*_tmp)
             self._console.print(_richtable)
 
     @staticmethod
-    def markdown_info(info:str)->str:
+    def render_info(info:str)->str:
         """ renders markdown information """
         # replace any icon shortcuts
         out_s = Emoji.replace(info)
+        # drop durations
+        out_s = re.sub(REGEX_TIME_RANGE, "", out_s)
+        # drop date informations
+        out_s = re.sub(REGEX_DATE_RANGE, "", out_s)
+        out_s = re.sub(REGEX_YYYYMMDD, "", out_s)
+        # replace datetime informations
         return out_s
 
     @staticmethod
@@ -157,7 +193,6 @@ class CalendarRenderer():
         """
 
         out = []
-
         _day_type = day_info.day_type
         _icon = DAYTYPE_ICONS[_day_type.name].value
 
@@ -170,18 +205,34 @@ class CalendarRenderer():
         _t = str(_day_type).upper()
         _n = str(day_info.day_in_year).zfill(3)
         _i_list = day_info.info
+        _s_i = None
+        _d = day_info.duration
+        # render duration and duration as emoji clock
+        if isinstance(_d,float) and _d>0:
+            _emoji_hours = int(round(_d)) % 12
+            if _emoji_hours == 0:
+                _emoji_hours = 12
+            _emoji_clock = Emoji.replace(f":clock{str(_emoji_hours)}:")
+            _hours_s = str(int(_d // 1)).zfill(2)
+            _minutes_s = str(round(( _d % 1 ) * 60)).zfill(2)
+            _time = f"{_hours_s}:{_minutes_s}"
+            _ds = f"{_emoji_clock}{_time}"
+        else:
+            _ds = ""
+
         if _h is None:
             _h = ""
         else:
             _h = f"/{str(_h).upper()}"
-        _markdown = Emoji.replace(f"* {_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h}")
-
+        # @TODO RENDER DURATION WITH CLOCK EMOJI
+        _markdown = Emoji.replace(f"* {_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h} {_ds}")
         out.append(_markdown)
 
         if _i_list and add_info:
             for _i in _i_list:
-                # render output string
-                _i = CalendarRenderer.markdown_info(_i)
+                # render output string / drop items
+                _i = CalendarRenderer.render_info(_i)
+
                 out.append(f"  * {_i}  ")
 
         return out
@@ -193,6 +244,7 @@ class CalendarRenderer():
             add_info: if info is maintained add it to output
             only_info: only items with info are output
         """
+        _stats = self.calendar.stats
         out = []
         if month is None:
             out.append(f"# **CALENDAR {self.calendar.year}**")
@@ -200,9 +252,12 @@ class CalendarRenderer():
         else:
             _m_range = range(month,month+1)
         for _month in _m_range:
-            if only_info is False:
+            _has_info = len(_stats[_month]["days_with_info"]) > 0
+            # only add month if there are infos in case only_info is selected
+            if only_info is False or (only_info is True and _has_info):
                 out.append("\n---")
-                out.append(f"## **{self.calendar.year}-{str(_month).zfill(2)} {MONTHS[_month]}**")
+                _month_emoji = Emoji.replace(MONTH_EMOJIS[_month])
+                out.append(f"## {_month_emoji} **{self.calendar.year}-{str(_month).zfill(2)} {MONTHS[_month]}**")
             _month_info = self.calendar.year_info[_month]
             _days = list(_month_info.keys())
             _days.sort(reverse=True)
@@ -221,19 +276,36 @@ if __name__ == "__main__":
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
                         level=LOG_LEVEL, datefmt="%Y-%m-%d %H:%M:%S",
                         handlers=[RichHandler(rich_tracebacks=True)])
+    # console python -m rich.markdown test.md
 
+    # sample creation of items. For real usafge this would be a plain txt file
+    # allowing easy and quick entry of items
     _daytype_list = {DTE.WORKDAY_HOME:["Mo Di Mi Fr"],
                      DTE.FLEXTIME:["20240902"],
                      DTE.VACATION:["20240919-20240923","20240927"],
-                     DTE.INFO:["20240929-20241004 :rainbow: Test Info ","20240901 :red_circle: :green_square: MORE INFO"]}
-
+                     DTE.INFO:["20240929-20241004 :notebook: Test Info ",
+                               "20240901 :red_circle: :green_square: MORE INFO 1230-1450 1615-1645",
+                               "20241010 JUST INFO 0934-1134"]}
     _calendar = Calendar(2024,_daytype_list)
-    _renderer = CalendarRenderer(calendar=_calendar,num_months_in_table=12,icon_render="no_info",force_terminal=True)
-    # _renderer.render_calendar()
+    # rendering the calendar and markdown list 
+    # icon_render is "all","first","info","no_info"
+    _renderer = CalendarRenderer(calendar=_calendar,num_months_in_table=12,icon_render="all")
+    # render the calendar as table
+    if False:
+        _renderer.render_calendar()
+    # render the calendar as markdown list (only_info=only items with INFO will be printed)
     _markdown_list = _renderer.get_markdown(only_info=False)
-    # _markdown = Text.from_markup(Markdown("\n".join(_renderer.get_markdown(only_info=False))))
-    # _markdown = Markdown(Text.from_markup("\n".join(_renderer.get_markdown(only_info=False))))
-
-    # console python -m rich.markdown test.md
     console = _renderer.console
-    console.print(Markdown("\n".join(_markdown_list)))
+    if False:
+        console.print(Markdown("\n".join(_markdown_list)))
+    # overtime indicator
+    if False:
+        CalendarRenderer.show_overtime_indicator()
+    # stats
+    if True:
+        _stats = _renderer.calendar.stats
+        console.print(_stats)
+        _stats_sum = _renderer.calendar.stats_sum
+        console.print(_stats_sum)
+
+
