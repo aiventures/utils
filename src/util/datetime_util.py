@@ -4,6 +4,7 @@ import logging
 import os
 import re
 from datetime import date
+import time
 from datetime import datetime as DateTime
 from datetime import timedelta
 from math import ceil
@@ -24,22 +25,61 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
 
 DAYS_IN_MONTH = {1:31,2:28,3:31,4:30,5:31,6:30,
                  7:31,8:31,9:30,10:31,11:30,12:31}
-WEEKDAY = {1:"Mo",2:"Di",3:"Mi",4:"Do",5:"Fr",6:"Sa",7:"So"}
+
+WEEKDAY =    {1:"Mo",2:"Di",3:"Mi",4:"Do",5:"Fr",6:"Sa",7:"So"}
+WEEKDAY_EN = {1:"Mon",2:"Tue",3:"Wed",4:"Thu",5:"Fri",6:"Sat",7:"Sun"}
+
+MONTHS = {
+    1: "Januar", 2: "Februar", 3: "März", 4: "April",
+    5: "Mai", 6: "Juni", 7: "Juli", 8: "August",
+    9: "September", 10: "Oktober", 11: "November", 12: "Dezember"
+}
+
+MONTHS_EN = {
+    1: "January", 2: "February", 3: "March", 4: "April",
+    5: "May", 6: "June", 7: "July", 8: "August",
+    9: "September", 10: "October", 11: "November", 12: "December"
+}
+
 
 MONTHS_SHORT = {1:"JAN",2:"FEB",3:"MRZ",
                 4:"APR",5:"MAI",6:"JUN",
                 7:"JUL",8:"AUG",9:"SEP",
                 10:"OKT",11:"NOV",12:"DEZ"}
 
+MONTHS_SHORT_EN = {1:"JAN",2:"FEB",3:"MAR",
+                   4:"APR",5:"MAY",6:"JUN",
+                   7:"JUL",8:"AUG",9:"SEP",
+                   10:"OCT",11:"NOV",12:"DEC"}
+
 # Patterns for Date Identification
 # regex match any 8 Digit Groups preceded by space or start of line
 # and not followed by a dash
 REGEX_YYYYMMDD = re.compile(r"((?<=\s)|(?<=^))(\d{8})(?!-)")
 REGEX_DATE_RANGE = re.compile(r"\d{8}-\d{8}")
+REGEX_TIME_RANGE = re.compile(r"\d{4}-\d{4}")
 REGEX_WEEKDAY = re.compile(r"[MDFS][oira]")
 
 class DateTimeUtil():
     """ Util Functions for Date and Time  """
+
+    @staticmethod
+    def duration_from_str(s:str,as_str:bool=False)->float|str:
+        """ Calculates Durations from hhMM-HHMM strings in hours or as time string
+            also sums up multiple occurences
+        """
+        _durations = re.findall(REGEX_TIME_RANGE,s)
+        _total_duration = 0
+        for _duration in _durations:
+            _from,_to = [DateTime.strptime(_t, '%H%M') for _t in  _duration.split("-")]
+            # duration in minutes
+            _total_duration += ( _to - _from ).seconds // 60
+        _hours = round(float(_total_duration) / 60,2)
+        if as_str:
+            _hours_s = str(int(_hours // 1)).zfill(2)
+            _minutes_s = str(round(( _hours % 1 ) * 60)).zfill(2)
+            _hours = f"{_hours_s}:{_minutes_s}"
+        return _hours
 
     @staticmethod
     def get_datetime_from_string(datetime_s:str,local_tz='Europe/Berlin')->DateTime:
@@ -61,7 +101,7 @@ class DateTimeUtil():
         reg_expr_utc2 = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[.]000Z$"
         reg_expr_tz = "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$"
 
-        if ( ( len(re.findall(reg_expr_dt, datetime_s)) == 1 ) ): # date time format
+        if len(re.findall(reg_expr_dt, datetime_s)) == 1: # date time format
             try:
                 timezone_loc = pytz.timezone(local_tz)
                 dt_s = datetime_s[0:4]+"-"+datetime_s[5:7]+"-"+datetime_s[8:10]+" "+datetime_s[11:13]+"-"+datetime_s[14:16]+"-"+datetime_s[17:19]
@@ -70,11 +110,11 @@ class DateTimeUtil():
             except:
                 return 0
 
-        elif  ( len(re.findall(reg_expr_utc2, datetime_s)) == 1 ): # utc2 format
+        elif  len(re.findall(reg_expr_utc2, datetime_s)) == 1: # utc2 format
             datetime_s = datetime_s[:-5] + "+00:00"
-        elif ( len(re.findall(reg_expr_utc, datetime_s)) == 1 ): # utc format
+        elif len(re.findall(reg_expr_utc, datetime_s)) == 1: # utc format
             datetime_s = datetime_s[:-1] + "+00:00"
-        elif ( len(re.findall(reg_expr_tz, datetime_s)) == 1 ): # time zone format
+        elif len(re.findall(reg_expr_tz, datetime_s)) == 1: # time zone format
             pass # this time zone already has the correct format
         else:
             logger.warning(f"can't evaluate time format {datetime_s} ")
@@ -148,8 +188,8 @@ class DateTimeUtil():
             dt = dt_in
         elif isinstance(dt_in,str):
             # convert date hyphens
-            if (len(re.findall(reg_expr_datetime, dt_in))==1):
-                dt_in = (dt_in[:10].replace(":","-")+dt_in[10:])
+            if len(re.findall(reg_expr_datetime, dt_in))==1:
+                dt_in = dt_in[:10].replace(":","-")+dt_in[10:]
 
             # utc code
             if dt_in[-1] == "Z":
@@ -200,7 +240,7 @@ class DateTimeUtil():
         # Gregorian EPact
         # The number 8 is a constant that calibrates the starting point of the Gregorian Epact so
         # that it matches the actual age of the moon on new year’s day.
-        epact_gregorian = ( epact_julian - S + L + 8 )
+        epact_gregorian = epact_julian - S + L + 8
 
         # adjust so that gregorian epact is within range of 1 to 30
         if epact_gregorian == 0:
@@ -308,13 +348,13 @@ class DateTimeUtil():
         """ check whether year is leap year """
         ly = False
 
-        if ( y % 4 == 0 ) and not ( y % 100 == 0 ):
+        if ( y % 4 == 0 ) and not y % 100 == 0:
             ly = True
 
-        if ( y % 100 == 0 ) and not ( y % 400 == 0 ):
+        if ( y % 100 == 0 ) and not y % 400 == 0:
             ly = False
 
-        if ( y % 400 == 0 ):
+        if y % 400 == 0:
             ly = True
 
         return ly
@@ -328,7 +368,7 @@ class DateTimeUtil():
         d_jan1 = date(y,1,1)
         wd_jan1 = d_jan1.isoweekday()
         # get the monday of this week
-        d_monday_w01 = d_jan1 - timedelta(days=(wd_jan1-1))
+        d_monday_w01 = d_jan1 - timedelta(days=wd_jan1-1)
         # majority of days in new calendar week
         if wd_jan1 > 4:
             d_monday_w01 += timedelta(days=7)
@@ -362,9 +402,9 @@ class DateTimeUtil():
         wy = DateTimeUtil.get_isoweekyear(y)
 
         # check if date is in boundary of current calendar year
-        if ( d < wy["first_monday"] ):
+        if d < wy["first_monday"]:
             wy = DateTimeUtil.get_isoweekyear(y-1)
-        elif ( d > wy["last_day"] ):
+        elif d > wy["last_day"]:
             wy = DateTimeUtil.get_isoweekyear(y+1)
 
         iso = {}
@@ -408,6 +448,16 @@ class Calendar():
         self._set_daytypes()
         # adds information
         self._add_info()
+
+    @property
+    def year(self)->int:
+        """ return year """
+        return self._year
+
+    @property
+    def year_info(self)->YearModelType:
+        """ return year info"""
+        return self._year_info
 
     @staticmethod
     def _get_day_type(week_info:dict,holiday:str,workday_home:bool=False)->DayTypeEnum:
@@ -631,4 +681,3 @@ class Calendar():
             out.append(_table)
 
         return out
-

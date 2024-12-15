@@ -70,3 +70,10 @@ def test_reshape2rows():
     assert t[0] == ["a","b","c"]
     assert t[1] == ["d","e","f"]
 
+def test_list2matrix():
+    """ test list2matrix """
+    m = ["a","b","c","d","e","f","g"]    
+    # reshape list into matrix
+    t = MatrixList.list2matrix(m,3)
+    assert len(t) == 3
+    assert len(t[0]) == 3

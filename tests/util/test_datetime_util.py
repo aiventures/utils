@@ -27,13 +27,16 @@ def test_get_year_info():
     """ getting all holiday date for a given year """
     _year = 2024
     _year_info = DTU.create_calendar(_year)
-    pass
-    # try:
-    #     _validated = MonthAdapter.validate_python(_month_info)
-    #     assert isinstance(_validated,dict),"Validation to Month Adpater is successful"
-    # except ValidationError as e:
-    #     print(f"VALIDATION ERROR: {e}")
-    #     assert False,"Validation to Month Adapter failed"
+    assert isinstance(_year_info,Calendar)
+
+def test_duration_from_str():
+    """ testing duration """
+    s_duration = "some info and durations 125-432 1230-1600 1800-1845"
+    duration = DTU.duration_from_str(s_duration)
+    assert duration == 4.25
+    # assert isinstance(_year_info,Calendar)    
+    duration_s = DTU.duration_from_str(s_duration,True)
+    assert duration_s == "04:15"
 
 def test_calendar():
     """ testing creation of calendar """

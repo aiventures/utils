@@ -1,24 +1,27 @@
 """ Rendering some items from the datetime_util """
 
 import logging
+import os
+import re
 from enum import StrEnum
-from rich.logging import RichHandler
-from rich.table import Table
+
 from rich.console import Console
-from util.datetime_util import Calendar,MONTHS_SHORT
-from util.const_local import LOG_LEVEL
-from model.model_datetime import DayTypeEnum as DTE
-from cli.bootstrap_config import console_maker
+from rich.logging import RichHandler
 from rich.markdown import Markdown
-from model.model_datetime import ( CalendarDayType )
+from rich.text import Text
+from rich.table import Table
+from rich.emoji import Emoji
+from util import constants as C
+from cli.bootstrap_config import console_maker
+from model.model_datetime import CalendarDayType
+from model.model_datetime import DayTypeEnum as DTE,CellRenderOptionType
+from util.const_local import LOG_LEVEL
+from util.datetime_util import ( MONTHS_SHORT, Calendar,
+                                 WEEKDAY, MONTHS )
+from pydantic import ValidationError
 
-WEEKDAY_EN = {1:"Mon",2:"Tue",3:"Wed",4:"Thu",5:"Fri",6:"Sat",7:"Sun"}
 
-MONTHS = {
-    1: "January", 2: "February", 3: "March", 4: "April",
-    5: "May", 6: "June", 7: "July", 8: "August",
-    9: "September", 10: "October", 11: "November", 12: "December"
-}
+REGEX_ICON_STR = ":[a-zA-Z0-9_]+:" # alphanum chars embraced in colons
 
 class DAYTYPE_ICONS(StrEnum):
     """ ICONS For Rich Table """
@@ -40,14 +43,63 @@ class DAYTYPE_COLORS(StrEnum):
     FLEXTIME = "[orange1]" # Gleitzeit
     PARTTIME = ""
 
+logger = logging.getLogger(__name__)
+# get log level from environment if given
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
+
 class CalendarRenderer():
     """ Rendering some datetime utils """
 
-    def __init__(self,calendar:Calendar,num_months:int=4):
+    def __init__(self,calendar:Calendar,num_months_in_table:int=12,icon_render:CellRenderOptionType="all",
+                 force_terminal:bool=None):
+
+        try:
+            _ = CellRenderOptionType.model_validate(icon_render)
+        except ValidationError as e:
+            _error = e.errors()[0]
+            _err = f"Couldn't parse as Pydantic Model, {_error['msg']}"
+            logger.warning(_err)
+            return
+
         self._calendar = calendar
-        self._num_months = num_months
-        self._console = console_maker.get_console()
-        pass
+        self._num_month = num_months_in_table
+        self._console = console_maker.get_console(force_terminal=force_terminal)
+        self._icon_render = icon_render
+
+    @property
+    def console(self)->Console:
+        """ returns rich console """
+        return self._console
+
+    @property
+    def calendar(self)->Calendar:
+        """ returns calendar """
+        return self._calendar
+
+    @staticmethod
+    def _get_icons(day_info:dict,icon_render:str)->str:
+        """ gets the icons from list """
+
+        if icon_render == "no_info":
+            return ""
+        out = ""
+        _icon = ""
+        _s_info = ""
+        if day_info.info is not None:
+            _s_info = " ".join(day_info.info)
+            _icons = re.findall(REGEX_ICON_STR,_s_info)
+            if len(_icons) > 0:
+                out = _icons
+                if icon_render == "info":
+                    out = ":dizzy:"
+                elif icon_render == "first":
+                    out = _icons[0]
+                elif icon_render == "all":
+                    out = "".join(_icons)
+            else: # no icons in infos add default icon for info
+                out = ":dizzy:"
+
+        return out
 
     def _render_cell(self,month:int,day:int)->str:
         _day_info = self._calendar.get_day_info(month,day)
@@ -55,15 +107,14 @@ class CalendarRenderer():
         _icon = DAYTYPE_ICONS[_day_type.name].value
         _color = DAYTYPE_COLORS[_day_type.name].value
         _weekday = _day_info.weekday_s
-        _info_icon = ""
-        if _day_info.info is not None:
-            _info_icon = ":dizzy:"
-        return f"{_icon} {_color}{_weekday}{_info_icon}"
+        _info_icons = CalendarRenderer._get_icons(_day_info,self._icon_render)
+        rendered = f"{_icon} {_color}{_weekday}{_info_icons}"
+        return rendered
 
     def render_calendar(self):
         """ renders the calendar  """
-        _year = self._calendar._year
-        _tables = self._calendar.get_calendar_table(self._num_months)
+        _year = self.calendar.year
+        _tables = self._calendar.get_calendar_table(self._num_month)
         for _table in _tables:
             _month_min = _table[0][1][0]
             _month_max = _table[0][-1][0]+1
@@ -86,60 +137,85 @@ class CalendarRenderer():
                     _rendered_row.append(_rendered_cell)
                 _richtable.add_row(*_rendered_row)
 
+
                 # _tmp = [str(_elem) for _elem in _row]
                 # _richtable.add_row(*_tmp)
             self._console.print(_richtable)
 
     @staticmethod
+    def markdown_info(info:str)->str:
+        """ renders markdown information """
+        # replace any icon shortcuts
+        out_s = Emoji.replace(info)
+        return out_s
+
+    @staticmethod
     def create_markdown(day_info:CalendarDayType,add_info:bool=True)->list:
-        """ convert a day info into mark down """
+        """ convert a day info into mark down
+            Markdown and Rich Inline Colors can't be used together
+            https://github.com/Textualize/rich/issues/3587
+        """
+
         out = []
+
+        _day_type = day_info.day_type
+        _icon = DAYTYPE_ICONS[_day_type.name].value
+
         _dt = day_info.datetime_s
-        _wd = WEEKDAY_EN[day_info.weekday_num]
+        # split daytime
+        _dt = f"{_dt[:4]}-{_dt[4:6]}-{_dt[6:8]}"
+        _wd = WEEKDAY[day_info.weekday_num]
         _w = str(day_info.isoweeknum).zfill(2)
         _h = day_info.holiday
-        _t = str(day_info.day_type).upper()
+        _t = str(_day_type).upper()
         _n = str(day_info.day_in_year).zfill(3)
         _i_list = day_info.info
         if _h is None:
             _h = ""
         else:
             _h = f"/{str(_h).upper()}"
+        _markdown = Emoji.replace(f"* {_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h}")
 
-        out.append(f"* {_dt}/{_n}/W{_w} [{_wd}] {_t}{_h}")
+        out.append(_markdown)
+
         if _i_list and add_info:
             for _i in _i_list:
+                # render output string
+                _i = CalendarRenderer.markdown_info(_i)
                 out.append(f"  * {_i}  ")
 
         return out
 
-    def get_markdown(self,month:int=None,add_info:bool=True)->list:
+    def get_markdown(self,month:int=None,add_info:bool=True,only_info:bool=False)->list:
         """ create markdown snippet for given month
             if month is None, the whole year will be
             returned
+            add_info: if info is maintained add it to output
+            only_info: only items with info are output
         """
         out = []
         if month is None:
-            out.append(f"# **CALENDAR {self._calendar._year}**")
+            out.append(f"# **CALENDAR {self.calendar.year}**")
             _m_range = range(12, 0, -1)
         else:
             _m_range = range(month,month+1)
         for _month in _m_range:
-            out.append("\n---")
-            out.append(f"## **{self._calendar._year}/{str(_month).zfill(2)} {MONTHS[_month]}**")
-            _month_info = self._calendar._year_info[_month]
+            if only_info is False:
+                out.append("\n---")
+                out.append(f"## **{self.calendar.year}-{str(_month).zfill(2)} {MONTHS[_month]}**")
+            _month_info = self.calendar.year_info[_month]
             _days = list(_month_info.keys())
             _days.sort(reverse=True)
             for _day in _days:
                 _day_info = _month_info.get(_day)
+                if only_info and _day_info.info is None:
+                    continue
                 _markdown = CalendarRenderer.create_markdown(_day_info,add_info)
                 out.extend(_markdown)
-            pass
-        if month is None:
+
+        if month is None and only_info is False:
             out.append("--- ")
         return out
-
-
 
 if __name__ == "__main__":
     logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
@@ -149,12 +225,15 @@ if __name__ == "__main__":
     _daytype_list = {DTE.WORKDAY_HOME:["Mo Di Mi Fr"],
                      DTE.FLEXTIME:["20240902"],
                      DTE.VACATION:["20240919-20240923","20240927"],
-                     DTE.INFO:["20240929-20241004 Test Info ","20240901 MORE INFO"]}
+                     DTE.INFO:["20240929-20241004 :rainbow: Test Info ","20240901 :red_circle: :green_square: MORE INFO"]}
 
     _calendar = Calendar(2024,_daytype_list)
-    _renderer = CalendarRenderer(_calendar,12)
-    _renderer.render_calendar()
-    _markdown = Markdown("\n".join(_renderer.get_markdown()))
+    _renderer = CalendarRenderer(calendar=_calendar,num_months_in_table=12,icon_render="no_info",force_terminal=True)
+    # _renderer.render_calendar()
+    _markdown_list = _renderer.get_markdown(only_info=False)
+    # _markdown = Text.from_markup(Markdown("\n".join(_renderer.get_markdown(only_info=False))))
+    # _markdown = Markdown(Text.from_markup("\n".join(_renderer.get_markdown(only_info=False))))
+
     # console python -m rich.markdown test.md
-    console = _renderer._console
-    console.print(_markdown)
+    console = _renderer.console
+    console.print(Markdown("\n".join(_markdown_list)))

@@ -84,7 +84,7 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20240923` Create Config validation features (Config.json > CHECK > Errors/Warnings > Automatical Clean Up)
 * `20240923` Create a Config schema (idea: create a yaml with comments and convwert it as json), so that configs can also be validated 
 * `20240923` Enable `Yaml` 
-* `20240923` Create `Typer` SubCommands
+* ~~`20240923` Create `Typer` SubCommands~~
 * ~~`20240923` Link Executables to Configuration~~
 * `20240923` Add [todo.txt](https://github.com/todotxt/todo.txt) logic 
 * ~~dddd~~

@@ -44,6 +44,19 @@ class Utils():
     """ util collection """
 
     @staticmethod
+    def split_string(s:str,n:int,fill:str=None)->list:
+        """ splits a string into same length strings 
+            optionally fills up the last string with fill chars
+            to match the same string length 
+        """
+        num_chars = len(s)        
+        if fill:
+            mod_s = num_chars % n
+            s += [fill] * (n-mod_s)
+            num_chars = len(s)
+        return [s[i:i+n] for i in range(0, num_chars, n)]
+        
+    @staticmethod
     def byte_info(x:int,short:bool=True,num_decimals:int=1):
         """ returns formatted size in bytes
             Parameters

@@ -15,7 +15,7 @@ from rich import print_json
 #from util.persistence import Persistence
 from util import constants as C
 from util.constants import DEFAULT_COLORS as CMAP
-from util.emoji import show_rich_emoji_codes
+from util.emoji import EmojiUtil
 # from util.config_env import ConfigEnv
 from cli.bootstrap_config import config_env,console_maker
 from cli.bootstrap_env import OS_BOOTSTRAP_VARS
@@ -127,7 +127,7 @@ def show_emojis(emoji_filter:str|None=None,only_meta:bool=True):
     _emoji_filter = None
     if emoji_filter:
         _emoji_filter = emoji_filter.split(",")
-    show_rich_emoji_codes(_emoji_filter,only_meta)
+    EmojiUtil.show_rich_emoji_codes(_emoji_filter,only_meta)
 
 # TODO Create Themes Using Theme Console Constructor
 

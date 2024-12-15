@@ -709,7 +709,7 @@ class ThemeConsole(ColorMapper):
         else:
             logger.warning("f[ThemeConsole] No valid resources path [{self._p_resources}], check your configuration")
 
-    def get_console(self,theme:str=None)->Console:
+    def get_console(self,theme:str=None,force_terminal:bool=None)->Console:
         """ returns a console with created theme """
         _theme_name = theme
         if not _theme_name in self._themes:
@@ -718,7 +718,7 @@ class ThemeConsole(ColorMapper):
         _theme = self._theme_manager.get(_theme_name)
         if theme is not None:
             self._theme = theme
-        return Console(theme=_theme)
+        return Console(theme=_theme,force_terminal=force_terminal)
 
     def show_styles(self,theme:str=None)->None:
         """ prints the styles """
