@@ -1,4 +1,4 @@
-""" Enum Definition with some additional helper methods on Enum """
+"""Enum Definition with some additional helper methods on Enum"""
 
 from enum import Enum
 from typing import Any
@@ -7,27 +7,31 @@ import os
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get("CLI_LOG_LEVEL",logging.INFO)))
+logger.setLevel(int(os.environ.get("CLI_LOG_LEVEL", logging.INFO)))
+
 
 class AbstractEnum(Enum):
-    """ Abstract Enum To Provide some helper methods """
+    """Abstract Enum To Provide some helper methods"""
+
     @classmethod
-    def get_values(cls)->list:
-        """ returns maintained filter values """
+    def get_values(cls) -> list:
+        """returns maintained filter values"""
         return [c.value for c in cls]
 
     @classmethod
-    def get_names(cls)->list:
-        """ returns maintained filter values """
+    def get_names(cls) -> list:
+        """returns maintained filter values"""
         return [c.name for c in cls]
 
     @classmethod
-    def as_dict(cls)->dict:
-        """ returns the enum as dict """
-        return  {c.name:c.value for c in cls}
+    def as_dict(cls) -> dict:
+        """returns the enum as dict"""
+        return {c.name: c.value for c in cls}
 
     @classmethod
-    def get_enum(cls,key:str,search_name:bool=True,search_value:bool=False,exact:bool=True)->list|Enum:
+    def get_enum(
+        cls, key: str, search_name: bool = True, search_value: bool = False, exact: bool = True
+    ) -> list | Enum:
         """returns the enum(s) from a key
 
         Args:
@@ -51,7 +55,7 @@ class AbstractEnum(Enum):
                     if c.value == key:
                         _found = c
                 else:
-                    if isinstance(c.value,str) and key in c.value:
+                    if isinstance(c.value, str) and key in c.value:
                         _found = c
 
             if _found:
@@ -61,7 +65,9 @@ class AbstractEnum(Enum):
             if len(out) == 1:
                 return out[0]
             elif len(out) > 1:
-                logger.info(f"[AbstractEnum] Found more entries for key [{key}] in Enum [{cls.__name__}] when doing an exact search")
+                logger.info(
+                    f"[AbstractEnum] Found more entries for key [{key}] in Enum [{cls.__name__}] when doing an exact search"
+                )
                 return out
         else:
             return out

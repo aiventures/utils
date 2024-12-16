@@ -1,2 +1,1 @@
-""" package the enable the cli client
- """
+"""package the enable the cli client"""

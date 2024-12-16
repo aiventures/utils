@@ -1,56 +1,68 @@
-""" Configuration and Env Client """
+"""Configuration and Env Client"""
 
+import json
 import logging
-from typing_extensions import Annotated
 import os
-#import sys
-#import json
+
+# import sys
+# import json
 import typer
 from rich import print as rprint
+from rich import print_json
+
 # from rich.markup import escape as esc
 from rich.logging import RichHandler
-import json
-from rich import print_json
-#from pathlib import Path
-#from util.persistence import Persistence
+from typing_extensions import Annotated
+
+# from util.config_env import ConfigEnv
+from cli.bootstrap_config import config_env, console_maker
+from cli.bootstrap_env import OS_BOOTSTRAP_VARS
+
+# from pathlib import Path
+# from util.persistence import Persistence
 from util import constants as C
 from util.constants import DEFAULT_COLORS as CMAP
 from util.emoji import EmojiUtil
-# from util.config_env import ConfigEnv
-from cli.bootstrap_config import config_env,console_maker
-from cli.bootstrap_env import OS_BOOTSTRAP_VARS
-from util_cli.cli_color_mapper import ColorMapper,ThemeConsole
+from util_cli.cli_color_mapper import ColorMapper, ThemeConsole
+
 # from util_cli import
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
-app = typer.Typer(name="cli_config_client", add_completion=True, help="Command Line Client Customizing (Colors, Locations, Envionment Setup)")
+app = typer.Typer(
+    name="cli_config_client",
+    add_completion=True,
+    help="Command Line Client Customizing (Colors, Locations, Envionment Setup)",
+)
+
 
 @app.command("bootstrap")
 def show_bootstrap_config():
-    """Display Bootstrap OS ENV Parameters (cli.bootstrap_config)
-    """
+    """Display Bootstrap OS ENV Parameters (cli.bootstrap_config)"""
     rprint(f"[{CMAP['out_title']}]### ENV BOOTSTRAP CONFIGURATION (cli.bootstrap_env)")
     print_json(json.dumps(OS_BOOTSTRAP_VARS))
+
 
 @app.command("show")
 @app.command("s")
 def show_config():
-    """ Display configuration environment"""
+    """Display configuration environment"""
     config_env.show()
+
 
 @app.command("show-json")
 @app.command("j")
 def show_config_json():
-    """ Display configuration environment as json together with the bootstrap configuration"""
+    """Display configuration environment as json together with the bootstrap configuration"""
     config_env.show_json()
     # show the env bootsrapping config
     show_bootstrap_config()
 
+
 @app.command("ansi-colors")
-def show_ansi_colors(with_names:bool=False):
+def show_ansi_colors(with_names: bool = False):
     """Display ANSI Colors
 
     Args:
@@ -60,18 +72,19 @@ def show_ansi_colors(with_names:bool=False):
     _ansi_table = ColorMapper.get_ansi_table(with_names)
     _console.print(_ansi_table)
 
+
 @app.command("create-themes")
-def create_themes(p_resources:str|None=None)->None:
-    """ Create Rich Color Theme Styles to be used in console
+def create_themes(p_resources: str | None = None) -> None:
+    """Create Rich Color Theme Styles to be used in console
 
     Args:
         p_resources (str): Path To Style Configuration (defaults to ../resources in the repo)
     """
-    _ = ThemeConsole(create_themes=True,p_resources=p_resources)
+    _ = ThemeConsole(create_themes=True, p_resources=p_resources)
 
 
 @app.command("themes")
-def show_themes_and_styles(theme:str=None):
+def show_themes_and_styles(theme: str = None):
     """Display available styles and themes
 
     Args:
@@ -85,11 +98,12 @@ def show_themes_and_styles(theme:str=None):
     _console.print(f"*   {_themes}")
     _console.print(f"[out_title]### Selected Theme [list_key]\[{_theme}]")
     for _style in _styles:
-        _s_style=f"\[{_style}]"
+        _s_style = f"\[{_style}]"
         _console.print(f"[out_title]*   {_s_style:<19}[{_style}]THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG")
 
+
 @app.command("theme-preview")
-def show_theme_preview(theme:str=None):
+def show_theme_preview(theme: str = None):
     """Display styles using themes manager
 
     Args:
@@ -101,8 +115,9 @@ def show_theme_preview(theme:str=None):
     _console.print(f"[out_title]### Preview Theme \[{console_maker.theme}]")
     console_maker.preview_theme(console_maker.theme)
 
+
 @app.command("color-map")
-def show_color_map(num_cols:int=4,colors:str|None=None):
+def show_color_map(num_cols: int = 4, colors: str | None = None):
     """show color maps
 
     Args:
@@ -114,10 +129,11 @@ def show_color_map(num_cols:int=4,colors:str|None=None):
     _colors = None
     if colors:
         _colors = colors.split(",")
-    ColorMapper().show_colors(num_colums=num_cols,colors=_colors)
+    ColorMapper().show_colors(num_colums=num_cols, colors=_colors)
+
 
 @app.command("emojis")
-def show_emojis(emoji_filter:str|None=None,only_meta:bool=True):
+def show_emojis(emoji_filter: str | None = None, only_meta: bool = True):
     """Display Emojis
 
     Args:
@@ -127,20 +143,27 @@ def show_emojis(emoji_filter:str|None=None,only_meta:bool=True):
     _emoji_filter = None
     if emoji_filter:
         _emoji_filter = emoji_filter.split(",")
-    EmojiUtil.show_rich_emoji_codes(_emoji_filter,only_meta)
+    EmojiUtil.show_rich_emoji_codes(_emoji_filter, only_meta)
+
 
 # TODO Create Themes Using Theme Console Constructor
+
 
 # https://typer.tiangolo.com/tutorial/commands/callback/
 @app.callback()
 def main():
-    """ main method """
+    """main method"""
     pass
 
-if __name__ == "__main__":
-    log_level = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name,C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)
-    logging.basicConfig(format='%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s',
-                        level=log_level, datefmt="%Y-%m-%d %H:%M:%S",
-                        handlers=[RichHandler(rich_tracebacks=True)])
-    app()
 
+if __name__ == "__main__":
+    log_level = os.environ.get(
+        C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name, C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value
+    )
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
+        level=log_level,
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[RichHandler(rich_tracebacks=True)],
+    )
+    app()

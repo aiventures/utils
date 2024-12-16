@@ -1,31 +1,28 @@
-""" Unit Tests for the Constants Class """
+"""Unit Tests for the Constants Class"""
+
+import logging
+import os
+import re
+from copy import deepcopy
+from enum import Enum
+from unittest.mock import MagicMock
 
 import pytest
-from unittest.mock import MagicMock
-import os
 
-from copy import deepcopy
-import logging
-from enum import Enum
-import re
-
-from copy import deepcopy
 from util import constants as C
 from util.config_env import ConfigEnv
-from util.utils import PathConverter
-from util.utils import Utils
-
-import logging
+from util.utils import PathConverter, Utils
 
 logger = logging.getLogger(__name__)
-# get log level from environment if given 
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL,logging.INFO)))
+# get log level from environment if given
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
-@pytest.mark.parametrize("transform_rule",["UNC","WIN","DOS","OS",None,"WRONG_TYPE"])
-def test_resolve_paths(transform_rule,fixture_paths):
-    """ testing resolve path for win paths (implicitly using PathConverter) """
+
+@pytest.mark.parametrize("transform_rule", ["UNC", "WIN", "DOS", "OS", None, "WRONG_TYPE"])
+def test_resolve_paths(transform_rule, fixture_paths):
+    """testing resolve path for win paths (implicitly using PathConverter)"""
     for _path in fixture_paths:
-        _resolved_path = Utils.resolve_path(_path,transform_rule=transform_rule,check_exist=False,info=True)
+        _resolved_path = Utils.resolve_path(_path, transform_rule=transform_rule, check_exist=False, info=True)
         # do some sanity checks
         if transform_rule == "DOS" and not Utils.is_windows():
             continue
@@ -53,7 +50,7 @@ def test_resolve_paths(transform_rule,fixture_paths):
         if _rule == "UNC":
             assert "/" in _converted
             assert not "\\" in _converted
-        elif _rule in ["DOS","WIN"]:
+        elif _rule in ["DOS", "WIN"]:
             assert "\\" in _converted
             assert not "/" in _converted
 
