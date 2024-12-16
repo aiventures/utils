@@ -1,31 +1,30 @@
 """ Managing Configuration for a given command line """
 
-import os
-import sys
-import re
 import json
 import logging
-from functools import wraps
-from typing import List,Optional,Union,Dict,Any,Literal
-from pathlib import Path
-from rich import print_json
-from rich import print as rprint
-from datetime import datetime as DateTime
-
+import os
+import re
+import sys
 # TODO REPLACE BY UNIT TESTS
 # when doing tests add this to reference python path
 # sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from copy import deepcopy
-from util.persistence import Persistence
-from util.colors import col
-from util import constants as C
-from util.constants import DEFAULT_COLORS as CMAP, ConfigStatus
-from model.model_config import (SourceEnum, SourceRef,ConfigItemProcessed)
-from util.utils import Utils
-from model.model_config import ( SourceRef,ConfigItemProcessed,
-                                 ConfigRule, DataDefinition, ConfigItemType,
-                                 ConfigItemAdapter,ConfigModelAdapter)
+from datetime import datetime as DateTime
+from functools import wraps
+from pathlib import Path
+from typing import Dict, List
+
+from rich import print as rprint
+from rich import print_json
+
 from demo.demo_config import create_demo_config
+from model.model_config import (ConfigItemProcessed,
+                                SourceEnum, SourceRef)
+from util import constants as C
+from util.colors import col
+from util.constants import DEFAULT_COLORS as CMAP
+from util.persistence import Persistence
+from util.utils import Utils
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -172,7 +171,7 @@ class ConfigEnv():
             elif isinstance(_cmd_info,dict):
                 _cmd_template = _cmd_info.get(C.ConfigAttribute.RULE.value)
             if _cmd_template is None:
-                _msg = (f"[CONFIG] Key [{key}], rule [{cmd_key}], Invalid setting")
+                _msg = f"[CONFIG] Key [{key}], rule [{cmd_key}], Invalid setting"
                 logger.warning(_msg)
                 return None
 
@@ -768,7 +767,7 @@ class ConfigEnv():
         # now subtitute all dependencies
         _resolved = self._subst_dependencies(key,_dependency_refs)
         # set the processing status accordingly
-        if _resolved == True:
+        if _resolved is True:
             self.set_status(key,C.ConfigStatus.VALID)
         else:
             # if these items are False or None, set the status to invalid

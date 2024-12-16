@@ -72,6 +72,8 @@ Configuration should be OS independent, but only tested on Win Os.
 
 ## Todos / Ideas
 
+* `20241216` create a function to count lfs stub sizes  
+* `20241216` make worklog_txt and todo_txt work together 
 * `20241216` Create the styles via command line (Simply Calling the constructor)
 * `20241215` Create gliding overtime 
 * `20241215` Create a directive / mapping for recording template
@@ -82,7 +84,7 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20241215` Create Icon List with search capabilities based on keywords  
 * `20241215` Calculate Total Durations per Month / and Delta to Working Times / directly in calendar model 
 * `20241215` Use Rich Text to highlight text searches 
-* `20241215` Create a Tree explorer view 
+* `20241215` Create a Tree explorer view (including sizes)
 * `20241215` Render Calendar as Tree
 * `20241215` Create Pydantic Model to render the Calendar markdown list with different options such as  
              only certain types of days to be rendered 

@@ -1,16 +1,19 @@
 """ Helper class to read / write (single) file """
-import sys
-import os
-from pathlib import Path
-import logging
-import re
-from datetime import datetime as DateTime
-from rich.progress import track
-from rich import print as rprint
 import json
+import logging
+import os
+import re
+import sys
+from datetime import datetime as DateTime
+from pathlib import Path
+
+from rich import print as rprint
+from rich.progress import track
+
 from util import constants as C
 from util.constants import ColorDefault as Color
-# circular import 
+
+# circular import
 # from cli.bootstrap_config import console
 
 
@@ -79,14 +82,14 @@ class Persistence():
     def get_changed_time(f:str,dateformat:str=None)->DateTime|str:
         """ determines changed time of a file and returns datetime,
             if dateformat is None, the datetime object will be returned,
-            the formatted date time string otherwie 
+            the formatted date time string otherwie
         """
         _file_changed_timestamp = os.path.getmtime(f)
         _datetime = DateTime.fromtimestamp(int(_file_changed_timestamp))
         if dateformat is None:
             return _datetime
         return _datetime.strftime(dateformat)
-    
+
 
     @staticmethod
     def get_abspath_from_relpath(p_abs:str,p_rel:str)->str:
@@ -97,7 +100,7 @@ class Persistence():
         p_root = Path(os.path.abspath(p_abs)).parts[:-_up_levels]
         p_sub_path = _p_rel_parts[_up_levels:]
         return os.path.join(*p_root,*p_sub_path)
-        
+
     @staticmethod
     def replace_file_suffix(f_name:str,new_suffix:str)->str:
         """ Replaces file suffix """
@@ -245,7 +248,7 @@ class Persistence():
                 _passed = Persistence._passes(_p,re_include_paths,re_exclude_paths,match_all)
             if _passed is False:
                 continue
-            
+
             paths_out.append(_p)
             path_dict[_p]=[]
 
@@ -266,7 +269,7 @@ class Persistence():
             _p_rel=os.path.relpath(_p,p_root)
             _s = f"[{Color['OUT_TITLE']}]  - ({str(len(_files)).zfill(3)}) [{Color['OUT_PATH']}].\{_p_rel:<60}"
             for _f in track(_files,description=_s,style=Color["PROGRESS_BAR"],refresh_per_second=2,
-                            disable=(not show_progress)):
+                            disable=not show_progress):
                 _file_params["f_abs"]=os.path.join(_p,_f)
                 _passed = Persistence._passes_filecheck(**_file_params)
                 if _passed is False:
@@ -339,7 +342,7 @@ class Persistence():
 
         # either return dict or list of files
         if as_dict:
-            # clean up empty paths 
+            # clean up empty paths
             _out = {}
             for _path,_file_list in _path_dict.items():
                 # only skip paths if files are expected

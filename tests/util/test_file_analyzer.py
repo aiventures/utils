@@ -10,7 +10,6 @@ import logging
 
 # from pathlib import Path
 # from copy import deepcopy
-from util import const_local
 from pathlib import Path
 from util import constants as C
 from util.file_analyzer import FileSysObjectInfo

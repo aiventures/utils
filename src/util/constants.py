@@ -1,12 +1,11 @@
 """ constants file """
 import os
 from copy import deepcopy
+from logging import ERROR as LOG_ERROR
 from pathlib import Path
+
 # from typing import Any
 from util.abstract_enum import AbstractEnum
-from logging import INFO as LOG_INFO
-from logging import ERROR as LOG_ERROR
-
 
 # TODO SWITCH TO PYDANTIC IN FUTURE
 # Constants
@@ -92,7 +91,7 @@ class ColorDefault(AbstractEnum):
     PG_BRANCH = "bold #00ff00"
     PG_PATH = "#ff0000"
     PG_VENV = "#0000ff"
-    PG_VENV_ACTIVE = "#ffffff"    
+    PG_VENV_ACTIVE = "#ffffff"
     PROGRESS_BAR = os.environ.get("COL_PROGRESS_BAR","#ff5f00") #orange
 
 # type definitions
@@ -109,7 +108,7 @@ class DataType(AbstractEnum):
     PATH_CMD = "path_cmd" # path var representing a path for a command, eg with quotes in win
     PATH_UNC = "path_unc" # path var as unc
     PATH_WIN = "path_win" # path var as win
-    PATH_DOS = "path_dos" # path var as dos, eg without spaces and max 8 chars per path element 
+    PATH_DOS = "path_dos" # path var as dos, eg without spaces and max 8 chars per path element
 
 
 DATA_TYPES = DataType.get_values()
@@ -434,7 +433,7 @@ class Cmd(AbstractEnum):
     GIT = "git"
     VENV = "venv"
 
-# Default colors copied from the /sresources/colorthemes.json Ubuntu Schemes 
+# Default colors copied from the /sresources/colorthemes.json Ubuntu Schemes
 DEFAULT_COLORS= {
                 "black":"#000000",
                 "blue":"#006fb8",
@@ -476,7 +475,7 @@ DEFAULT_COLORS= {
                 "yellow":"#ffc706"
 }
 
-# default order for bootdstrapping vars 
-# can also be mapped to Source Enum in 
-# model/model_config.py 
+# default order for bootdstrapping vars
+# can also be mapped to Source Enum in
+# model/model_config.py
 BOOTSTRAP_VARS_ORDER = ["environment","config_ref","config_value","path","file","cwd"]

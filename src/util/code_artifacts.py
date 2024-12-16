@@ -457,14 +457,14 @@ class CodeArtifacts():
         return out
 
     def link_code_meta(self)->CodeMetaDict:
-        """ gets an all in one Dict containing object references 
-            to corresponding git, venv and vscde objects 
+        """ gets an all in one Dict containing object references
+            to corresponding git, venv and vscde objects
             key is the git repo location"""
         code_meta_dict = CodeMetaDict()
         _git = self.git_artifact
         _vscode = self.vscode_artifact
-        _venv = self.venv_artifact        
-        _link_vscode = self.link_git2vscode()        
+        _venv = self.venv_artifact
+        _link_vscode = self.link_git2vscode()
         _link_venv = self.link_git2venv()
         for _p_git,_git_meta in _git.info_dict.items():
             _venv_meta_list = []
@@ -483,7 +483,7 @@ class CodeArtifacts():
                     _vscode_meta = _vscode.get_vscode_meta(_f_vscode)
                     if _vscode_meta:
                         _vscode_meta_list.append(_vscode_meta)
-                
+
             code_meta_dict[_p_git] = CodeMeta(p_git=_p_git,
                                               p_venv_list=_p_venv_list,
                                               f_vscode_list=_f_vscode_list,
@@ -493,10 +493,10 @@ class CodeArtifacts():
 
         return code_meta_dict
 
-    # todo save and load 
-    
+    # todo save and load
 
-    
+
+
 
 
 

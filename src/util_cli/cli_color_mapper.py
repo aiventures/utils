@@ -506,7 +506,6 @@ class ThemeConsole(ColorMapper):
         # todo handle themes / instanciate theme manager
         self._theme_manager = None
         if create_themes:
-
             self._theme_manager = self.create_rich_themes()
         if not self._theme_manager:
             self._theme_manager = ThemeManager(theme_dir=self._p_rich_themes)
@@ -589,7 +588,7 @@ class ThemeConsole(ColorMapper):
         styles_dict = {}
         # TODO CHANGE LOCATION
         _f_styles = os.path.join(self._p_resources,F_STYLES)
-        if os.path.isfile(_f_styles):
+        if isinstance(_f_styles,str) and os.path.isfile(_f_styles):
             styles_dict = Persistence.read_json(_f_styles)
             if isinstance(styles_dict,dict):
                 logger.debug(f"[ThemeConsole] Read [{len(styles_dict)}] styles from [{_f_styles}]")
@@ -696,18 +695,19 @@ class ThemeConsole(ColorMapper):
 
             logger.debug(f"[ThemeConsole] Creating Theme [{_theme_name}]")
             _rich_themes.append(Theme(**_theme))
-        print(f"CREATED RICH STYLE THEMES IN [{self._p_rich_themes}]")
+        print(f"[ThemeConsole] CREATED RICH STYLE THEMES IN [{self._p_rich_themes}]")
         return ThemeManager(theme_dir=self._p_rich_themes, themes=_rich_themes,overwrite=True)
 
     def _set_rich_themes_path(self):
         """" setting the rich themes folder as a subfolder of the resources folder """
-        if os.path.isdir(self._p_resources):
+        if isinstance(self._p_resources) and os.path.isdir(self._p_resources):
             _p_rich_themes = os.path.join(self._p_resources,P_RICH_THEMES)
             if not os.path.isdir(_p_rich_themes ):
                 Path(self._p_rich_themes).mkdir(parents=True)
             self._p_rich_themes = _p_rich_themes
         else:
             logger.warning("f[ThemeConsole] No valid resources path [{self._p_resources}], check your configuration")
+            print("[ThemeConsole] Couldn't create path to themes folder, create theme first by calling ThemeConsole(create_themes=True)")
 
     def get_console(self,theme:str=None,force_terminal:bool=None)->Console:
         """ returns a console with created theme """
