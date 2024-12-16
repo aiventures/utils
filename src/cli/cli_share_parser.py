@@ -1,17 +1,17 @@
 """ command line client for share client """
 import logging
-import typer
+import os
 # from typing_extensions import Annotated
 import sys
-from rich import print
-import os 
-from util import constants as C
-# path to config json
-# from util.const_local import F_CONFIG_ENV
+import typer
+from rich import print as rprint
 
 # different config files
-from util.const_local import F_CONFIG
-from util.const_local import LOG_LEVEL
+from cli.bootstrap_env import LOG_LEVEL
+from util import constants as C
+
+# path to config json
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given 
@@ -28,7 +28,7 @@ def xyz_function(xyz:str,test:str="Test"):
         xyz (str): _description_
         test (str, optional): _description_. Defaults to "Test".
     """
-    print(f"Hello Share Parser CLI {test}")
+    rprint(f"Hello Share Parser CLI {test}")
 
 # https://typer.tiangolo.com/tutorial/commands/callback/
 @app.callback()

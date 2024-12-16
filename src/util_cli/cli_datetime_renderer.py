@@ -4,23 +4,23 @@ import logging
 import os
 import re
 from enum import StrEnum
+
+from pydantic import ValidationError
 from rich.console import Console
+from rich.emoji import Emoji
 from rich.logging import RichHandler
 from rich.markdown import Markdown
-from rich.text import Text
 from rich.table import Table
-from rich.emoji import Emoji
-from util import constants as C
-from cli.bootstrap_config import console_maker
-from model.model_datetime import CalendarDayType
-from model.model_datetime import DayTypeEnum as DTE,CellRenderOptionType
-from util.const_local import LOG_LEVEL
-from util.datetime_util import ( MONTHS_SHORT, Calendar,
-                                 WEEKDAY, MONTHS, REGEX_DATE_RANGE,
-                                 REGEX_YYYYMMDD, REGEX_TIME_RANGE )
-from util.utils import Utils
-from pydantic import ValidationError
 
+from cli.bootstrap_config import console_maker
+from cli.bootstrap_env import LOG_LEVEL
+from model.model_datetime import CalendarDayType, CellRenderOptionType
+from model.model_datetime import DayTypeEnum as DTE
+from util import constants as C
+from util.datetime_util import (MONTHS, MONTHS_SHORT, REGEX_DATE_RANGE,
+                                REGEX_TIME_RANGE, REGEX_YYYYMMDD, WEEKDAY,
+                                Calendar)
+from util.utils import Utils
 
 REGEX_ICON_STR = ":[a-zA-Z0-9_]+:" # alphanum chars embraced in colons
 EMOJI_INFO = ":pencil:"

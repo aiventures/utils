@@ -11,7 +11,8 @@ OS_BOOTSTRAP_VARS = {}
 # will be provided a default logging level
 cli_log_level=str(os.environ.get("CLI_LOG_LEVEL",ERROR))
 os.environ["CLI_LOG_LEVEL"]=cli_log_level
-OS_BOOTSTRAP_VARS["CLI_LOG_LEVEL"]=cli_log_level
+OS_BOOTSTRAP_VARS["CLI_LOG_LEVEL"]=int(cli_log_level)
+LOG_LEVEL = int(cli_log_level)
 
 # set a default command line theme and theme if not set already in environment
 # it's also defined in /util/conststants.py/ConfigBootStrap

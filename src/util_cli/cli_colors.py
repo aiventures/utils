@@ -10,7 +10,7 @@ import os
 import util.constants as C
 
 # TODO MOVE THIS TO A CONFIG FILE
-from util.const_local import LOG_LEVEL
+from cli.bootstrap_env import LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given 

@@ -72,6 +72,7 @@ Configuration should be OS independent, but only tested on Win Os.
 
 ## Todos / Ideas
 
+* `20241216` Create the styles via command line (Simply Calling the constructor)
 * `20241215` Create gliding overtime 
 * `20241215` Create a directive / mapping for recording template
 * `20241215` Create a time recording template and a parsing method 

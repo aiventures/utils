@@ -19,7 +19,7 @@ from copy import deepcopy
 
 # TODO MOVE THIS TO A CONFIG FILE
 from util import constants as C
-from util.const_local import LOG_LEVEL
+from cli.bootstrap_env import LOG_LEVEL
 from util.persistence import Persistence
 from util.utils import Utils
 from util_cli.cli_color_maps import RGB_COLORS,HEX_COLORS,COLOR_NAMES, ANSI_VALUES
