@@ -4,16 +4,21 @@ import logging
 import os
 import re
 import time
+from enum import StrEnum
 from datetime import date, timedelta
 from datetime import datetime as DateTime
 from math import ceil
-from typing import Dict
+from typing import Dict,List
 
 import pytz
 from dateutil.parser import parse
 from dateutil.tz import tzoffset, tzutc
 
-from model.model_datetime import CalendarDayType, DayTypeEnum, DayTypeListType, MonthModelType, YearModelType
+from model.model_datetime import CalendarDayType, DayTypeEnum, DayTypeDictType, MonthModelType, YearModelType
+from model.model_worklog import (ShortCodes,WorkLogModel)
+
+# regex to extract todo_txt string matching signature @(...)
+
 from util import constants as C
 
 logger = logging.getLogger(__name__)
@@ -92,8 +97,10 @@ MONTHS_SHORT_EN = {
 REGEX_YYYYMMDD = re.compile(r"((?<=\s)|(?<=^))(\d{8})(?!-)")
 REGEX_DATE_RANGE = re.compile(r"\d{8}-\d{8}")
 REGEX_TIME_RANGE = re.compile(r"\s(\d{4}-\d{4})")
+# any combination of Upper/Lowercase String  in German 
 REGEX_WEEKDAY = re.compile(r"[MDFS][oira]")
-
+# REGEX TO Extract a TODO.TXT substring
+REGEX_TODO_TXT = r"\s@T\((.+)?\)"
 
 class DateTimeUtil:
     """Util Functions for Date and Time"""
@@ -186,6 +193,15 @@ class DateTimeUtil:
         )
 
         return dt
+
+    @staticmethod
+    def add_shortcodes(shortcode_dict:dict)->StrEnum:
+        """ adding shortcodes to standard worklog enum codes """
+        # create a Dict 
+        _shortcode_dict = {_code.name:_code.value for _code in ShortCodes}
+        # add shortcodes 
+        _shortcode_dict.update(shortcode_dict)
+        return StrEnum("ShortCodes",_shortcode_dict)
 
     @staticmethod
     def get_timestamp(datetime_s: str, local_tz="Europe/Berlin") -> int:
@@ -480,7 +496,7 @@ class DateTimeUtil:
         return iso
 
     @staticmethod
-    def create_calendar(year: int, daytype_list: DayTypeListType = None):
+    def create_calendar(year: int, daytype_list: DayTypeDictType = None):
         """create a calendar"""
         return Calendar(year, daytype_list)
 
@@ -499,7 +515,9 @@ class DateTimeUtil:
 class Calendar:
     """Calendar Object"""
 
-    def __init__(self, year: int, worktime: float=8, daytype_list: DayTypeListType = None):
+    #    def __init__(self, year: int, worktime: float=8, daytype_list: DayTypeListType = None):
+    def __init__(self, year: int, worktime: float=8, dayinfo_list: List[str] = None):
+
         """Constructor"""
         self._year: int = year
         # regular working time, used for calculating overtime
@@ -508,10 +526,14 @@ class Calendar:
         self._isoweek_info: dict = DateTimeUtil.get_isoweekyear(year)
         self._year_info: YearModelType = None
         self._create_year_info()
-        
-        self._daytype_list = {}
-        if daytype_list:
-            self._daytype_list = daytype_list
+        self._dayinfo_list = []
+        if isinstance(dayinfo_list,list):
+            self._dayinfo_list = dayinfo_list
+        self._daytype_dict: DayTypeDictType = {}
+
+        # TODO get strings by daytype
+        if dayinfo_list:
+            self._daytype_dict = dayinfo_list
         # adds daytpe info
         self._set_daytypes()
         # adds information
@@ -626,7 +648,7 @@ class Calendar:
         if date_s:
             _date_s = date_s
         else:
-            _date_s = " ".join(self._daytype_list.get(daytype, []))
+            _date_s = " ".join(self._daytype_dict.get(daytype, []))
         _date_ranges = REGEX_DATE_RANGE.findall(_date_s)
         dates = [DateTimeUtil.get_dates_from_range(_dr) for _dr in _date_ranges]
         dates = [_d for _daterange_list in dates for _d in _daterange_list]
@@ -640,7 +662,7 @@ class Calendar:
 
     def _add_info(self) -> None:
         """adds information"""
-        _info_list = self._daytype_list.get(DayTypeEnum.INFO, [])
+        _info_list = self._daytype_dict.get(DayTypeEnum.INFO, [])
         for _info in _info_list:
             _day_list = self._get_daytype_dates(DayTypeEnum.INFO, _info)
             for _day in _day_list:
@@ -676,7 +698,7 @@ class Calendar:
         """setting the daytypes in a specific order"""
         # some order needs to be maintained
         _all_daytypes = [DayTypeEnum.WORKDAY_HOME, DayTypeEnum.PARTTIME, DayTypeEnum.FLEXTIME, DayTypeEnum.VACATION]
-        _daytypes = list(self._daytype_list.keys())
+        _daytypes = list(self._daytype_dict.keys())
         for _daytype in _all_daytypes:
             if _daytype not in _daytypes:
                 continue

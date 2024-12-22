@@ -6,6 +6,7 @@ from model.model_datetime import MonthAdapter
 from util.datetime_util import Calendar
 from util.datetime_util import DateTimeUtil as DTU
 from util.datetime_util import DayTypeEnum as DT
+from enum import EnumMeta
 # from util_cli.cli_datetime_renderer import CalendarRenderer
 
 
@@ -45,42 +46,21 @@ def test_duration_from_str():
     assert duration_s == "04:15"
 
 
-def test_calendar():
+def test_calendar(fixture_day_info_list):
     """testing creation of calendar"""
     _year = 2024
-    _calendar = Calendar(_year,8)
+    _calendar = Calendar(_year,8,fixture_day_info_list)
+    pass
     # adding some additional daytypes
-    _daytype_list = {
-        DT.WORKDAY_HOME: ["Mo Di Mi Fr"],
-        DT.FLEXTIME: ["20240902"],
-        DT.VACATION: ["20240919-20240923", "20240927"],
-    }
-    _calendar = Calendar(_year, _daytype_list)
+    # _daytype_list = {
+    #     DT.WORKDAY_HOME: ["Mo Di Mi Fr"],
+    #     DT.FLEXTIME: ["20240902"],
+    #     DT.VACATION: ["20240919-20240923", "20240927"],
+    # }
+    # _calendar = Calendar(_year, _daytype_list)
 
-
-def test_calendar2():
-    """testing creation of calendar"""
-    # adding some additional daytypes
-    _year = 2024
-    _daytype_list = {
-        DT.WORKDAY_HOME: ["20240520-20240608"],
-        DT.FLEXTIME: [],
-        DT.VACATION: ["20240919-20240923", "20240927"],
-        DT.INFO: [
-            "20240929-20241004 Test Info ",
-            "20240901 EVEN MORE INFO",
-            "20240901 MORE INFO",
-            "20240501 :brain: :maple_leaf: Testing with icons",
-        ],
-    }
-    _calendar = Calendar(_year, daytype_list=_daytype_list)
-    _stats = _calendar.stats
-    assert isinstance(_stats, dict)
-    _stats_sum = _calendar.stats_sum
-    assert isinstance(_stats, dict)
-    # render calendar table
-    _calender_table = _calendar.get_calendar_table(4)
-    # get markdown
-    # console python -m rich.markdown test.md
-    # _markdown = _calendar.get_markdown()
-    # CalendarRenderer.render_calendar(_calendar)
+def test_add_shortcodes():
+    """adding shortcodes """
+    add_shortcodes = {"SHORTCODE":"SHORTCODE_VALUE"}
+    _enum = DTU.add_shortcodes(add_shortcodes)
+    assert isinstance(_enum,EnumMeta)

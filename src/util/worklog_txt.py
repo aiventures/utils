@@ -21,14 +21,6 @@ class WorkLogTxt():
         self._calendars = {}
         pass
     
-    @staticmethod
-    def add_shortcodes(shortcode_dict:dict)->StrEnum:
-        """ adding shortcodes to standard worklog enum codes """
-        # create a Dict 
-        _shortcode_dict = {_code.name:_code.value for _code in ShortCodes}
-        # add shortcodes 
-        _shortcode_dict.update(shortcode_dict)
-        return StrEnum("ShortCodes",_shortcode_dict)
 
 # def test_calendar2():
 #     """testing creation of calendar"""

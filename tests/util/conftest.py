@@ -327,7 +327,7 @@ def fixture_testfile_tablizer() -> str:
     return f_test_file
 
 @pytest.fixture(scope="module")
-def fixture_worklog_txt() -> list:
+def fixture_day_info_list() -> list:
     """ Fixture for worklog list """
     out = ["20240929-20241004 Test Info @part", # testing upper lower case sensitive
            "20240901 MORE INFO", # no additional metatag check for default value assignment

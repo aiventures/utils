@@ -54,9 +54,9 @@ YearModel = Dict[int, Dict[int, CalendarDayType]]
 YearAdapter = TypeAdapter(YearModel)
 YearModelType = Annotated[YearModel, YearAdapter]
 
-DayTypeListModel = Dict[DayTypeEnum, List[str]]
-DayTypeListAdapter = TypeAdapter(DayTypeListModel)
-DayTypeListType = Annotated[DayTypeListModel, DayTypeListAdapter]
+DayTypeDictModel = Dict[DayTypeEnum, List[str]]
+DayTypeDictAdapter = TypeAdapter(DayTypeDictModel)
+DayTypeDictType = Annotated[DayTypeDictModel, DayTypeDictAdapter]
 
 # Custom type for rendering an additional icon in the calendar
 # no_info = do not show an icon
