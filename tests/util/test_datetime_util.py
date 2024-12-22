@@ -68,11 +68,12 @@ def test_calendar2():
         DT.VACATION: ["20240919-20240923", "20240927"],
         DT.INFO: [
             "20240929-20241004 Test Info ",
+            "20240901 EVEN MORE INFO",
             "20240901 MORE INFO",
             "20240501 :brain: :maple_leaf: Testing with icons",
         ],
     }
-    _calendar = Calendar(_year, _daytype_list)
+    _calendar = Calendar(_year, daytype_list=_daytype_list)
     _stats = _calendar.stats
     assert isinstance(_stats, dict)
     _stats_sum = _calendar.stats_sum

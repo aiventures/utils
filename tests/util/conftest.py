@@ -325,3 +325,19 @@ def fixture_testfile_tablizer() -> str:
     """Sample Path to tablizer file"""
     f_test_file = str(C.PATH_ROOT.joinpath("test_data", "test_path", "testfile_for_table.txt"))
     return f_test_file
+
+@pytest.fixture(scope="module")
+def fixture_worklog_txt() -> list:
+    """ Fixture for worklog list """
+    out = ["20240929-20241004 Test Info @part", # testing upper lower case sensitive
+           "20240901 MORE INFO", # no additional metatag check for default value assignment
+           "20240901 EVEN MORE INFO 1000-1800", # testing two lines
+           "20240919-20240923 20240927 @VACA ", # Testing raw info without additional info only 
+           "20240501 :brain: :maple_leaf: Testing with icons @flex", # testing icons and additional comments
+           "20241001 1024-1235 1300-1730 1800-1830", # testing datetime calculation 
+           "20241001 1024-9999 1300-1730 1800-1830", # testing invalid datetimes 
+           "20251001 1024-1100 1300-1730 1800-1830", # testing date outside of range 
+           "@HOME Mo Di Mi Fr",
+           "@WORK Do 1000-1800" # testing default duration on each work day
+           ] 
+    return out

@@ -8,7 +8,6 @@ from pydantic import BaseModel, TypeAdapter, Field, RootModel
 
 class DayTypeEnumEN(StrEnum):
     """Type of Day"""
-
     WEEKEND = "weekend"
     WORKDAY = "workday"
     WORKDAY_HOME = "workday_home"
@@ -21,7 +20,6 @@ class DayTypeEnumEN(StrEnum):
 
 class DayTypeEnum(StrEnum):
     """Type of Day"""
-
     WEEKEND = "WOCHENENDE"
     WORKDAY = "ARBEITSTAG"
     WORKDAY_HOME = "HOMEOFFICE"
@@ -31,25 +29,22 @@ class DayTypeEnum(StrEnum):
     PARTTIME = "TEILZEIT"
     INFO = "INFO"  # information attribute
 
-
 class CalendarDayType(BaseModel):
     """Calendar Day Model"""
-
-    datetime_s: str  # string representation YYYYMMDD
-    datetime: DateTime
-    year: int
-    month: int
-    day: int
-    day_in_year: int
-    weekday_num: int
-    weekday_s: str
-    isoweeknum: int
+    datetime_s: Optional[str] = None  # string representation YYYYMMDD
+    datetime: Optional[DateTime] = None
+    year: Optional[int] = None
+    month: Optional[int] = None
+    day: Optional[int] = None
+    day_in_year: Optional[int] = None
+    weekday_num: Optional[int] = None
+    weekday_s: Optional[str] = None
+    isoweeknum: Optional[int] = None
     holiday: Optional[str] = None
-    day_type: DayTypeEnum
+    day_type: Optional[DayTypeEnum] = None
     duration: Optional[float] = None  # durations derived from info
     overtime: Optional[float] = None  # Overtime Calculation
-    info: Optional[str] = None  # Additional Info
-
+    info: Optional[List] = None  # Additional Info
 
 # derived models
 MonthModel = Dict[str, CalendarDayType]
@@ -72,8 +67,6 @@ CellRenderOptionField = Annotated[
     Literal["all", "first", "info", "no_info"], Field(description="Calendar Rendering Option")
 ]
 
-
 class CellRenderOptionType(RootModel):
-    """Rendering OPtion for the calendar"""
-
+    """Rendering Option for the calendar"""
     root: CellRenderOptionField = "all"

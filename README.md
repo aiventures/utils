@@ -10,7 +10,7 @@ Command Line Utils V2 as the tools project has become too bloated. To make a com
 
 ## Features 
 
-
+* Create a Pydantic CSV Model for several files 
 * Automatically locate executables using `where` `under the hood
 * Convert file paths using `cygpath` (comes with git)
 * Searching in file content and paths (as an alternative to `find` and `grep)

@@ -508,6 +508,7 @@ class Calendar:
         self._isoweek_info: dict = DateTimeUtil.get_isoweekyear(year)
         self._year_info: YearModelType = None
         self._create_year_info()
+        
         self._daytype_list = {}
         if daytype_list:
             self._daytype_list = daytype_list

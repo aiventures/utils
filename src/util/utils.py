@@ -8,6 +8,7 @@ import re
 import shlex
 import subprocess
 import sys
+import hashlib
 from configparser import Error as ConfigParserError
 from datetime import datetime as DateTime
 from enum import Enum
@@ -41,6 +42,12 @@ P_SAVE = "p_save"
 
 class Utils:
     """util collection"""
+
+    @staticmethod
+    def get_hash(s:str):
+        """ calculates a hash string of transferred string """
+        hash_object = hashlib.md5(s.encode())
+        return hash_object.hexdigest()
 
     @staticmethod
     def split_string(s: str, n: int, fill: str = None) -> list:

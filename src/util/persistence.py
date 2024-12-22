@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import sys
+import io
 from datetime import datetime as DateTime
 from pathlib import Path
 
@@ -79,6 +80,42 @@ class Persistence:
             self._get_save_file_name()
         else:
             return None
+
+    @staticmethod
+    def istextfile(f: str, blocksize=512) -> bool:
+        """checking heuristically whether a file might be a binary
+        use din favor over binaryornot module to save a depedency
+        """
+        with io.open(f, mode="rb") as file:
+            block = file.read(blocksize)
+            if b"\0" in block:
+                return False
+            text_characters = b"".join(
+                map(lambda x: x.to_bytes(1, "big"), range(32, 127)) + [b"\n", b"\r", b"\t", b"\b"]
+            )
+            text_characters = list(map(lambda x: x.to_bytes(1, "big"), range(32, 127)))
+            text_characters.extend([b"\n", b"\r", b"\t", b"\b"])
+            text_characters = b"".join(text_characters)
+            non_text_characters = sum(1 for char in block if char not in text_characters)
+            return non_text_characters / len(block) <= 0.30
+
+    @staticmethod
+    def read_last_line(f: str) -> str:
+        """reads last line of a file, can be used to read the file stubs in lfs files"""
+        with open(f, mode="r", encoding="UTF-8") as _f:
+            _f.seek(0, os.SEEK_END)
+            file_length = _f.tell()
+            file_position = file_length - 4096
+            if file_position < 0:
+                file_position = 0
+            _f.seek(file_position, os.SEEK_SET)
+            file_buffer = _f.read(file_length - file_position)
+            end_line = file_buffer.rfind("\n")
+            start_line = file_buffer[:end_line].rfind("\n")
+            if start_line != -1:
+                return file_buffer[start_line + 1 : end_line]
+            else:
+                return file_buffer[:end_line]
 
     @staticmethod
     def get_changed_time(f: str, dateformat: str = None) -> DateTime | str:
