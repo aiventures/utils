@@ -1,20 +1,28 @@
 """Calendar and Time Utils"""
 
 import logging
+import itertools
 import os
 import re
 import time
-from enum import StrEnum
+from enum import StrEnum,EnumMeta
 from datetime import date, timedelta
 from datetime import datetime as DateTime
 from math import ceil
 from typing import Dict,List
+from copy import deepcopy
 
 import pytz
 from dateutil.parser import parse
 from dateutil.tz import tzoffset, tzutc
 
-from model.model_datetime import CalendarDayType, DayTypeEnum, DayTypeDictType, MonthModelType, YearModelType
+from model.model_datetime import ( CalendarDayType, DayTypeEnum,
+                                  CalendarDayDictType, YearModelType,
+                                  MonthModelType, DayTypeDictType,
+                                  CalendarBuffer
+                                  )
+
+
 from model.model_worklog import (ShortCodes,WorkLogModel)
 
 # regex to extract todo_txt string matching signature @(...)
@@ -26,7 +34,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 DAYS_IN_MONTH = {1: 31, 2: 28, 3: 31, 4: 30, 5: 31, 6: 30, 7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
-
 WEEKDAY = {1: "Mo", 2: "Di", 3: "Mi", 4: "Do", 5: "Fr", 6: "Sa", 7: "So"}
 WEEKDAY_EN = {1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat", 7: "Sun"}
 
@@ -97,10 +104,12 @@ MONTHS_SHORT_EN = {
 REGEX_YYYYMMDD = re.compile(r"((?<=\s)|(?<=^))(\d{8})(?!-)")
 REGEX_DATE_RANGE = re.compile(r"\d{8}-\d{8}")
 REGEX_TIME_RANGE = re.compile(r"\s(\d{4}-\d{4})")
-# any combination of Upper/Lowercase String  in German 
+# any combination of Upper/Lowercase String  in German
 REGEX_WEEKDAY = re.compile(r"[MDFS][oira]")
 # REGEX TO Extract a TODO.TXT substring
-REGEX_TODO_TXT = r"\s@T\((.+)?\)"
+REGEX_TODO_TXT = r"@[Tt]\((.+)?\)"
+# REGEX for TAGS / excluding the TODOO TXT tag
+REGEX_TAGS = r"@([^Tt][a-zA-Z0-9_]+)"
 
 class DateTimeUtil:
     """Util Functions for Date and Time"""
@@ -114,11 +123,14 @@ class DateTimeUtil:
         if len(_durations) == 0:
             return None
 
-        _total_duration = 0
+        _total_duration = 0.0
         for _duration in _durations:
-            _from, _to = [DateTime.strptime(_t, "%H%M") for _t in _duration.split("-")]
-            # duration in minutes
-            _total_duration += (_to - _from).seconds // 60
+            try:
+                _from, _to = [DateTime.strptime(_t, "%H%M") for _t in _duration.split("-")]
+                # duration in minutes
+                _total_duration += (_to - _from).seconds // 60
+            except ValueError as e:
+                logger.warning(f"[DateTimeUtil] Couldn't Parse [{s}] as DateTime Object, {e}")
         _hours = round(float(_total_duration) / 60, 2)
         # no durations found return None
         if _hours == 0.0:
@@ -197,9 +209,9 @@ class DateTimeUtil:
     @staticmethod
     def add_shortcodes(shortcode_dict:dict)->StrEnum:
         """ adding shortcodes to standard worklog enum codes """
-        # create a Dict 
+        # create a Dict
         _shortcode_dict = {_code.name:_code.value for _code in ShortCodes}
-        # add shortcodes 
+        # add shortcodes
         _shortcode_dict.update(shortcode_dict)
         return StrEnum("ShortCodes",_shortcode_dict)
 
@@ -496,9 +508,9 @@ class DateTimeUtil:
         return iso
 
     @staticmethod
-    def create_calendar(year: int, daytype_list: DayTypeDictType = None):
+    def create_calendar(year: int, dayinfo_list: List[str] = None):
         """create a calendar"""
-        return Calendar(year, daytype_list)
+        return Calendar(year, dayinfo_list)
 
     @staticmethod
     def get_dates_from_range(daterange: str) -> list:
@@ -515,28 +527,65 @@ class DateTimeUtil:
 class Calendar:
     """Calendar Object"""
 
-    #    def __init__(self, year: int, worktime: float=8, daytype_list: DayTypeListType = None):
-    def __init__(self, year: int, worktime: float=8, dayinfo_list: List[str] = None):
+    # buffering calendar
+    _cls_calendar_buffer : Dict[int,CalendarBuffer] = {}
+
+    @classmethod
+    def _set_calendar_buffer(cls, year:int,work_hours:float=None)->None:
+        """ add year info to calendar buffer  """
+        if year is None:
+            cls._cls_calendar_buffer = {}
+            return
+        _holidays = DateTimeUtil.get_holiday_dates(year)
+        _days_in_month = deepcopy(DAYS_IN_MONTH)
+        _dt_dec31 = DateTime(year, 1, 1) - timedelta(days=1)
+        if DateTimeUtil.is_leap_year(year):
+            _days_in_month[2] = 29
+        cls._cls_calendar_buffer[year] = CalendarBuffer(days_in_month=_days_in_month,
+                                                         holidays=_holidays,
+                                                         year=year,
+                                                         dt_dec31=_dt_dec31,
+                                                         work_hours=work_hours)
+
+    @classmethod
+    def set_work_hours(cls,work_hours:float=8.0)->None:
+        """ setting the work hours in all calendars of the calendar buffer """
+        for _,_calendar_buffer in cls._cls_calendar_buffer.items():
+            _calendar_buffer.work_hours = work_hours
+
+    @classmethod
+    def _get_calendar_buffer(cls,year:int)->CalendarBuffer:
+        """ gets calendar meta data from calendar buffer and sets working hours """
+        _calendar_buffer = cls._cls_calendar_buffer.get(year)
+        if _calendar_buffer is None:
+            cls._set_calendar_buffer(year)
+            _calendar_buffer = cls._cls_calendar_buffer.get(year)
+        return _calendar_buffer
+
+    def __init__(self, year: int=None, work_hours: float=8.0, dayinfo_list: List[str] = None,short_codes:EnumMeta=None):
 
         """Constructor"""
+        if year is None:
+            year = DateTime.now().year
         self._year: int = year
         # regular working time, used for calculating overtime
-        self._working_time: float = worktime
+        self._work_hours: float = work_hours
         # get first monday of isoweek
         self._isoweek_info: dict = DateTimeUtil.get_isoweekyear(year)
         self._year_info: YearModelType = None
         self._create_year_info()
-        self._dayinfo_list = []
+        self._dayinfo_list: List[str] = []
         if isinstance(dayinfo_list,list):
             self._dayinfo_list = dayinfo_list
         self._daytype_dict: DayTypeDictType = {}
-
-        # TODO get strings by daytype
-        if dayinfo_list:
-            self._daytype_dict = dayinfo_list
-        # adds daytpe info
+        self._short_codes: EnumMeta = ShortCodes
+        if short_codes is not None:
+            self._short_codes = short_codes
+        self._short_code_list =  [f"{_short_code.name}" for _short_code in self._short_codes]
+        self._parse_shortcodes()
+        # TODO REFACTOR THIS PART
         self._set_daytypes()
-        # adds information
+        # adds information from info file
         self._add_info()
 
     @property
@@ -550,77 +599,81 @@ class Calendar:
         return self._year_info
 
     @staticmethod
-    def _get_day_type(week_info: dict, holiday: str, workday_home: bool = False) -> DayTypeEnum:
-        """determines the daytype"""
-        if workday_home:
-            day_type = DayTypeEnum.WORKDAY_HOME
-        else:
-            day_type = DayTypeEnum.WORKDAY
+    def create_day_info(year:int,month:int,day:int,work_hours:float=None)->CalendarDayType:
+        """ returning a dayinfo object from date information """
+        _calendar_buffer = Calendar._get_calendar_buffer(year)
+        if _calendar_buffer.work_hours is None and work_hours is not None:
+            Calendar.set_work_hours(work_hours)
+            _calendar_buffer = Calendar._get_calendar_buffer(year)
+        _holidays = _calendar_buffer.holidays
+        _work_hours = _calendar_buffer.work_hours
+        _dt_dec31 = _calendar_buffer.dt_dec31
+        _dt = DateTime(year, month, day)
+        _dt_s = _dt.strftime("%Y%m%d")
+        _y = _dt.year
+        _m = _dt.month
+        _d = _dt.day
+        _weekinfo = DateTimeUtil.isoweek(_dt)
+        _day_in_year = (_dt - _dt_dec31).days
+        _week_day_num = _weekinfo.get("weekday")
+        _week_day_s = WEEKDAY[_week_day_num]
+        _calendar_week = _weekinfo.get("calendar_week")
+        _holiday = _holidays.get(_dt)
+        if _holiday:
+            _holiday = _holiday.get("name")
+        # get default day type
+        _day_type = DayTypeEnum.WORKDAY_HOME
+        if _week_day_num > 5:
+            _day_type = DayTypeEnum.WEEKEND
+        elif _holiday is not None:
+            _day_type = DayTypeEnum.HOLIDAY
 
-        if week_info["weekday"] > 5:
-            day_type = DayTypeEnum.WEEKEND
+        _day_info = {
+            "datetime_s": _dt_s,
+            "datetime": _dt,
+            "year": _y,
+            "month": _m,
+            "day": _d,
+            "day_in_year": _day_in_year,
+            "weekday_num": _week_day_num,
+            "weekday_s": _week_day_s,
+            "isoweeknum": _calendar_week,
+            "holiday": _holiday,
+            "day_type": _day_type,
+            "work_hours": _work_hours,
+        }
 
-        if holiday is not None:
-            day_type = DayTypeEnum.HOLIDAY
-
-        return day_type
+        return CalendarDayType(**_day_info)
 
     @staticmethod
-    def get_month_info(year: int, month: int) -> MonthModelType:
+    def get_month_info(year: int, month: int,work_hours:float=None) -> MonthModelType:
         """gets date information as Pydantic Model"""
         # get this date for calculation of number of days
-        dt_dec31 = DateTime(year, 1, 1) - timedelta(days=1)
         out = {}
+        _calendar_buffer = Calendar._get_calendar_buffer(year)
+        if _calendar_buffer.work_hours is None and work_hours is not None:
+            Calendar.set_work_hours(work_hours)
         # get holidays
-        _holidays = DateTimeUtil.get_holiday_dates(year)
+        _days_in_month = _calendar_buffer.days_in_month
         # get days in month
-        _days_in_month = DAYS_IN_MONTH.get(month)
-        if month == 2 and DateTimeUtil.is_leap_year(year):
-            _days_in_month += 1
+        _days_in_month = _days_in_month.get(month)
+
         for _d in range(1, _days_in_month + 1):
             _dt = DateTime(year, month, _d)
             _dt_s = _dt.strftime("%Y%m%d")
-            _y = _dt.year
-            _m = _dt.month
-            _d = _dt.day
-            _weekinfo = DateTimeUtil.isoweek(_dt)
-            _day_in_year = (_dt - dt_dec31).days
-            _week_day_num = _weekinfo.get("weekday")
-            _week_day_s = WEEKDAY[_week_day_num]
-            _calendar_week = _weekinfo.get("calendar_week")
-            _holiday = _holidays.get(_dt)
-            if _holiday:
-                _holiday = _holiday.get("name")
-            # get day type
-            _day_type = Calendar._get_day_type(_weekinfo, _holiday)
-
-            _day_info = {
-                "datetime_s": _dt_s,
-                "datetime": _dt,
-                "year": _y,
-                "month": _m,
-                "day": _d,
-                "day_in_year": _day_in_year,
-                "weekday_num": _week_day_num,
-                "weekday_s": _week_day_s,
-                "isoweeknum": _calendar_week,
-                "holiday": _holiday,
-                "day_type": _day_type,
-                "duration": 0.0,
-                "overtime": 0.0,
-            }
-            out[_dt_s] = CalendarDayType(**_day_info)
+            _ymdh = (_dt.year,_dt.month,_dt.day,work_hours)
+            out[_dt_s] = Calendar.create_day_info(*_ymdh)
         return out
 
     @staticmethod
-    def get_year_info(year: int) -> YearModelType:
+    def get_year_info(year: int,work_hours:float=None) -> YearModelType:
         """returns a year as matrix [month][day]
         also adds vacation list (either as date YYYYMMDD or as range
                                  YYYYMMDD-yyyymmdd)
         """
         out = {}
         for _month in range(1, 13):
-            _month_info = Calendar.get_month_info(year, _month)
+            _month_info = Calendar.get_month_info(year, _month,work_hours)
             # transform it into a dict using day ints
             _month_info = dict([(_info.day, _info) for _info in _month_info.values()])
             out[_month] = _month_info
@@ -628,7 +681,7 @@ class Calendar:
 
     def _create_year_info(self) -> None:
         """create a year calendar"""
-        self._year_info = Calendar.get_year_info(self._year)
+        self._year_info = Calendar.get_year_info(year=self._year,work_hours=self._work_hours)
 
     def get_weekdays(self, weekdays: list = None) -> list:
         """get all weekdays ["Mo",...]from list"""
@@ -642,7 +695,7 @@ class Calendar:
                     out.append(day_info.datetime)
         return out
 
-    def _get_daytype_dates(self, daytype: DayTypeEnum, date_s: str = None) -> list:
+    def _get_daytype_dates(self, daytype: DayTypeEnum=None, date_s: str = None) -> List[DateTime]:
         """get datetype_dates"""
         # get all dates in one string and apply regexes from there
         if date_s:
@@ -660,25 +713,209 @@ class Calendar:
         dates = list(tuple(sorted(dates)))
         return dates
 
-    def _add_info(self) -> None:
-        """adds information"""
-        _info_list = self._daytype_dict.get(DayTypeEnum.INFO, [])
-        for _info in _info_list:
-            _day_list = self._get_daytype_dates(DayTypeEnum.INFO, _info)
-            for _day in _day_list:
-                if _day.year != self._year:
+    def _parse_shortcodes(self)->None:
+        """ parse shortcodes and set infodict """
+        self._daytype_dict = {}
+        _regex_short_codes = [re.compile(f"@{_code}",re.IGNORECASE) for _code in self._short_code_list]
+
+        for _dayinfo in self._dayinfo_list:
+            _found = False
+            for _regex in _regex_short_codes:
+                # only use the first occurence
+                _result = _regex.findall(_dayinfo)
+                if len(_result) > 0:
+                    _found = True
+                    _shortcode = _regex.pattern.upper()[1:]
+                    _daytype_name = ShortCodes[_shortcode].value
+                    _daytype = DayTypeEnum[_daytype_name]
+                    _info = self._daytype_dict.get(_daytype,[])
+                    _info.append(_dayinfo)
+                    self._daytype_dict[_daytype] = _info
+                    break
+            if _found is False:
+                logger.warning(f"[Calendar] Found [{_dayinfo}] where no daytype could be found")
+
+        return
+
+
+    def parse_dayinfo(self,dayinfo:str)->CalendarDayDictType:
+        """ parses a dayinfo line """
+        out = {}
+        # adapted string
+        _s_adapted = dayinfo
+        # get todo_txt part and drop it (since it might contain @tags)
+        _todo_txts = re.findall(REGEX_TODO_TXT,dayinfo)
+        for _todo_txt in _todo_txts:
+            _s_adapted = _s_adapted.replace(_todo_txt,"")
+        # string parts that need to be dropped
+        _string_matches = ["@"]
+        # get all dates
+        _dates = self._get_daytype_dates(date_s=dayinfo)
+        # get date parts
+        _date_ranges_s = re.findall(REGEX_DATE_RANGE,dayinfo)
+        _string_matches.extend(_date_ranges_s)
+        # get single dates
+        _dates_s = re.findall(REGEX_YYYYMMDD,dayinfo)
+        _dates_s = [_d[1] for _d in _dates_s]
+        _string_matches.extend(_dates_s)
+        # get week parts
+        _weekdays = re.findall(REGEX_WEEKDAY,dayinfo)
+        _string_matches.extend(_weekdays)
+        # get duration parts / calculate duration
+        _durations = re.findall(REGEX_TIME_RANGE,dayinfo)
+        _total_duration = DateTimeUtil.duration_from_str(_s_adapted)
+
+        _string_matches.extend(_durations)
+        # get all tags
+        _tags = re.findall(REGEX_TAGS,dayinfo)
+        # get DayTypeInfo / use only the first occurence
+        _daytype_short = None
+        _daytypes = [_tag for _tag in _tags if _tag.upper() in self._short_code_list ]
+        if len(_daytypes) > 1:
+            logger.warning(f"[Calendar] found more than one daytypes in [{dayinfo}], using the 1st")
+            _daytype_short = _daytypes[0]
+        elif len(_daytypes) == 0:
+            logger.warning(f"[Calendar] found no daytypes in [{dayinfo}], using HOME")
+            _daytype_short = ShortCodes.HOME.name
+        else:
+            _daytype_short = _daytypes[0]
+        _day_type = DayTypeEnum[ShortCodes[_daytype_short.upper()].value]
+        # self._short_code_list
+        _string_matches.extend(_tags)
+
+        # info string
+        for _s in _string_matches:
+            _s_adapted = _s_adapted.replace(_s,"")
+        _info = _s_adapted.strip()
+        if len(_info) == 0:
+            _info = None
+        else:
+            _info = [_info]
+        _s_adapted = _s_adapted.strip()
+
+        for _date in _dates:
+            _ymdh = (_date.year,_date.month,_date.day,self._work_hours)
+            # create_day_info type
+            _day_info = Calendar.create_day_info(*_ymdh)
+            # add parts from the string parsing above
+            # _day_info.day_type = _day_type
+            Calendar._merge_daytype(_day_info,[_day_type])
+            _day_info.duration = _total_duration
+            _day_info.work_hours = self._work_hours
+            if isinstance(_total_duration,(float,int)) and isinstance(self._work_hours,(float,int)):
+                _day_info.overtime = _total_duration - self._work_hours
+            # @TODO _day_info.overtime
+            if len(_s_adapted) > 0:
+                _day_info.info = [_s_adapted]
+            _day_info.info_raw = [dayinfo]
+            _day_info.tags = _tags
+            _day_info.todos_raw = _todo_txts
+            out[_day_info.datetime_s] = _day_info
+
+        return out
+
+    @staticmethod
+    def _merge_daytype(dayinfo:CalendarDayType,daytypes:List[DayTypeEnum]):
+        """ prioritizes daytype from incoming list"""
+        if dayinfo.holiday is not None:
+            dayinfo.day_type = DayTypeEnum.HOLIDAY
+        elif dayinfo.weekday_num > 5:
+            dayinfo.day_type = DayTypeEnum.WEEKEND
+        elif DayTypeEnum.VACATION in daytypes:
+            dayinfo.day_type = DayTypeEnum.VACATION
+        elif DayTypeEnum.FLEXTIME in daytypes:
+            dayinfo.day_type = DayTypeEnum.FLEXTIME
+        elif DayTypeEnum.PARTTIME in daytypes:
+            dayinfo.day_type = DayTypeEnum.PARTTIME
+        elif DayTypeEnum.WORKDAY in daytypes:
+            dayinfo.day_type = DayTypeEnum.WORKDAY
+        else:
+            dayinfo.day_type = DayTypeEnum.WORKDAY_HOME
+
+    @staticmethod
+    def _merge_dayinfo(dayinfos:List[CalendarDayType])->CalendarDayType:
+        """ merge a list of day infos into one entry """
+
+        # info / info_raw / tags /  / duration / holiday / overtime / day_type / todo_raw
+        _merged = {"holiday":[], "day_type":[],
+                   "duration":[],"work_hours":[],
+                   "info":[],"info_raw":[],
+                   "tags":[],"todos_raw":[]}
+        for _dayinfo in dayinfos:
+            for _name,_value in _dayinfo:
+                if _value is None:
                     continue
-                _day_info = self._year_info[_day.month][_day.day]
-                _info_value = _day_info.info
-                if isinstance(_info_value, list):
-                    _info_value.append(_info)
+                _value_list = _merged.get(_name)
+                if _value_list is None:
+                    continue
+                if isinstance(_value,list) and len(_value)==0:
+                    continue
+                if isinstance(_value,list):
+                    _value_list.extend(_value)
                 else:
-                    _info_value = [_info]
-                # calculate durations
-                if isinstance(_info_value, list) and len(_info_value) > 0:
-                    _s_info = " ".join(_info_value)
-                    _day_info.duration = DateTimeUtil.duration_from_str(_s_info)
-                _day_info.info = _info_value
+                    _value_list.append(_value)
+
+        _day_info = deepcopy(dayinfos[0])
+        Calendar._merge_daytype(_day_info,_merged["day_type"])
+        _ = _merged.pop("day_type")
+
+        for _merge_field, _values in _merged.items():
+            if len(_values) == 0:
+                continue
+            # create unique values
+            _values = list(set(_values))
+            if _merge_field == "work_hours":
+                _day_info.work_hours = max(_values)
+            elif _merge_field == "duration":
+                _sum = sum([_v for _v in _values if isinstance(_v,(float,int))])
+                setattr(_day_info,_merge_field,_sum)
+            elif _merge_field == "holiday":
+                _day_info.holiday = _values[0]
+            else:
+                setattr(_day_info,_merge_field,_values)
+
+            pass
+
+        # calculate overrtime
+        if ( isinstance(_day_info.duration,(int,float)) and
+             isinstance(_day_info.work_hours,(int,float))):
+            _day_info.overtime = _day_info.duration - _day_info.work_hours
+        else:
+            _day_info.overtime = None
+
+        return _day_info
+
+    def _add_info(self) -> None:
+        """adds information to calendar and merges multiple information lines"""
+        _out = {}
+        _dayinfo_dicts = {}
+
+        # get dayinfos for each additional info line, blend them together
+        for _day_info_s in self._dayinfo_list:
+            _dayinfo_dict = self.parse_dayinfo(_day_info_s)
+            for _date,_dayinfo in _dayinfo_dict.items():
+                _day_infos = _dayinfo_dicts.get(_date,[])
+                _day_infos.append(_dayinfo)
+                _dayinfo_dicts[_date] = _day_infos
+        
+        for _date,_day_info in _dayinfo_dicts.items():
+            if len(_day_info) == 1:
+                _out[_date] = _day_info[0]
+            elif len(_day_info) > 1: 
+                _out[_date] = _day_info
+
+        for _date,_dayinfos in _out.items():
+            if isinstance(_dayinfos,list):
+                _merged = Calendar._merge_dayinfo(_dayinfos)
+                _out[_date] = _merged
+            
+            _dayinfo = _out[_date]
+            _dt = _dayinfo.datetime
+            _year, _month, _day= (_dt.year,_dt.month,_dt.day)
+            if _year != self.year:
+                logger.warning("[Calendar] Additional Information: Year not matching")                
+                continue
+            self.year_info[_month][_day] = _dayinfo
 
     def _set_daytype(self, daytype: DayTypeEnum) -> None:
         """setting a specific daytype"""
@@ -697,7 +934,9 @@ class Calendar:
     def _set_daytypes(self) -> None:
         """setting the daytypes in a specific order"""
         # some order needs to be maintained
-        _all_daytypes = [DayTypeEnum.WORKDAY_HOME, DayTypeEnum.PARTTIME, DayTypeEnum.FLEXTIME, DayTypeEnum.VACATION]
+        _all_daytypes = [DayTypeEnum.WORKDAY_HOME,DayTypeEnum.WORKDAY,
+                         DayTypeEnum.PARTTIME, DayTypeEnum.FLEXTIME,
+                         DayTypeEnum.VACATION]
         _daytypes = list(self._daytype_dict.keys())
         for _daytype in _all_daytypes:
             if _daytype not in _daytypes:
