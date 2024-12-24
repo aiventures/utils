@@ -316,17 +316,17 @@ if __name__ == "__main__":
 
     # sample creation of items. For real usafge this would be a plain txt file
     # allowing easy and quick entry of items
-    _daytype_list = {
-        DTE.WORKDAY_HOME: ["Mo Di Mi Fr"],
-        DTE.FLEXTIME: ["20240902"],
-        DTE.VACATION: ["20240919-20240923", "20240927"],
-        DTE.INFO: [
-            "20240929-20241004 :notebook: Test Info ",
-            "20240901 :red_circle: :green_square: MORE INFO 1230-1450 1615-1645",
-            "20241010 JUST INFO 0934-1134",
-        ],
-    }
-    _calendar = Calendar(2024, _daytype_list)
+    _daytype_list = [
+        "@HOME Mo Di Mi Fr",
+        "@WORK Do 1000-1200 1300-1600",
+        "@VACA 20240902",
+        "@PART 20240919-20240923", 
+        "@VACA 20240927",
+        "@WORK 20240929-20241004 :notebook: Test Info ",
+        "@WORK 20240901 :red_circle: :green_square: MORE INFO 1230-1450 1615-1645",
+        "@FLEX 20241010 JUST INFO 0934-1134",
+    ]
+    _calendar = Calendar(2024, 8,_daytype_list)
     # rendering the calendar and markdown list
     # icon_render is "all","first","info","no_info"
     _renderer = CalendarRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all")
@@ -342,7 +342,7 @@ if __name__ == "__main__":
     if False:
         CalendarRenderer.show_overtime_indicator()
     # stats
-    if True:
+    if False:
         _stats = _renderer.calendar.stats
         console.print(_stats)
         _stats_sum = _renderer.calendar.stats_sum
