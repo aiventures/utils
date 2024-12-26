@@ -61,7 +61,10 @@ select = ["E", "F"]
 # E741 https://docs.astral.sh/ruff/rules/ambiguous-variable-name/
 # E722 https://docs.astral.sh/ruff/rules/bare-except/
 # E713 https://docs.astral.sh/ruff/rules/not-in-test/
-ignore = ["F401","F811","E501","E741","E722","E713"]
+# drop F401 to allow for removal odf not used import 
+ignore = ["F811","E501","E741","E722","E713"]
+# ignore = ["F401","F811","E501","E741","E722","E713"]
+
 
 
 

@@ -10,7 +10,6 @@ Command Line Utils V2 as the tools project has become too bloated. To make a com
 
 ## Features 
 
-* Create a Pydantic CSV Model for several files 
 * Automatically locate executables using `where` `under the hood
 * Convert file paths using `cygpath` (comes with git)
 * Searching in file content and paths (as an alternative to `find` and `grep)
@@ -72,7 +71,9 @@ Configuration should be OS independent, but only tested on Win Os.
 
 ## Todos / Ideas
 
-* `20241216` create a function to count lfs stub sizes  
+* `20241216` Add a tag for setting total cumulated overtime   
+* `20241216` Create a Pydantic CSV Model for several files 
+* `20241216` ~~create a function to count lfs stub sizes~~
 * `20241216` make worklog_txt and todo_txt work together 
 * `20241216` Create the styles via command line (Simply Calling the constructor)
 * `20241215` Create gliding overtime 

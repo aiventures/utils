@@ -4,11 +4,6 @@ import os
 import uuid
 from pathlib import Path
 
-import pytest
-
-from util import constants as C
-from util.bat_helper import BatHelper
-
 
 def test_create_colors_template(fixture_battest_path, fixture_bat_helper):
     """creating a colors template"""

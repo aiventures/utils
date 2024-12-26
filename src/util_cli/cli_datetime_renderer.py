@@ -20,12 +20,10 @@ from util import constants as C
 from util.datetime_util import (
     MONTHS,
     MONTHS_SHORT,
-    REGEX_DATE_RANGE,
     REGEX_TIME_RANGE,
-    REGEX_YYYYMMDD,
     WEEKDAY,
-    Calendar,
 )
+from util.calendar import (Calendar,REGEX_DATE_RANGE,REGEX_YYYYMMDD) 
 from util.utils import Utils
 
 REGEX_ICON_STR = ":[a-zA-Z0-9_]+:"  # alphanum chars embraced in colons
@@ -66,7 +64,6 @@ OVERTIME_EMOJI_CODES = [
     "skull",
 ]
 OVERTIME_EMOJIS = [Emoji.replace(f":{e}:") for e in OVERTIME_EMOJI_CODES]
-
 
 class DAYTYPE_ICONS(StrEnum):
     """ICONS For Rich Table"""
@@ -239,6 +236,16 @@ class CalendarRenderer:
         _i_list = day_info.info
         _s_i = None
         _d = day_info.duration
+        _indicator = ""        
+        _overtime = ""
+        if isinstance(day_info.overtime,(float,int)):
+            _overtime = day_info.overtime            
+            _indicator = CalendarRenderer.get_overtime_indicator(_overtime)
+            _sign = "+"
+            if _overtime < 0:
+                _sign = ""
+            _overtime = f"{_sign}{_overtime:.1f}"
+
         # render duration and duration as emoji clock
         if isinstance(_d, float) and _d > 0:
             _emoji_hours = int(round(_d)) % 12
@@ -248,7 +255,7 @@ class CalendarRenderer:
             _hours_s = str(int(_d // 1)).zfill(2)
             _minutes_s = str(round((_d % 1) * 60)).zfill(2)
             _time = f"{_hours_s}:{_minutes_s}"
-            _ds = f"{_emoji_clock}{_time}"
+            _ds = f"{_indicator} {_time}/{_overtime}{_emoji_clock}"
         else:
             _ds = ""
 
@@ -264,7 +271,6 @@ class CalendarRenderer:
             for _i in _i_list:
                 # render output string / drop items
                 _i = CalendarRenderer.render_info(_i)
-
                 out.append(f"  * {_i}  ")
 
         return out
@@ -314,12 +320,12 @@ if __name__ == "__main__":
     )
     # console python -m rich.markdown test.md
 
-    # sample creation of items. For real usafge this would be a plain txt file
+    # sample creation of items. For real usage this would be a plain txt file
     # allowing easy and quick entry of items
     _daytype_list = [
-        "@HOME Mo Di Mi Fr",
+        "@HOME Mo Di Mi Fr 0800-1200 1300-1700",
         "@WORK Do 1000-1200 1300-1600",
-        "@VACA 20240902",
+        "@VACA 20240902-20240910",
         "@PART 20240919-20240923", 
         "@VACA 20240927",
         "@WORK 20240929-20241004 :notebook: Test Info ",
@@ -336,7 +342,7 @@ if __name__ == "__main__":
     # render the calendar as markdown list (only_info=only items with INFO will be printed)
     _markdown_list = _renderer.get_markdown(only_info=False)
     console = _renderer.console
-    if False:
+    if True:
         console.print(Markdown("\n".join(_markdown_list)))
     # overtime indicator
     if False:

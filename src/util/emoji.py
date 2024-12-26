@@ -30,11 +30,20 @@ from util import constants as C
 from util.matrix_list import MatrixList
 from util.persistence import Persistence
 
-# TODO put everything into a class
-
+EMOJI_NUMBERS = {0:"zero", 1:"one",10:"ten",2:"two",3:"three",4:"four",
+                 5:"five", 6:"six",7:"seven", 8:"eight", 9:"nine"}
 
 class EmojiUtil:
     """ Emoji Helper """
+
+    @staticmethod
+    def int2emoji(number:int)->str:
+        """ converting an int to an emoji """
+        out=""
+        s_int = str(number)
+        for s in s_int:
+            out += Emoji.replace(f":{EMOJI_NUMBERS[int(s)]}:")
+        return out
 
     @staticmethod
     def get_emoji_tree(emoji_dict: dict) -> dict:
@@ -201,4 +210,5 @@ if __name__ == "__main__":
     # EmojiUtil.show_emoji_table(emoji_filter=["circ","sq"])
     # EmojiUtil.emoji("sss")
     # EmojiUtil.parse_sequences(r"...")
+    print(EmojiUtil.int2emoji(1234))
     pass

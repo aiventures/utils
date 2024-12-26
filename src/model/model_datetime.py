@@ -15,8 +15,8 @@ class DayTypeEnumEN(StrEnum):
     HOLIDAY = "holiday"
     FLEXTIME = "flextime"  # Gleitzeit
     PARTTIME = "parttime"
+    ONDUTY = "onduty" # Schicht
     INFO = "info"  # information attribute
-
 
 class DayTypeEnum(StrEnum):
     """Type of Day"""
@@ -41,10 +41,12 @@ class CalendarDayType(BaseModel):
     weekday_s: Optional[str] = None
     isoweeknum: Optional[int] = None
     holiday: Optional[str] = None
+    workday: Optional[bool] = None
     day_type: Optional[DayTypeEnum] = None
     duration: Optional[float] = None  # durations derived from info
     work_hours: Optional[float] = None
     overtime: Optional[float] = None  # Overtime Calculation
+    total_work: Optional[float] = None # Cumulated overtime
     info: Optional[List] = None  # Additional Info
     info_raw: Optional[List] = None  # Original Info
     tags: Optional[List] = None # all tags that were extracted from info
@@ -58,6 +60,20 @@ class CalendarBuffer(BaseModel):
     dt_dec31 : Optional[DateTime] = None
     work_hours : Optional[float]  = None
 
+class CalendarIndex(BaseModel):
+    """ Summary Calendar Index """
+    year: Optional[int] = None
+    leap_year: Optional[bool] = None
+    month: Optional[int] = None
+    day: Optional[int] = None
+    day_in_year: Optional[int] = None
+    calendar_week: Optional[int] = None
+    weekday: Optional[int] = None
+    holiday: Optional[str] = None
+    is_holiday: Optional[bool] = None
+    is_weekend: Optional[bool] = None
+    is_workday: Optional[bool] = None
+
 # derived models
 MonthModel = Dict[str, CalendarDayType]
 MonthAdapter = TypeAdapter(MonthModel)
@@ -66,7 +82,7 @@ YearModel = Dict[int, Dict[int, CalendarDayType]]
 YearAdapter = TypeAdapter(YearModel)
 YearModelType = Annotated[YearModel, YearAdapter]
 
-# lists of dayinfo 
+# lists of dayinfo
 CalendarDayDictModel = Dict[str,CalendarDayType]
 CalendarDayDictAdapter = TypeAdapter(CalendarDayDictModel)
 CalendarDayDictType = Annotated[CalendarDayDictModel,CalendarDayDictAdapter]

@@ -1,10 +1,7 @@
 """Test Setup"""
 
-import logging
 import os
-import sys
 from copy import deepcopy
-from enum import Enum
 from pathlib import Path
 
 import pytest
@@ -332,12 +329,14 @@ def fixture_day_info_list() -> list:
     out = ["20240929-20241004 Test Info @part", # testing upper lower case sensitive
            "20240901 MORE INFO", # no additional metatag check for default value assignment
            "20240901 EVEN MORE INFO 1000-1800", # testing two lines
-           "20240919-20240923 20240927 @VACA ", # Testing raw info without additional info only 
+           "20240919-20240923 20240927 @VACA ", # Testing raw info without additional info only
            "20240501 :brain: :maple_leaf: Testing with icons @flex", # testing icons and additional comments
-           "20241001 1024-1235 1300-1730 1800-1830", # testing datetime calculation 
-           "20241001 1024-9999 1300-1730 1800-1830", # testing invalid datetimes 
-           "20251001 1024-1100 1300-1730 1800-1830", # testing date outside of range 
+           "20241001 @flex 1024-1235 1300-1730 1800-1830", # testing flextime
+           "20240213 @TOTALWORK40.45", # testing totalwork
+           "20241001 1024-1235 1300-1730 1800-1830", # testing datetime calculation
+           "20241001 1024-9999 1300-1730 1800-1830", # testing invalid datetimes
+           "20251001 1024-1100 1300-1730 1800-1830", # testing date outside of range
            "@HOME Mo Di Mi Fr",
            "@WORK Do 1000-1800" # testing default duration on each work day
-           ] 
+           ]
     return out
