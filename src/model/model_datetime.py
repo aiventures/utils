@@ -1,7 +1,7 @@
 """models for datetime_util methods"""
 
 from datetime import datetime as DateTime
-from typing import Optional, Dict, Annotated, List, Literal
+from typing import Optional, Dict, Annotated, List, Literal, Tuple
 from enum import StrEnum
 from pydantic import BaseModel, TypeAdapter, Field, RootModel
 
@@ -52,6 +52,30 @@ class CalendarDayType(BaseModel):
     tags: Optional[List] = None # all tags that were extracted from info
     todos_raw: Optional[List] = None # all todo_txt strings from info
 
+class IndexType(StrEnum):
+    """ CalendarIndex  Type """
+    INDEX_NUM = "num"
+    INDEX_DAY_IN_YEAR = "day_in_year"
+    INDEX_DATETIME = "datetime"
+    INDEX_MONTH_DAY = "month_day"
+    INDEX_ALL = "all"
+
+class CalendarIndexType(BaseModel):
+    """ Summary Calendar Index """
+    datetime: Optional[DateTime] = None
+    year: Optional[int] = None
+    month: Optional[int] = None
+    day: Optional[int] = None
+    day_in_year: Optional[int] = None
+    calendar_week: Optional[int] = None
+    month_day: Optional[List|Tuple] = None
+    weekday: Optional[int] = None
+    holiday: Optional[str] = None
+    is_leap_year: Optional[bool] = None
+    is_holiday: Optional[bool] = None
+    is_weekend: Optional[bool] = None
+    is_workday: Optional[bool] = None
+
 class CalendarBuffer(BaseModel):
     """ Calendar Buffer """
     days_in_month: Optional[dict] = {}
@@ -59,20 +83,6 @@ class CalendarBuffer(BaseModel):
     year: Optional[int] = None
     dt_dec31 : Optional[DateTime] = None
     work_hours : Optional[float]  = None
-
-class CalendarIndex(BaseModel):
-    """ Summary Calendar Index """
-    year: Optional[int] = None
-    leap_year: Optional[bool] = None
-    month: Optional[int] = None
-    day: Optional[int] = None
-    day_in_year: Optional[int] = None
-    calendar_week: Optional[int] = None
-    weekday: Optional[int] = None
-    holiday: Optional[str] = None
-    is_holiday: Optional[bool] = None
-    is_weekend: Optional[bool] = None
-    is_workday: Optional[bool] = None
 
 # derived models
 MonthModel = Dict[str, CalendarDayType]

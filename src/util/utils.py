@@ -1,6 +1,7 @@
 """collection of utils"""
 
 import configparser
+import hashlib
 import logging
 import os
 import platform
@@ -8,18 +9,14 @@ import re
 import shlex
 import subprocess
 import sys
-import hashlib
 from configparser import Error as ConfigParserError
 from datetime import datetime as DateTime
-from enum import Enum
 from math import floor, inf, log
 from pathlib import Path
 
 from util import constants as C
 
 # from util.cmd_runner import CmdRunner
-from util.abstract_enum import AbstractEnum
-from util.constants import CygPathCmd
 from util.persistence import Persistence
 
 logger = logging.getLogger(__name__)
@@ -44,8 +41,13 @@ class Utils:
     """util collection"""
 
     @staticmethod
-    def get_hash(s:str):
-        """ calculates a hash string of transferred string """
+    def is_list_or_tuple(obj):
+        """check if item is list or tuple"""
+        return isinstance(obj, (list, tuple)) and not isinstance(obj, str)
+
+    @staticmethod
+    def get_hash(s: str):
+        """calculates a hash string of transferred string"""
         hash_object = hashlib.md5(s.encode())
         return hash_object.hexdigest()
 
@@ -465,7 +467,7 @@ class Utils:
             if len(_cmd_list) == 1:
                 return _cmd_list[0]
             else:
-                # todo add crtieria configuration to pick a preferred version
+                # TODO add crtieria configuration to pick a preferred version
                 logger.warning(f"[Utils] More than 1 executables for [{cmd}] found {_cmd_list}, returning 1st entry")
                 return _cmd_list[0]
         else:
@@ -835,4 +837,3 @@ if __name__ == "__main__":
     out = Utils.convert(C.Conversion.VIRTUAL_ENV.name)
     out = Utils.convert(C.Conversion.GIT_BRANCH.name)
     out = Utils.convert(C.Conversion.PYTHON.name)
-    pass

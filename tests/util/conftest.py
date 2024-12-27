@@ -10,6 +10,7 @@ from demo.demo_config import create_demo_config
 from util import constants as C
 from util.abstract_enum import AbstractEnum
 from util.bat_helper import BatHelper
+from util.calendar import CalendarIndex
 from util.config_env import ConfigEnv, Environment
 from util.persistence import Persistence
 from util.utils import Utils
@@ -259,23 +260,11 @@ def fixture_sample_stocks_data(fixture_config_env_testpath) -> Path:
 
 
 @pytest.fixture
-def fixture_sample_config_json(fixture_config_env_testpath, fixture_config_env_testconfig_template):
+def fixture_sample_config_json():
     """creates a sample json config file from existing one in test folder
     replacing absolute test paths, returns path to sample config json
     """
-    # _sample_config_json = str(os.path.join(fixture_config_env_testpath,"config_env_sample.json"))
-    # if os.path.isfile(_sample_config_json):
-    #     return _sample_config_json
-    # # create a sample file
-    # _sample_dict = Persistence.read_json(fixture_config_env_testconfig_template)
-    # # populate path
-    # _sample_dict["P_CONFIGTEST"]["p"]=str(fixture_config_env_testpath)
-    # # populate configfile 1 file with absolute path
-    # p_config_test1 = os.path.join(fixture_config_env_testpath,"file1_config.txt")
-    # _sample_dict["F_CONFIGTEST1"]["f"]=str(p_config_test1)
-    # # populate configfile3 with absolute path and file
-    # _sample_dict["F_CONFIGTEST3"]["p"]=str(fixture_config_env_testpath)
-    # Persistence.save_json(_sample_config_json,_sample_dict)
+
     return create_demo_config()
 
 
@@ -340,3 +329,17 @@ def fixture_day_info_list() -> list:
            "@WORK Do 1000-1800" # testing default duration on each work day
            ]
     return out
+
+@pytest.fixture(scope="module")
+def fixture_calendar2024_index() ->CalendarIndex:
+    """ fixture calendar index """
+    _year = 2024
+    _cal_index = CalendarIndex(_year)
+    return _cal_index
+
+@pytest.fixture(scope="module")
+def fixture_calendar2015_index() ->CalendarIndex:
+    """ fixtrue calendar index 2015 has 53 Calendar Weeks at start of year  """
+    _year = 2015
+    _cal_index = CalendarIndex(_year)
+    return _cal_index

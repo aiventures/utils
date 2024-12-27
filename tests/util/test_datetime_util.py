@@ -32,3 +32,10 @@ def test_add_shortcodes():
     add_shortcodes = {"SHORTCODE":"SHORTCODE_VALUE"}
     _enum = DTU.add_shortcodes(add_shortcodes)
     assert isinstance(_enum,EnumMeta)
+
+def test_isoweekyear():
+    """ testing the iso week year """
+    week_years = {}
+    for y in range (2000,2020):
+        week_years[y] = DTU.get_isoweekyear(y)
+    assert isinstance(week_years,dict)
