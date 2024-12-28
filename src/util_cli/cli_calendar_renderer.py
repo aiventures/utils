@@ -14,7 +14,7 @@ from rich.table import Table
 
 from cli.bootstrap_config import console_maker
 from cli.bootstrap_env import LOG_LEVEL
-from model.model_datetime import CalendarDayType, CellRenderOptionType
+from model.model_calendar import CalendarDayType, CellRenderOptionType
 from util import constants as C
 from util.datetime_util import (
     MONTHS,
@@ -164,12 +164,24 @@ class CalendarRenderer:
 
         return out
 
+    @staticmethod
+    def render_info(info: str) -> str:
+        """renders markdown information"""
+        # replace any icon shortcuts
+        out_s = Emoji.replace(info)
+        # drop durations
+        out_s = re.sub(REGEX_TIME_RANGE, "", out_s)
+        # drop date informations
+        out_s = re.sub(REGEX_DATE_RANGE, "", out_s)
+        out_s = re.sub(REGEX_YYYYMMDD, "", out_s)
+        # replace datetime informations
+        return out_s    
 
 class CalendarTableRenderer(CalendarRenderer):
     """subclass to render calendar as Markdown or Table"""
 
-    def __init__(self, calendar, num_months_in_table=12, icon_render="all"):
-        super().__init__(calendar, num_months_in_table, icon_render)
+    # def __init__(self, calendar, num_months_in_table=12, icon_render="all"):
+    #     super().__init__(calendar, num_months_in_table, icon_render)
 
     def _render_cell(self, month: int, day: int) -> str:
         _day_info = self._calendar.get_day_info(month, day)
@@ -207,19 +219,6 @@ class CalendarTableRenderer(CalendarRenderer):
                     _rendered_row.append(_rendered_cell)
                 _richtable.add_row(*_rendered_row)
             self._console.print(_richtable)
-
-    @staticmethod
-    def render_info(info: str) -> str:
-        """renders markdown information"""
-        # replace any icon shortcuts
-        out_s = Emoji.replace(info)
-        # drop durations
-        out_s = re.sub(REGEX_TIME_RANGE, "", out_s)
-        # drop date informations
-        out_s = re.sub(REGEX_DATE_RANGE, "", out_s)
-        out_s = re.sub(REGEX_YYYYMMDD, "", out_s)
-        # replace datetime informations
-        return out_s
 
     @staticmethod
     def create_markdown(day_info: CalendarDayType, add_info: bool = True) -> list:
@@ -277,7 +276,7 @@ class CalendarTableRenderer(CalendarRenderer):
         if _i_list and add_info:
             for _i in _i_list:
                 # render output string / drop items
-                _i = CalendarTableRenderer.render_info(_i)
+                _i = CalendarRenderer.render_info(_i)
                 out.append(f"  * {_i}  ")
 
         return out

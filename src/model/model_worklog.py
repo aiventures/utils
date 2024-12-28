@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from model.model_datetime import CalendarDayType, DayTypeEnum
+from model.model_calendar import CalendarDayType, DayTypeEnum
 
 
 class ShortCodes(StrEnum):

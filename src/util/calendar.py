@@ -9,7 +9,7 @@ from datetime import timedelta
 from enum import EnumMeta
 from typing import Any, Dict, List
 
-from model.model_datetime import (
+from model.model_calendar import (
     CalendarBuffer,
     CalendarDayDictType,
     CalendarDayType,
@@ -26,34 +26,13 @@ from model.model_worklog import ShortCodes
 from util import constants as C
 from util.datetime_util import DAYS_IN_MONTH, REGEX_TIME_RANGE, WEEKDAY, DateTimeUtil
 from util.utils import Utils
+from util.calendar_constants import (REGEX_DATE_RANGE,REGEX_YYYYMMDD,REGEX_WEEKDAY,REGEX_TOTAL_WORK,
+                                     REGEX_TODO_TXT,REGEX_TODO_TXT_REPLACE,
+                                     REGEX_TOTAL_WORK_REPLACE,REGEX_TAGS,WORKDAYS)
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
-
-WORKDAYS = ["onduty", "workday", "workday_home"]
-
-# # Patterns for Date Identification
-# # regex match any 8 Digit Groups preceded by space or start of line
-# # and not followed by a dash
-REGEX_YYYYMMDD = re.compile(r"((?<=\s)|(?<=^))(\d{8})(?!-)")
-REGEX_DATE_RANGE = re.compile(r"\d{8}-\d{8}")
-# # any combination of Upper/Lowercase String  in German
-REGEX_WEEKDAY = re.compile(r"[MDFS][oira]")
-# # REGEX TO Extract a TODO.TXT substring
-REGEX_TODO_TXT = r"@[Tt]\((.+)?\)"
-REGEX_TODO_TXT_REPLACE = r"@[Tt]\(.+?\)"
-# # REGEX for TAGS / excluding the TODOO TXT tag
-REGEX_TAGS = r"@([^Tt][a-zA-Z0-9_]+)"
-REGEX_TAGS_REPLACE = r"@[^Tt][a-zA-Z0-9_]+"
-
-# REGEX FOR TOTAL WORK
-REGEX_TOTAL_WORK = r"@TOTALWORK([0-9,.]+)"
-REGEX_TOTAL_WORK_REPLACE = r"@TOTALWORK[0-9,.]+"
-
-# Mode to Determine Calendar Week Indices
-CW_DROP  = "cw_drop" # drop 1st calendar week if in previous year
-CW_TRUNC = "cw_trunc"  # truncate to January 1
 
 class Calendar:
     """Calendar Object"""

@@ -13,7 +13,7 @@ import pytz
 from dateutil.parser import parse
 from dateutil.tz import tzoffset, tzutc
 
-from model.model_datetime import (
+from model.model_calendar import (
     CalendarIndexType,
 )
 from model.model_worklog import ShortCodes

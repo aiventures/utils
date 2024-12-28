@@ -113,3 +113,5 @@ CellRenderOptionField = Annotated[
 class CellRenderOptionType(RootModel):
     """Rendering Option for the calendar"""
     root: CellRenderOptionField = "all"
+
+    
