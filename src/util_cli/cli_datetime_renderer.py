@@ -15,7 +15,6 @@ from rich.table import Table
 from cli.bootstrap_config import console_maker
 from cli.bootstrap_env import LOG_LEVEL
 from model.model_datetime import CalendarDayType, CellRenderOptionType
-from model.model_datetime import DayTypeEnum as DTE
 from util import constants as C
 from util.datetime_util import (
     MONTHS,
@@ -23,7 +22,7 @@ from util.datetime_util import (
     REGEX_TIME_RANGE,
     WEEKDAY,
 )
-from util.calendar import (Calendar,REGEX_DATE_RANGE,REGEX_YYYYMMDD) 
+from util.calendar import Calendar, REGEX_DATE_RANGE, REGEX_YYYYMMDD
 from util.utils import Utils
 
 REGEX_ICON_STR = ":[a-zA-Z0-9_]+:"  # alphanum chars embraced in colons
@@ -64,6 +63,7 @@ OVERTIME_EMOJI_CODES = [
     "skull",
 ]
 OVERTIME_EMOJIS = [Emoji.replace(f":{e}:") for e in OVERTIME_EMOJI_CODES]
+
 
 class DAYTYPE_ICONS(StrEnum):
     """ICONS For Rich Table"""
@@ -164,6 +164,13 @@ class CalendarRenderer:
 
         return out
 
+
+class CalendarTableRenderer(CalendarRenderer):
+    """subclass to render calendar as Markdown or Table"""
+
+    def __init__(self, calendar, num_months_in_table=12, icon_render="all"):
+        super().__init__(calendar, num_months_in_table, icon_render)
+
     def _render_cell(self, month: int, day: int) -> str:
         _day_info = self._calendar.get_day_info(month, day)
         _day_type = _day_info.day_type
@@ -175,7 +182,7 @@ class CalendarRenderer:
         return rendered
 
     def render_calendar(self):
-        """renders the calendar"""
+        """renders the calendar as rich table"""
         _year = self.calendar.year
         _tables = self._calendar.get_calendar_table(self._num_month)
         for _table in _tables:
@@ -236,10 +243,10 @@ class CalendarRenderer:
         _i_list = day_info.info
         _s_i = None
         _d = day_info.duration
-        _indicator = ""        
+        _indicator = ""
         _overtime = ""
-        if isinstance(day_info.overtime,(float,int)):
-            _overtime = day_info.overtime            
+        if isinstance(day_info.overtime, (float, int)):
+            _overtime = day_info.overtime
             _indicator = CalendarRenderer.get_overtime_indicator(_overtime)
             _sign = "+"
             if _overtime < 0:
@@ -270,7 +277,7 @@ class CalendarRenderer:
         if _i_list and add_info:
             for _i in _i_list:
                 # render output string / drop items
-                _i = CalendarRenderer.render_info(_i)
+                _i = CalendarTableRenderer.render_info(_i)
                 out.append(f"  * {_i}  ")
 
         return out
@@ -292,6 +299,7 @@ class CalendarRenderer:
         for _month in _m_range:
             _has_info = len(_stats[_month]["days_with_info"]) > 0
             # only add month if there are infos in case only_info is selected
+            # @TODO put rendering options into a model
             if only_info is False or (only_info is True and _has_info):
                 out.append("\n---")
                 _month_emoji = Emoji.replace(MONTH_EMOJIS[_month])
@@ -303,7 +311,7 @@ class CalendarRenderer:
                 _day_info = _month_info.get(_day)
                 if only_info and _day_info.info is None:
                     continue
-                _markdown = CalendarRenderer.create_markdown(_day_info, add_info)
+                _markdown = CalendarTableRenderer.create_markdown(_day_info, add_info)
                 out.extend(_markdown)
 
         if month is None and only_info is False:
@@ -326,18 +334,18 @@ if __name__ == "__main__":
         "@HOME Mo Di Mi Fr 0800-1200 1300-1700",
         "@WORK Do 1000-1200 1300-1600",
         "@VACA 20240902-20240910",
-        "@PART 20240919-20240923", 
+        "@PART 20240919-20240923",
         "@VACA 20240927",
         "@WORK 20240929-20241004 :notebook: Test Info ",
         "@WORK 20240901 :red_circle: :green_square: MORE INFO 1230-1450 1615-1645",
         "@FLEX 20241010 JUST INFO 0934-1134",
     ]
-    _calendar = Calendar(2024, 8,_daytype_list)
+    _calendar = Calendar(2024, 8, _daytype_list)
     # rendering the calendar and markdown list
     # icon_render is "all","first","info","no_info"
-    _renderer = CalendarRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all")
+    _renderer = CalendarTableRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all")
     # render the calendar as table
-    if False:
+    if True:
         _renderer.render_calendar()
     # render the calendar as markdown list (only_info=only items with INFO will be printed)
     _markdown_list = _renderer.get_markdown(only_info=False)

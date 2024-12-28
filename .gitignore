@@ -11,6 +11,7 @@ test.md
 .vscode/
 config_env_sample.json
 playground/
+*.old
 # ignore test bat files
 **/test_data/bat/*.bat
 **/test_output/*.json
