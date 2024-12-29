@@ -22,6 +22,11 @@ REGEX_TAGS_REPLACE = r"@[^Tt][a-zA-Z0-9_]+"
 REGEX_TOTAL_WORK = r"@TOTALWORK([0-9,.]+)"
 REGEX_TOTAL_WORK_REPLACE = r"@TOTALWORK[0-9,.]+"
 
+# WEEK INDICES FOR LAST CALENDAR WEEK OF PREVIOUS YEAR AND 
+# FOLLOWING YEAR 
+WEEK_INDEX_PREVIOUS_YEAR = 0
+WEEK_INDEX_NEXT_YEAR = 99
+
 # Mode to Determine Calendar Week Indices
 CW_DROP = "cw_drop"  # drop 1st calendar week if in previous year
 CW_TRUNC = "cw_trunc"  # truncate to January 1

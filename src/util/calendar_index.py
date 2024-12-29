@@ -23,7 +23,7 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 class CalendarIndex():
     """ creating a calendar index """
-    def __init__(self,year:int=None,index_type:IndexType=IndexType.INDEX_NUM):
+    def __init__(self,year:int=None,index_type:IndexType=IndexType.INDEX_DAY_IN_YEAR):
 
         if year is None:
             year = DateTime.now().year
@@ -31,7 +31,7 @@ class CalendarIndex():
         self._index_type: IndexType = index_type
         self._year_index: Dict[int,CalendarIndexType] = DateTimeUtil.year_index(year)
         self._indices: dict = {IndexType.INDEX_DATETIME:[],
-                         IndexType.INDEX_NUM:[],
+                         IndexType.INDEX_DAY_IN_YEAR:[],
                          IndexType.INDEX_MONTH_DAY:[]}
         self._create_indices()
         _isoweek_year: dict = DateTimeUtil.get_isoweekyear(year)
@@ -86,7 +86,7 @@ class CalendarIndex():
         """ create the indices """
         for _idx,_idx_info in self._year_index.items():
             self._indices[IndexType.INDEX_DATETIME].append(_idx_info.datetime)
-            self._indices[IndexType.INDEX_NUM].append(_idx)
+            self._indices[IndexType.INDEX_DAY_IN_YEAR].append(_idx)
             self._indices[IndexType.INDEX_MONTH_DAY].append([_idx_info.month,_idx_info.day])
 
     @property
@@ -97,7 +97,7 @@ class CalendarIndex():
     def index_map(self,key_index:IndexType=None,value_index:IndexType=None)->dict:
         """ returns date index map  """
         if key_index is None:
-            key_index = IndexType.INDEX_NUM
+            key_index = IndexType.INDEX_DAY_IN_YEAR
         if value_index is None:
             value_index = self._index_type
 

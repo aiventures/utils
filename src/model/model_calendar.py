@@ -27,6 +27,7 @@ class DayTypeEnum(StrEnum):
     HOLIDAY = "FEIERTAG"
     FLEXTIME = "GLEITZEIT"  # Gleitzeit
     PARTTIME = "TEILZEIT"
+    ONDUTY = "BEREITSCHAFT" 
     INFO = "INFO"  # information attribute
 
 class CalendarDayType(BaseModel):
@@ -114,17 +115,24 @@ class CellRenderOptionType(RootModel):
     """Rendering Option for the calendar"""
     root: CellRenderOptionField = "all"
 
-class TreeRenderType(BaseModel):
+class CalendarColoringType(BaseModel):
     """ Model containing params to render the Output Tree (allowing to alter it) 
         also provides default values if used with defaults         
     """
-    month_line_style : Optional[str] = "bold bright_green"
-    week_line_style : Optional[str] = "blue"
-    day_line_style : Optional[str] = "gold1"
-    weekend_line_style : Optional[str] = "magenta"
-    vacation_line_style : Optional[str] = "bright_red"
+    # line styles are being used for lines in calendar trees
+    # Note that the line styles will only show up for lines of child elements    
+    MONTH_LINE_STYLE : Optional[str] = "bold bright_green"
+    WEEK_LINE_STYLE : Optional[str] = "blue"
+    DAY_LINE_STYLE : Optional[str] = "magenta"
+    # COLORS FOR THE DAYTYPES, KEYS CORRESPOND TO DAYTYPES
+    WEEKEND : Optional[str]= "bright_black"
+    WORKDAY : Optional[str]= "bright_green"
+    WORKDAY_HOME : Optional[str]= "light_sky_blue1"
+    VACATION : Optional[str]= "gold1"
+    HOLIDAY : Optional[str]= "deep_pink3"
+    FLEXTIME : Optional[str]= "bright_red"  # Gleitzeit
+    PARTTIME : Optional[str]= "bright_black"
+    ONDUTY : Optional[str]= "cyan1" # Bereitschaft
+    # INFO ITEM COLOR
+    INFO : Optional[str] = "white"
 
-
-
-
-    

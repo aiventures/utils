@@ -12,11 +12,10 @@ from rich.logging import RichHandler
 from rich.markdown import Markdown
 from rich.table import Table
 from rich.tree import Tree
-from rich.text import Text
 
 from cli.bootstrap_config import console_maker
 from cli.bootstrap_env import LOG_LEVEL
-from model.model_calendar import CalendarDayType, CellRenderOptionType, TreeRenderType, IndexType
+from model.model_calendar import CalendarDayType, CellRenderOptionType, CalendarColoringType, IndexType, DayTypeEnum
 from util import constants as C
 from util.emoji import EmojiUtil
 from util.datetime_util import (
@@ -65,7 +64,26 @@ OVERTIME_EMOJI_CODES = [
     "purple_square",
     "skull",
 ]
+
 OVERTIME_EMOJIS = [Emoji.replace(f":{e}:") for e in OVERTIME_EMOJI_CODES]
+
+OVERTIME_COLORS = [
+    "bright_black",
+    "navy_blue",
+    "blue",
+    "bright_blue",
+    "dark_green",
+    "green",
+    "bright_yellow",
+    "yellow",
+    "gold1",
+    "dark_orange3",
+    "red",
+    "bright_red",
+    "deep_pink1",
+    "bright_magenta",
+    "medium_orchid1",
+]
 
 
 class DAYTYPE_ICONS(StrEnum):
@@ -100,8 +118,14 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 class CalendarRenderer:
     """Rendering some datetime utils"""
 
-    def __init__(self, calendar: Calendar, num_months_in_table: int = 12, icon_render: CellRenderOptionType = "all",
-                 render_duration_bool=False):
+    def __init__(
+        self,
+        calendar: Calendar,
+        num_months_in_table: int = 12,
+        icon_render: CellRenderOptionType = "all",
+        render_duration: bool = False,
+        calendar_colors: CalendarColoringType = None,
+    ):
         try:
             _ = CellRenderOptionType.model_validate(icon_render)
         except ValidationError as e:
@@ -115,22 +139,36 @@ class CalendarRenderer:
         self._num_month: int = num_months_in_table
         self._console: Console = console_maker.get_console()
         self._icon_render: CellRenderOptionType = icon_render
-        self._render_duration : bool = False
+        self._render_duration: bool = render_duration
+
+        self._calendar_colors = None
+        if calendar_colors is None:
+            self._calendar_colors = CalendarColoringType()
+        else:
+            self._calendar_colors = calendar_colors
 
     @staticmethod
     def get_overtime_indicator(overtime: float) -> str:
         """calculates and renders overtime indicator"""
         _idx = Utils.get_nearby_index(overtime, OVERTIME_LEVELS)
         return OVERTIME_EMOJIS[_idx]
+    
+    @staticmethod
+    def get_overtime_color(overtime: float) -> str:
+        """calculates and returns an overtime color"""
+        _idx = Utils.get_nearby_index(overtime, OVERTIME_LEVELS)
+        return OVERTIME_COLORS[_idx]       
 
     @staticmethod
     def show_overtime_indicator() -> None:
         """displays the overtime indicator"""
+        _console = console_maker.get_console()
         _finished = False
         _overtime = -3.0
         while not _finished:
             _emoji = CalendarRenderer.get_overtime_indicator(_overtime)
-            print(f"[OVERTIME INDICATOR] {_emoji} [{round(_overtime,1)}]")
+            _color = CalendarRenderer.get_overtime_color(_overtime)
+            _console.print(f"[{_color}]\[OVERTIME INDICATOR] {_emoji} {_color} \[{round(_overtime,1)}]")
             _overtime += 0.1
             if _overtime > 2.5:
                 _finished = True
@@ -172,7 +210,9 @@ class CalendarRenderer:
 
     @staticmethod
     def render_info(info: str) -> str:
-        """renders markdown information"""
+        """renders markdown information by removing any informations stored elsewhere
+        (such as date information)
+        """
         # replace any icon shortcuts
         out_s = Emoji.replace(info)
         # drop durations
@@ -183,9 +223,8 @@ class CalendarRenderer:
         # replace datetime informations
         return out_s
 
-    def _render_day_info(self,day_info:CalendarDayType,formatting:str=None)->str:
-        """ renders day information as line """
-        out = ""
+    def _render_day_info(self, day_info: CalendarDayType, colorize: bool = False) -> str:
+        """renders day information as line"""
         _day_type = day_info.day_type
         _icon = DAYTYPE_ICONS[_day_type.name].value
         _dt = day_info.datetime_s
@@ -209,6 +248,8 @@ class CalendarRenderer:
             if isinstance(day_info.overtime, (float, int)):
                 _overtime = day_info.overtime
                 _indicator = CalendarRenderer.get_overtime_indicator(_overtime)
+                _color = CalendarRenderer.get_overtime_color(_overtime)
+                
                 _sign = "+"
                 if _overtime < 0:
                     _sign = ""
@@ -226,19 +267,25 @@ class CalendarRenderer:
                 _ds = f"{_indicator} {_time}/{_overtime}{_emoji_clock}"
             else:
                 _ds = ""
+            
+            if colorize is True and len(_ds)>0:
+                _ds = f"[{_color}]{_ds}[/]"
+
 
         if _h is None:
             _h = ""
         else:
             _h = f"/{str(_h).upper()}"
 
-        if formatting is False:
+        if colorize is False:
             out_s = f"{_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h} {_ds}"
-        # format some items 
+        # TODO format some items - Defined this in the Base Model
         else:
-            out_s = f"{_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h} {_ds}"
+            _day_type = day_info.day_type.name
+            _color = getattr(self._calendar_colors, _day_type)            
+            out_s = f"{_icon} [{_color}]{_dt} {_wd} KW{_w}/{_n} {_t}{_h}[/] {_ds}"
 
-        # @TODO xxx
+        # TODO xxx
         out_s = Emoji.replace(out_s)
         return out_s
 
@@ -286,54 +333,14 @@ class CalendarTableRenderer(CalendarRenderer):
                 _richtable.add_row(*_rendered_row)
             self._console.print(_richtable)
 
-    def create_markdown(self,day_info: CalendarDayType, add_info: bool = True) -> list:
+    def create_markdown(self, day_info: CalendarDayType, add_info: bool = True) -> list:
         """convert a day info into mark down
         Markdown and Rich Inline Colors can't be used together
         https://github.com/Textualize/rich/issues/3587
         """
 
-        # @TODO use from generic class
+        # TODO add logic to only display some parts
         out = []
-        # _day_type = day_info.day_type
-        # _icon = DAYTYPE_ICONS[_day_type.name].value
-
-        # _dt = day_info.datetime_s
-        # # split daytime
-        # _dt = f"{_dt[:4]}-{_dt[4:6]}-{_dt[6:8]}"
-        # _wd = WEEKDAY[day_info.weekday_num]
-        # _w = str(day_info.isoweeknum).zfill(2)
-        # _h = day_info.holiday
-        # _t = str(_day_type).upper()
-        # _n = str(day_info.day_in_year).zfill(3)
-        # _s_i = None
-        # _d = day_info.duration
-        # _indicator = ""
-        # _overtime = ""
-        # if isinstance(day_info.overtime, (float, int)):
-        #     _overtime = day_info.overtime
-        #     _indicator = CalendarRenderer.get_overtime_indicator(_overtime)
-        #     _sign = "+"
-        #     if _overtime < 0:
-        #         _sign = ""
-        #     _overtime = f"{_sign}{_overtime:.1f}"
-        # # render duration and duration as emoji clock
-        # if isinstance(_d, float) and _d > 0:
-        #     _emoji_hours = int(round(_d)) % 12
-        #     if _emoji_hours == 0:
-        #         _emoji_hours = 12
-        #     _emoji_clock = Emoji.replace(f":clock{str(_emoji_hours)}:")
-        #     _hours_s = str(int(_d // 1)).zfill(2)
-        #     _minutes_s = str(round((_d % 1) * 60)).zfill(2)
-        #     _time = f"{_hours_s}:{_minutes_s}"
-        #     _ds = f"{_indicator} {_time}/{_overtime}{_emoji_clock}"
-        # else:
-        #     _ds = ""
-        # if _h is None:
-        #     _h = ""
-        # else:
-        #     _h = f"/{str(_h).upper()}"
-
-        # _markdown = Emoji.replace(f"* {_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h} {_ds}")
         _markdown = f"* {self._render_day_info(day_info)}"
         out.append(_markdown)
 
@@ -355,6 +362,7 @@ class CalendarTableRenderer(CalendarRenderer):
         """
         _stats = self.calendar.stats
         out = []
+        # TODO REPLACE SELECTION OF BY USING DATE RANGE FILTER
         if month is None:
             out.append(f"# **CALENDAR {self.calendar.year}**")
             _m_range = range(12, 0, -1)
@@ -363,7 +371,7 @@ class CalendarTableRenderer(CalendarRenderer):
         for _month in _m_range:
             _has_info = len(_stats[_month]["days_with_info"]) > 0
             # only add month if there are infos in case only_info is selected
-            # @TODO put rendering options into a model
+            # TODO put rendering options into a model
             if only_info is False or (only_info is True and _has_info):
                 out.append("\n---")
                 _month_emoji = Emoji.replace(MONTH_EMOJIS[_month])
@@ -375,7 +383,7 @@ class CalendarTableRenderer(CalendarRenderer):
                 _day_info = _month_info.get(_day)
                 if only_info and _day_info.info is None:
                     continue
-                # @TODO REFACTOR
+                # TODO REFACTOR
                 _markdown = self.create_markdown(_day_info, add_info)
                 out.extend(_markdown)
 
@@ -387,29 +395,40 @@ class CalendarTableRenderer(CalendarRenderer):
 class CalendarTreeRenderer(CalendarRenderer):
     """subclass to render calendar as Markdown or Table"""
 
-    def __init__(self, calendar, num_months_in_table=12, icon_render="all", tree_render: TreeRenderType = None):
-        super().__init__(calendar, num_months_in_table, icon_render)
-        self._tree_render: TreeRenderType = TreeRenderType()
+    def __init__(
+        self,
+        calendar: Calendar,
+        num_months_in_table=12,
+        icon_render: CellRenderOptionType = "all",
+        render_duration: bool = False,
+        colorize: bool = True,
+        calendar_colors: CalendarColoringType = None,
+        tree: Tree = None,
+    ):
+        super().__init__(calendar, num_months_in_table, icon_render, render_duration, calendar_colors)
 
-        if tree_render is not None:
-            self._tree_render = tree_render
         self._calendar_index: CalendarIndex = CalendarIndex(year=self._year, index_type=IndexType.INDEX_MONTH_DAY)
         self._monthweek_map = self._calendar_index.monthweek_map()
+        # colorize lines
+        self._colorize = colorize
         self._tree = None
+        # TODO in future versions: Add Elements for a year to a multiyear tree
+        if tree is not None:
+            self._tree = tree
         self._month_nodes = {}
         self._week_nodes = {}
         self._day_nodes = {}
 
     def _render_tree_root(self):
         """renders the tree root"""
-        _m_style = self._tree_render.month_line_style
+        _m_style = self._calendar_colors.MONTH_LINE_STYLE
         _title = f":books:  [bold {_m_style}]CALENDAR {self._year}[/]"
         self._tree = Tree(label=_title, guide_style=_m_style)
 
     def _render_month_nodes(self):
         """renders the month node in the tree"""
-        _m_style = self._tree_render.month_line_style
-        _w_style = self._tree_render.week_line_style
+        _m_style = self._calendar_colors.MONTH_LINE_STYLE
+        _w_style = self._calendar_colors.WEEK_LINE_STYLE
         # add months to root node
         # TODO render only selcted months
 
@@ -417,35 +436,52 @@ class CalendarTreeRenderer(CalendarRenderer):
             _icon_num_months = EmojiUtil.int2emoji(_m, 2)
             _icon_month = Emoji.replace(MONTH_EMOJIS[_m])
             _node_month_txt = f"{_icon_num_months}  [bold {_m_style}]{MONTHS[_m]} {self._year}[/] {_icon_month}"
-            _month_node = self._tree.add(_node_month_txt,guide_style=_w_style)
+            _month_node = self._tree.add(_node_month_txt, guide_style=_w_style)
             self._month_nodes[_m] = _month_node
 
     def _render_week_nodes(self):
         """renders the calendar week nodes"""
-        _w_style = self._tree_render.week_line_style
-        _d_style = self._tree_render.day_line_style
-        for _m in range(1,13):
+        _w_style = self._calendar_colors.WEEK_LINE_STYLE
+        _d_style = self._calendar_colors.DAY_LINE_STYLE
+        for _m in range(1, 13):
             self._week_nodes[_m] = {}
             _week_info = self._monthweek_map[_m]
             _month = MONTHS_SHORT[_m]
             _month_node = self._month_nodes[_m]
-            for _cw,_cw_info in _week_info.items():
+            for _cw, _cw_info in _week_info.items():
                 _days = list(_cw_info.keys())
-                _d_min,_d_max = [str(min(_days)).zfill(2),str(max(_days)).zfill(2)]
+                _d_min, _d_max = [str(min(_days)).zfill(2), str(max(_days)).zfill(2)]
                 _week_node_txt = f"[{_w_style}]KW{str(_cw).zfill(2)}/{self._year} {_d_min}-{_d_max}.{_month}[/]"
-                _week_node = _month_node.add(_week_node_txt,guide_style=_d_style)
-                self._week_nodes[_m][_cw]=_week_node
+                _week_node = _month_node.add(_week_node_txt, guide_style=_d_style, highlight=False)
+                self._week_nodes[_m][_cw] = _week_node
 
-#  • 🗿 2024-01-06 Sa KW01/006 WOCHENENDE/DREIKÖNIG
-#  • 🟦 2024-01-05 Fr KW01/005 HOMEOFFICE 🟩 08:00/+0.0🕗
-#         pass
+    def _render_day_info_nodes(self,day_info:CalendarDayType,day_node:Tree)->None:
+        """ renders daily information list and attaches it to the day node """
+        # TODO add filter to only add node info according to certain add criteria TBD
+        _infos = day_info.info 
+        if _infos is None or not isinstance(_infos,list):
+            return
+        _color = self._calendar_colors.INFO
+        for _info in _infos:
+            _info_s = f"[{_color}]{_info}[/]"
+            day_node.add(_info_s)
+
+    def _get_line_style(self,day_info:CalendarDayType)->str:
+        """ returns the line style for any notes below day info """
+        # self._calendar_colors
+        _day_type = day_info.day_type.name
+        _color = getattr(self._calendar_colors,_day_type)
+        return _color
 
     def _render_day_nodes(self):
-        """ renders the single day nodes """
-        _d_style = self._tree_render.day_line_style
-        _month_day_index = list(self._calendar_index.index_map().values())
-        for _m in range(1,13):
+        """renders the single day nodes"""
+        _month_day_index = [tuple(_l) for _l in list(self._calendar_index.index_map().values())]
+        _weeknum_map = self._calendar_index.weeknum_map(IndexType.INDEX_MONTH_DAY)
+        # initialize the weekday node map
+        for _m in range(1, 13):
             self._day_nodes[_m] = {}
+        for _monthweek, _weeknum in _weeknum_map.items():
+            self._day_nodes[_monthweek[0]][_weeknum] = []
         # 🗿 2024-01-28 So KW04/028 WOCHENENDE
         # _title = f":books:  [bold {_m_style}]CALENDAR {self._year}[/]"
         # get all information and render it
@@ -453,8 +489,14 @@ class CalendarTreeRenderer(CalendarRenderer):
             _month = _md[0]
             _day = _md[1]
             _day_info = self._calendar.year_info[_month][_day]
-            _day_info_s = self._render_day_info(_day_info)
-            pass
+
+            _line_style = self._get_line_style(_day_info)
+            _day_info_s = self._render_day_info(_day_info, self._colorize)
+            _week_num = _weeknum_map[_md]
+            _week_node = self._week_nodes[_month][_week_num]
+            _day_node = _week_node.add(_day_info_s, guide_style=_line_style, highlight=False)            
+            self._day_nodes[_month][_week_num].append(_day_node)
+            self._render_day_info_nodes(_day_info,_day_node)
         pass
 
     def render_calendar(self):
@@ -466,6 +508,7 @@ class CalendarTreeRenderer(CalendarRenderer):
         # _w_style = self._tree_render.week_line_style
 
         self._console.print(self._tree)
+
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -479,11 +522,16 @@ if __name__ == "__main__":
     # sample creation of items. For real usage this would be a plain txt file
     # allowing easy and quick entry of items
     _daytype_list = [
-        "@HOME Mo Di Mi Fr 0800-1200 1300-1700",
-        "@WORK Do 1000-1200 1300-1600",
+        # "@HOME Mo Di Mi Fr 0800-1200 1300-1700",
+        # "@WORK Do 1000-1200 1300-1600",
         "@VACA 20240902-20240910",
         "@PART 20240919-20240923",
         "@VACA 20240927",
+        "@WORK 20241216 1000-1600 :notebook: 6H Test Info ",
+        "@WORK 20241217 1000-1700 :notebook: 7H Test Info ",
+        "@HOME 20241218 1000-1800 :notebook: 8H Test Info ",
+        "@WORK 20241219 1000-1900 :notebook: 9H Test Info ",
+        "@WORK 20241220 1000-2000 :notebook: 10H Test Info ",
         "@WORK 20240929-20241004 :notebook: Test Info ",
         "@WORK 20240901 :red_circle: :green_square: MORE INFO 1230-1450 1615-1645",
         "@FLEX 20241010 JUST INFO 0934-1134",
@@ -498,7 +546,7 @@ if __name__ == "__main__":
     # render the calendar as markdown list (only_info=only items with INFO will be printed)
     _markdown_list = _table_renderer.get_markdown(only_info=False)
     console = _table_renderer.console
-    if True:
+    if False:
         console.print(Markdown("\n".join(_markdown_list)))
     # overtime indicator
     if False:
@@ -511,5 +559,5 @@ if __name__ == "__main__":
         console.print(_stats_sum)
 
     if True:
-        _tree_renderer = CalendarTreeRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all")
+        _tree_renderer = CalendarTreeRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all",render_duration=True)
         _tree_renderer.render_calendar()

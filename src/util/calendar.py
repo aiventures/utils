@@ -26,13 +26,24 @@ from model.model_worklog import ShortCodes
 from util import constants as C
 from util.datetime_util import DAYS_IN_MONTH, REGEX_TIME_RANGE, WEEKDAY, DateTimeUtil
 from util.utils import Utils
-from util.calendar_constants import (REGEX_DATE_RANGE,REGEX_YYYYMMDD,REGEX_WEEKDAY,REGEX_TOTAL_WORK,
-                                     REGEX_TODO_TXT,REGEX_TODO_TXT_REPLACE,
-                                     REGEX_TOTAL_WORK_REPLACE,REGEX_TAGS,WORKDAYS)
+from util.calendar_constants import (
+    REGEX_DATE_RANGE,
+    REGEX_YYYYMMDD,
+    REGEX_WEEKDAY,
+    REGEX_TOTAL_WORK,
+    REGEX_TODO_TXT,
+    REGEX_TODO_TXT_REPLACE,
+    REGEX_TOTAL_WORK_REPLACE,
+    REGEX_TAGS,
+    WORKDAYS,
+    WEEK_INDEX_PREVIOUS_YEAR,
+    WEEK_INDEX_NEXT_YEAR,
+)
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+
 
 class Calendar:
     """Calendar Object"""
@@ -41,8 +52,7 @@ class Calendar:
     _cls_calendar_buffer: Dict[int, CalendarBuffer] = {}
 
     def __init__(
-        self, year: int = None, work_hours: float = 8.0, dayinfo_list: List[str] = None,
-        short_codes: EnumMeta = None
+        self, year: int = None, work_hours: float = 8.0, dayinfo_list: List[str] = None, short_codes: EnumMeta = None
     ):
         """Constructor"""
         if year is None:
@@ -67,7 +77,6 @@ class Calendar:
         self._set_daytypes()
         # adds information from info file
         self._add_info()
-
 
     @classmethod
     def _set_calendar_buffer(cls, year: int, work_hours: float = None) -> None:
@@ -222,7 +231,7 @@ class Calendar:
         _week_dates = self.get_weekdays(_weekdays_s)
         dates.extend(_week_dates)
         dates = list(tuple(sorted(dates)))
-        # remove all dates not in current calendar year 
+        # remove all dates not in current calendar year
         dates = [_d for _d in dates if _d.year == self._year]
         return dates
 
@@ -352,7 +361,7 @@ class Calendar:
             if isinstance(_total_duration, (float, int)) and isinstance(self._work_hours, (float, int)):
                 _day_info.overtime = _total_duration - self._work_hours
             _day_info.total_work = _total_work
-            # @TODO _day_info.overtime
+            # TODO _day_info.overtime
             if len(_s_adapted) > 0:
                 _day_info.info = [_s_adapted]
             _day_info.info_raw = [dayinfo]
@@ -606,45 +615,48 @@ class Calendar:
 
         return out
 
-class CalendarIndex():
-    """ creating a calendar index """
-    def __init__(self,year:int=None,index_type:IndexType=IndexType.INDEX_NUM):
 
+class CalendarIndex:
+    """creating a calendar index"""
+
+    def __init__(self, year: int = None, index_type: IndexType = IndexType.INDEX_DAY_IN_YEAR):
         if year is None:
             year = DateTime.now().year
         self._year: int = year
         self._index_type: IndexType = index_type
-        self._year_index: Dict[int,CalendarIndexType] = DateTimeUtil.year_index(year)
-        self._indices: dict = {IndexType.INDEX_DATETIME:[],
-                         IndexType.INDEX_NUM:[],
-                         IndexType.INDEX_MONTH_DAY:[]}
+        self._year_index: Dict[int, CalendarIndexType] = DateTimeUtil.year_index(year)
+        self._indices: dict = {
+            IndexType.INDEX_DATETIME: [],
+            IndexType.INDEX_DAY_IN_YEAR: [],
+            IndexType.INDEX_MONTH_DAY: [],
+        }
         self._create_indices()
         _isoweek_year: dict = DateTimeUtil.get_isoweekyear(year)
-        self._first_monday:DateTime = _isoweek_year["first_monday"]
-        self._last_monday:DateTime = _isoweek_year["last_monday"]
-        self._last_sunday:DateTime = _isoweek_year["last_day"]
-        self._num_weeks:int = _isoweek_year["weeks"]
-        self._is_leap_year:bool = self._year_index[1].is_leap_year
+        self._first_monday: DateTime = _isoweek_year["first_monday"]
+        self._last_monday: DateTime = _isoweek_year["last_monday"]
+        self._last_sunday: DateTime = _isoweek_year["last_day"]
+        self._num_weeks: int = _isoweek_year["weeks"]
+        self._is_leap_year: bool = self._year_index[1].is_leap_year
         self._days_in_year = 365
         if self._is_leap_year:
             self._days_in_year += 1
-        self._idx_first_monday:int= None
-        self._week_indices:list = None
-        self._month_indices:list = None
+        self._idx_first_monday: int = None
+        self._week_indices: list = None
+        self._month_indices: list = None
         self._calc_indices()
 
     @property
     def index_type(self):
-        """ index type getter """
+        """index type getter"""
         return self._index_type
 
     @index_type.setter
-    def index_type(self, index_type:IndexType):
-        """ setting the index type """
+    def index_type(self, index_type: IndexType):
+        """setting the index type"""
         self._index_type = index_type
 
     def _calc_indices(self):
-        """ calculates some indices """
+        """calculates some indices"""
 
         # calculate weekly indices
         if self._first_monday.year == self._year:
@@ -654,13 +666,13 @@ class CalendarIndex():
 
         _min_idx = self._idx_first_monday
         _max_idx = _min_idx + 7 * self._num_weeks
-        _week_indices = list(range(_min_idx,_max_idx+1,7))
+        _week_indices = list(range(_min_idx, _max_idx + 1, 7))
         self._week_indices = _week_indices
 
         # calculate annual indices
         _offset = 1
         _month_indices = [1]
-        for _m in range(1,13):
+        for _m in range(1, 13):
             _offset += DAYS_IN_MONTH[_m]
             if self._is_leap_year and _m == 2:
                 _offset += 1
@@ -668,48 +680,48 @@ class CalendarIndex():
         self._month_indices = _month_indices
 
     def _create_indices(self):
-        """ create the indices """
-        for _idx,_idx_info in self._year_index.items():
+        """create the indices"""
+        for _idx, _idx_info in self._year_index.items():
             self._indices[IndexType.INDEX_DATETIME].append(_idx_info.datetime)
-            self._indices[IndexType.INDEX_NUM].append(_idx)
-            self._indices[IndexType.INDEX_MONTH_DAY].append([_idx_info.month,_idx_info.day])
+            self._indices[IndexType.INDEX_DAY_IN_YEAR].append(_idx)
+            self._indices[IndexType.INDEX_MONTH_DAY].append([_idx_info.month, _idx_info.day])
 
     @property
     def index(self):
-        """ returns the generated index """
+        """returns the generated index"""
         return self._year_index
 
-    def index_map(self,key_index:IndexType=None,value_index:IndexType=None)->dict:
-        """ returns date index map  """
+    def index_map(self, key_index: IndexType = None, value_index: IndexType = None) -> dict:
+        """returns date index map"""
         if key_index is None:
-            key_index = IndexType.INDEX_NUM
+            key_index = IndexType.INDEX_DAY_IN_YEAR
         if value_index is None:
             value_index = self._index_type
 
-        return dict(zip(self._indices[key_index],self._indices[value_index]))
+        return dict(zip(self._indices[key_index], self._indices[value_index]))
 
-    def info(self,key:Any,index_type:IndexType=None)->CalendarIndexType:
-        """ retrieves calendar info using key  """
+    def info(self, key: Any, index_type: IndexType = None) -> CalendarIndexType:
+        """retrieves calendar info using key"""
         _info = None
         _index = None
 
         # convert string to date
-        if isinstance(key,str):
-            _date_str = re.findall(REGEX_YYYYMMDD,key)
+        if isinstance(key, str):
+            _date_str = re.findall(REGEX_YYYYMMDD, key)
             if len(_date_str) > 0:
-                key = DateTime.strptime(_date_str[0][1],"%Y%m%d")
+                key = DateTime.strptime(_date_str[0][1], "%Y%m%d")
 
         try:
-            if isinstance(key,int):
+            if isinstance(key, int):
                 _index = key - 1
             elif Utils.is_list_or_tuple(key):
                 _index = self._indices[IndexType.INDEX_MONTH_DAY].index(list(key))
-            elif isinstance(key,DateTime):
+            elif isinstance(key, DateTime):
                 _index = self._indices[IndexType.INDEX_DATETIME].index(key)
 
-            _info = self._year_index[_index+1]
+            _info = self._year_index[_index + 1]
 
-        except (ValueError,KeyError):
+        except (ValueError, KeyError):
             _index = None
             logger.warning(f"[CalendarIndex] Couldn't find Calendar index for [{key}]")
 
@@ -717,33 +729,34 @@ class CalendarIndex():
         if index_type is not None:
             _attribute = index_type.value
             try:
-                _info = getattr(_info,_attribute)
+                _info = getattr(_info, _attribute)
             except AttributeError:
                 logger.warning(f"[CalendarIndex] There is not attribute [{_attribute}] in CalendarIndexType")
+                _info = None
 
         return _info
 
-    def month_map(self,index_type:IndexType=None)->Dict[int,List[Any]]:
-        """ returns index keys by month   """
+    def month_map(self, index_type: IndexType = None) -> Dict[int, List[Any]]:
+        """returns index keys by month"""
         if index_type is None:
             index_type = self._index_type
         _map = self.index_map(value_index=index_type)
         _values = list(_map.values())
         _month_indices = self._month_indices
-        out = {_m: [] for _m in range(1,13)}
+        out = {_m: [] for _m in range(1, 13)}
         for _m in range(12):
             # adjust indices
             try:
-                _idx_from = max(_month_indices[_m]-1,0)
-                _idx_to = min(_month_indices[_m+1]-1,self._days_in_year)
-                out[_m+1]=_values[_idx_from:_idx_to]
+                _idx_from = max(_month_indices[_m] - 1, 0)
+                _idx_to = min(_month_indices[_m + 1] - 1, self._days_in_year)
+                out[_m + 1] = _values[_idx_from:_idx_to]
             except IndexError:
                 pass
 
         return out
 
-    def week_map(self,index_type:IndexType=None)->Dict[int,List[Any]]:
-        """ returns index keys by week  """
+    def week_map(self, index_type: IndexType = None) -> Dict[int, List[Any]]:
+        """returns index keys by week"""
         if index_type is None:
             index_type = self._index_type
         _map = self.index_map(value_index=index_type)
@@ -751,36 +764,35 @@ class CalendarIndex():
         _week_indices = self._week_indices
         _num_weeks = self._num_weeks
         # 0 and 99 are items reserved for previous year and follow up year
-        out = {_w: [] for _w in range(0,_num_weeks+1)}
-        out[99] = []
+        out = {_w: [] for _w in range(0, _num_weeks + 1)}
+        out[WEEK_INDEX_NEXT_YEAR] = []
         for _w in range(_num_weeks):
             # adjust indices
             try:
-                _idx_from = max(_week_indices[_w]-1,0)
-                _idx_to = min(_week_indices[_w+1]-1,self._days_in_year)
-                out[_w+1]=_values[_idx_from:_idx_to]
+                _idx_from = max(_week_indices[_w] - 1, 0)
+                _idx_to = min(_week_indices[_w + 1] - 1, self._days_in_year)
+                out[_w + 1] = _values[_idx_from:_idx_to]
             except IndexError:
                 pass
         # add edge case for lower end (=last week of previous calender year)
         if _week_indices[0] > 1:
-            out[00] = _values[:_week_indices[0]-1]
+            out[WEEK_INDEX_PREVIOUS_YEAR] = _values[: _week_indices[0] - 1]
         # add items to the last bucket, if the new calendar week 1 already begins in the old year
         if self._last_sunday.year == self._year:
-            _num_remaining_days = -1 *( DateTime(self._year,12,31) - self._last_sunday ).days
+            _num_remaining_days = -1 * (DateTime(self._year, 12, 31) - self._last_sunday).days
             if _num_remaining_days < 0:
-                out[99] = _values[_num_remaining_days:]
+                out[WEEK_INDEX_NEXT_YEAR] = _values[_num_remaining_days:]
 
         return out
 
-    def monthweek_map(self,index_type:IndexType=None)->Dict[int,Dict[int,Dict[int,Any]]]:
-        """Returns a Month Week Map (Month,Calendar,Week,Day)
-        """
+    def monthweek_map(self, index_type: IndexType = None) -> Dict[int, Dict[int, Dict[int, Any]]]:
+        """Returns a Month Week Map (Month,Calendar,Week,Day)"""
         if index_type is None:
             index_type = self._index_type
-        out = {_m: {} for _m in range(1,13)}
+        out = {_m: {} for _m in range(1, 13)}
         # brute force assignment loop over all items
         _weekmap = self.week_map(IndexType.INDEX_MONTH_DAY)
-        for _w,_md_list in _weekmap.items():
+        for _w, _md_list in _weekmap.items():
             for _md in _md_list:
                 _m = _md[0]
                 _d = _md[1]
@@ -789,6 +801,26 @@ class CalendarIndex():
                 if _w_dict is None:
                     _w_dict = {}
                     _m_dict[_w] = _w_dict
-                _value = self.info(_md,index_type)
+                _value = self.info(_md, index_type)
                 _w_dict[_d] = _value
+        return out
+
+    def weeknum_map(self, index_type: IndexType = None) -> Dict[Any, int]:
+        """Returns a lookup dict with index type as key, returning Calendar week"""
+        out = {}
+
+        if index_type is None:
+            index_type = self._index_type
+
+        _monthweek_map = self.monthweek_map(index_type)
+        for _m in range(1, 13):
+            _month_dict = _monthweek_map[_m]
+            for _w, _day_info in _month_dict.items():
+                _day_list = list(_day_info.values())
+                # convert key so it can be used as dict key
+                if index_type == IndexType.INDEX_MONTH_DAY:
+                    _day_list = [tuple(_d) for _d in _day_list]
+
+                _week_list = [_w] * len(_day_list)
+                out.update(dict(zip(_day_list, _week_list)))
         return out

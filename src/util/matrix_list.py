@@ -66,4 +66,4 @@ class MatrixList:
             out.append(_list[_row * num_cols : (_row + 1) * num_cols])
         return out
 
-    # @todo sum by rows and columns
+    # TODO sum by rows and columns
