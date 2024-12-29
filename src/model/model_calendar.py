@@ -114,4 +114,17 @@ class CellRenderOptionType(RootModel):
     """Rendering Option for the calendar"""
     root: CellRenderOptionField = "all"
 
+class TreeRenderType(BaseModel):
+    """ Model containing params to render the Output Tree (allowing to alter it) 
+        also provides default values if used with defaults         
+    """
+    month_line_style : Optional[str] = "bold bright_green"
+    week_line_style : Optional[str] = "blue"
+    day_line_style : Optional[str] = "gold1"
+    weekend_line_style : Optional[str] = "magenta"
+    vacation_line_style : Optional[str] = "bright_red"
+
+
+
+
     

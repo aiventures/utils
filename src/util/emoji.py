@@ -37,10 +37,12 @@ class EmojiUtil:
     """ Emoji Helper """
 
     @staticmethod
-    def int2emoji(number:int)->str:
+    def int2emoji(number:int,num_digits:int=None)->str:
         """ converting an int to an emoji """
         out=""
         s_int = str(number)
+        if num_digits is not None:
+            s_int = s_int.zfill(num_digits)
         for s in s_int:
             out += Emoji.replace(f":{EMOJI_NUMBERS[int(s)]}:")
         return out

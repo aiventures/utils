@@ -222,6 +222,8 @@ class Calendar:
         _week_dates = self.get_weekdays(_weekdays_s)
         dates.extend(_week_dates)
         dates = list(tuple(sorted(dates)))
+        # remove all dates not in current calendar year 
+        dates = [_d for _d in dates if _d.year == self._year]
         return dates
 
     def _parse_shortcodes(self) -> None:

@@ -11,36 +11,39 @@ from rich.emoji import Emoji
 from rich.logging import RichHandler
 from rich.markdown import Markdown
 from rich.table import Table
+from rich.tree import Tree
+from rich.text import Text
 
 from cli.bootstrap_config import console_maker
 from cli.bootstrap_env import LOG_LEVEL
-from model.model_calendar import CalendarDayType, CellRenderOptionType
+from model.model_calendar import CalendarDayType, CellRenderOptionType, TreeRenderType, IndexType
 from util import constants as C
+from util.emoji import EmojiUtil
 from util.datetime_util import (
     MONTHS,
     MONTHS_SHORT,
     REGEX_TIME_RANGE,
     WEEKDAY,
 )
-from util.calendar import Calendar, REGEX_DATE_RANGE, REGEX_YYYYMMDD
+from util.calendar import Calendar, CalendarIndex, REGEX_DATE_RANGE, REGEX_YYYYMMDD
 from util.utils import Utils
 
 REGEX_ICON_STR = ":[a-zA-Z0-9_]+:"  # alphanum chars embraced in colons
 EMOJI_INFO = ":pencil:"
 
 MONTH_EMOJIS = {
-    1: ":snowman:",
+    1: ":snowflake:",
     2: ":umbrella_with_rain_drops:",
     3: ":seedling:",
     4: ":leafy_green:",
     5: ":man_biking:",
     6: ":smiling_face_with_sunglasses:",
     7: ":sun_with_face:",
-    8: ":beach_with_umbrella:",
-    9: ":sunflower:",
+    8: ":sunflower:",
+    9: ":sheaf_of_rice:",
     10: ":fallen_leaf:",
     11: ":umbrella_with_rain_drops:",
-    12: ":zzz:",
+    12: ":evergreen_tree:",
 }
 
 # OVERTIME THRESHOLD INDICATOR
@@ -97,7 +100,8 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 class CalendarRenderer:
     """Rendering some datetime utils"""
 
-    def __init__(self, calendar: Calendar, num_months_in_table: int = 12, icon_render: CellRenderOptionType = "all"):
+    def __init__(self, calendar: Calendar, num_months_in_table: int = 12, icon_render: CellRenderOptionType = "all",
+                 render_duration_bool=False):
         try:
             _ = CellRenderOptionType.model_validate(icon_render)
         except ValidationError as e:
@@ -106,10 +110,12 @@ class CalendarRenderer:
             logger.warning(_err)
             return
 
-        self._calendar = calendar
-        self._num_month = num_months_in_table
-        self._console = console_maker.get_console()
-        self._icon_render = icon_render
+        self._calendar: Calendar = calendar
+        self._year: int = calendar.year
+        self._num_month: int = num_months_in_table
+        self._console: Console = console_maker.get_console()
+        self._icon_render: CellRenderOptionType = icon_render
+        self._render_duration : bool = False
 
     @staticmethod
     def get_overtime_indicator(overtime: float) -> str:
@@ -175,7 +181,67 @@ class CalendarRenderer:
         out_s = re.sub(REGEX_DATE_RANGE, "", out_s)
         out_s = re.sub(REGEX_YYYYMMDD, "", out_s)
         # replace datetime informations
-        return out_s    
+        return out_s
+
+    def _render_day_info(self,day_info:CalendarDayType,formatting:str=None)->str:
+        """ renders day information as line """
+        out = ""
+        _day_type = day_info.day_type
+        _icon = DAYTYPE_ICONS[_day_type.name].value
+        _dt = day_info.datetime_s
+        # split daytime
+        _dt = f"{_dt[:4]}-{_dt[4:6]}-{_dt[6:8]}"
+        _wd = WEEKDAY[day_info.weekday_num]
+        _w = str(day_info.isoweeknum).zfill(2)
+        _h = day_info.holiday
+        _t = str(_day_type).upper()
+        _n = str(day_info.day_in_year).zfill(3)
+        _i_list = day_info.info
+        _s_i = None
+        _ds = ""
+
+        # render duration
+        if self._render_duration:
+            _d = day_info.duration
+            _indicator = ""
+            _overtime = ""
+
+            if isinstance(day_info.overtime, (float, int)):
+                _overtime = day_info.overtime
+                _indicator = CalendarRenderer.get_overtime_indicator(_overtime)
+                _sign = "+"
+                if _overtime < 0:
+                    _sign = ""
+                _overtime = f"{_sign}{_overtime:.1f}"
+
+            # render duration and duration as emoji clock
+            if isinstance(_d, float) and _d > 0:
+                _emoji_hours = int(round(_d)) % 12
+                if _emoji_hours == 0:
+                    _emoji_hours = 12
+                _emoji_clock = Emoji.replace(f":clock{str(_emoji_hours)}:")
+                _hours_s = str(int(_d // 1)).zfill(2)
+                _minutes_s = str(round((_d % 1) * 60)).zfill(2)
+                _time = f"{_hours_s}:{_minutes_s}"
+                _ds = f"{_indicator} {_time}/{_overtime}{_emoji_clock}"
+            else:
+                _ds = ""
+
+        if _h is None:
+            _h = ""
+        else:
+            _h = f"/{str(_h).upper()}"
+
+        if formatting is False:
+            out_s = f"{_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h} {_ds}"
+        # format some items 
+        else:
+            out_s = f"{_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h} {_ds}"
+
+        # @TODO xxx
+        out_s = Emoji.replace(out_s)
+        return out_s
+
 
 class CalendarTableRenderer(CalendarRenderer):
     """subclass to render calendar as Markdown or Table"""
@@ -220,59 +286,58 @@ class CalendarTableRenderer(CalendarRenderer):
                 _richtable.add_row(*_rendered_row)
             self._console.print(_richtable)
 
-    @staticmethod
-    def create_markdown(day_info: CalendarDayType, add_info: bool = True) -> list:
+    def create_markdown(self,day_info: CalendarDayType, add_info: bool = True) -> list:
         """convert a day info into mark down
         Markdown and Rich Inline Colors can't be used together
         https://github.com/Textualize/rich/issues/3587
         """
 
+        # @TODO use from generic class
         out = []
-        _day_type = day_info.day_type
-        _icon = DAYTYPE_ICONS[_day_type.name].value
+        # _day_type = day_info.day_type
+        # _icon = DAYTYPE_ICONS[_day_type.name].value
 
-        _dt = day_info.datetime_s
-        # split daytime
-        _dt = f"{_dt[:4]}-{_dt[4:6]}-{_dt[6:8]}"
-        _wd = WEEKDAY[day_info.weekday_num]
-        _w = str(day_info.isoweeknum).zfill(2)
-        _h = day_info.holiday
-        _t = str(_day_type).upper()
-        _n = str(day_info.day_in_year).zfill(3)
-        _i_list = day_info.info
-        _s_i = None
-        _d = day_info.duration
-        _indicator = ""
-        _overtime = ""
-        if isinstance(day_info.overtime, (float, int)):
-            _overtime = day_info.overtime
-            _indicator = CalendarRenderer.get_overtime_indicator(_overtime)
-            _sign = "+"
-            if _overtime < 0:
-                _sign = ""
-            _overtime = f"{_sign}{_overtime:.1f}"
+        # _dt = day_info.datetime_s
+        # # split daytime
+        # _dt = f"{_dt[:4]}-{_dt[4:6]}-{_dt[6:8]}"
+        # _wd = WEEKDAY[day_info.weekday_num]
+        # _w = str(day_info.isoweeknum).zfill(2)
+        # _h = day_info.holiday
+        # _t = str(_day_type).upper()
+        # _n = str(day_info.day_in_year).zfill(3)
+        # _s_i = None
+        # _d = day_info.duration
+        # _indicator = ""
+        # _overtime = ""
+        # if isinstance(day_info.overtime, (float, int)):
+        #     _overtime = day_info.overtime
+        #     _indicator = CalendarRenderer.get_overtime_indicator(_overtime)
+        #     _sign = "+"
+        #     if _overtime < 0:
+        #         _sign = ""
+        #     _overtime = f"{_sign}{_overtime:.1f}"
+        # # render duration and duration as emoji clock
+        # if isinstance(_d, float) and _d > 0:
+        #     _emoji_hours = int(round(_d)) % 12
+        #     if _emoji_hours == 0:
+        #         _emoji_hours = 12
+        #     _emoji_clock = Emoji.replace(f":clock{str(_emoji_hours)}:")
+        #     _hours_s = str(int(_d // 1)).zfill(2)
+        #     _minutes_s = str(round((_d % 1) * 60)).zfill(2)
+        #     _time = f"{_hours_s}:{_minutes_s}"
+        #     _ds = f"{_indicator} {_time}/{_overtime}{_emoji_clock}"
+        # else:
+        #     _ds = ""
+        # if _h is None:
+        #     _h = ""
+        # else:
+        #     _h = f"/{str(_h).upper()}"
 
-        # render duration and duration as emoji clock
-        if isinstance(_d, float) and _d > 0:
-            _emoji_hours = int(round(_d)) % 12
-            if _emoji_hours == 0:
-                _emoji_hours = 12
-            _emoji_clock = Emoji.replace(f":clock{str(_emoji_hours)}:")
-            _hours_s = str(int(_d // 1)).zfill(2)
-            _minutes_s = str(round((_d % 1) * 60)).zfill(2)
-            _time = f"{_hours_s}:{_minutes_s}"
-            _ds = f"{_indicator} {_time}/{_overtime}{_emoji_clock}"
-        else:
-            _ds = ""
-
-        if _h is None:
-            _h = ""
-        else:
-            _h = f"/{str(_h).upper()}"
-        # @TODO RENDER DURATION WITH CLOCK EMOJI
-        _markdown = Emoji.replace(f"* {_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h} {_ds}")
+        # _markdown = Emoji.replace(f"* {_icon} {_dt} {_wd} KW{_w}/{_n} {_t}{_h} {_ds}")
+        _markdown = f"* {self._render_day_info(day_info)}"
         out.append(_markdown)
 
+        _i_list = day_info.info
         if _i_list and add_info:
             for _i in _i_list:
                 # render output string / drop items
@@ -310,13 +375,97 @@ class CalendarTableRenderer(CalendarRenderer):
                 _day_info = _month_info.get(_day)
                 if only_info and _day_info.info is None:
                     continue
-                _markdown = CalendarTableRenderer.create_markdown(_day_info, add_info)
+                # @TODO REFACTOR
+                _markdown = self.create_markdown(_day_info, add_info)
                 out.extend(_markdown)
 
         if month is None and only_info is False:
             out.append("--- ")
         return out
 
+
+class CalendarTreeRenderer(CalendarRenderer):
+    """subclass to render calendar as Markdown or Table"""
+
+    def __init__(self, calendar, num_months_in_table=12, icon_render="all", tree_render: TreeRenderType = None):
+        super().__init__(calendar, num_months_in_table, icon_render)
+        self._tree_render: TreeRenderType = TreeRenderType()
+
+        if tree_render is not None:
+            self._tree_render = tree_render
+        self._calendar_index: CalendarIndex = CalendarIndex(year=self._year, index_type=IndexType.INDEX_MONTH_DAY)
+        self._monthweek_map = self._calendar_index.monthweek_map()
+        self._tree = None
+        self._month_nodes = {}
+        self._week_nodes = {}
+        self._day_nodes = {}
+
+    def _render_tree_root(self):
+        """renders the tree root"""
+        _m_style = self._tree_render.month_line_style
+        _title = f":books:  [bold {_m_style}]CALENDAR {self._year}[/]"
+        self._tree = Tree(label=_title, guide_style=_m_style)
+
+    def _render_month_nodes(self):
+        """renders the month node in the tree"""
+        _m_style = self._tree_render.month_line_style
+        _w_style = self._tree_render.week_line_style
+        # add months to root node
+        # TODO render only selcted months
+
+        for _m in range(1, 13):
+            _icon_num_months = EmojiUtil.int2emoji(_m, 2)
+            _icon_month = Emoji.replace(MONTH_EMOJIS[_m])
+            _node_month_txt = f"{_icon_num_months}  [bold {_m_style}]{MONTHS[_m]} {self._year}[/] {_icon_month}"
+            _month_node = self._tree.add(_node_month_txt,guide_style=_w_style)
+            self._month_nodes[_m] = _month_node
+
+    def _render_week_nodes(self):
+        """renders the calendar week nodes"""
+        _w_style = self._tree_render.week_line_style
+        _d_style = self._tree_render.day_line_style
+        for _m in range(1,13):
+            self._week_nodes[_m] = {}
+            _week_info = self._monthweek_map[_m]
+            _month = MONTHS_SHORT[_m]
+            _month_node = self._month_nodes[_m]
+            for _cw,_cw_info in _week_info.items():
+                _days = list(_cw_info.keys())
+                _d_min,_d_max = [str(min(_days)).zfill(2),str(max(_days)).zfill(2)]
+                _week_node_txt = f"[{_w_style}]KW{str(_cw).zfill(2)}/{self._year} {_d_min}-{_d_max}.{_month}[/]"
+                _week_node = _month_node.add(_week_node_txt,guide_style=_d_style)
+                self._week_nodes[_m][_cw]=_week_node
+
+#  • 🗿 2024-01-06 Sa KW01/006 WOCHENENDE/DREIKÖNIG
+#  • 🟦 2024-01-05 Fr KW01/005 HOMEOFFICE 🟩 08:00/+0.0🕗
+#         pass
+
+    def _render_day_nodes(self):
+        """ renders the single day nodes """
+        _d_style = self._tree_render.day_line_style
+        _month_day_index = list(self._calendar_index.index_map().values())
+        for _m in range(1,13):
+            self._day_nodes[_m] = {}
+        # 🗿 2024-01-28 So KW04/028 WOCHENENDE
+        # _title = f":books:  [bold {_m_style}]CALENDAR {self._year}[/]"
+        # get all information and render it
+        for _md in _month_day_index:
+            _month = _md[0]
+            _day = _md[1]
+            _day_info = self._calendar.year_info[_month][_day]
+            _day_info_s = self._render_day_info(_day_info)
+            pass
+        pass
+
+    def render_calendar(self):
+        """renders the calendar as tre"""
+        self._render_tree_root()
+        self._render_month_nodes()
+        self._render_week_nodes()
+        self._render_day_nodes()
+        # _w_style = self._tree_render.week_line_style
+
+        self._console.print(self._tree)
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -342,13 +491,13 @@ if __name__ == "__main__":
     _calendar = Calendar(2024, 8, _daytype_list)
     # rendering the calendar and markdown list
     # icon_render is "all","first","info","no_info"
-    _renderer = CalendarTableRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all")
+    _table_renderer = CalendarTableRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all")
     # render the calendar as table
-    if True:
-        _renderer.render_calendar()
+    if False:
+        _table_renderer.render_calendar()
     # render the calendar as markdown list (only_info=only items with INFO will be printed)
-    _markdown_list = _renderer.get_markdown(only_info=False)
-    console = _renderer.console
+    _markdown_list = _table_renderer.get_markdown(only_info=False)
+    console = _table_renderer.console
     if True:
         console.print(Markdown("\n".join(_markdown_list)))
     # overtime indicator
@@ -356,7 +505,11 @@ if __name__ == "__main__":
         CalendarRenderer.show_overtime_indicator()
     # stats
     if False:
-        _stats = _renderer.calendar.stats
+        _stats = _table_renderer.calendar.stats
         console.print(_stats)
-        _stats_sum = _renderer.calendar.stats_sum
+        _stats_sum = _table_renderer.calendar.stats_sum
         console.print(_stats_sum)
+
+    if True:
+        _tree_renderer = CalendarTreeRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all")
+        _tree_renderer.render_calendar()

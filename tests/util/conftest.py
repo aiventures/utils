@@ -325,6 +325,7 @@ def fixture_day_info_list() -> list:
            "20241001 1024-1235 1300-1730 1800-1830", # testing datetime calculation
            "20241001 1024-9999 1300-1730 1800-1830", # testing invalid datetimes
            "20251001 1024-1100 1300-1730 1800-1830", # testing date outside of range
+           "20231211-20240103 TESTING CALENDAR 2023",
            "@HOME Mo Di Mi Fr",
            "@WORK Do 1000-1800" # testing default duration on each work day
            ]
