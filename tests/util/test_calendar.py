@@ -6,7 +6,8 @@ import pytest
 from pydantic import ValidationError
 
 from model.model_calendar import IndexType, MonthAdapter
-from util.calendar import Calendar, CalendarIndex
+from util.calendar import Calendar
+from util.calendar_index import CalendarIndex
 
 # from util_cli.cli_datetime_renderer import CalendarRenderer
 
