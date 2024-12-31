@@ -8,6 +8,7 @@ from pydantic import BaseModel, TypeAdapter, Field, RootModel
 
 class DayTypeEnumEN(StrEnum):
     """Type of Day"""
+
     WEEKEND = "weekend"
     WORKDAY = "workday"
     WORKDAY_HOME = "workday_home"
@@ -15,11 +16,13 @@ class DayTypeEnumEN(StrEnum):
     HOLIDAY = "holiday"
     FLEXTIME = "flextime"  # Gleitzeit
     PARTTIME = "parttime"
-    ONDUTY = "onduty" # Schicht
+    ONDUTY = "onduty"  # Schicht
     INFO = "info"  # information attribute
+
 
 class DayTypeEnum(StrEnum):
     """Type of Day"""
+
     WEEKEND = "WOCHENENDE"
     WORKDAY = "ARBEITSTAG"
     WORKDAY_HOME = "HOMEOFFICE"
@@ -27,11 +30,13 @@ class DayTypeEnum(StrEnum):
     HOLIDAY = "FEIERTAG"
     FLEXTIME = "GLEITZEIT"  # Gleitzeit
     PARTTIME = "TEILZEIT"
-    ONDUTY = "BEREITSCHAFT" 
+    ONDUTY = "BEREITSCHAFT"
     INFO = "INFO"  # information attribute
+
 
 class CalendarDayType(BaseModel):
     """Calendar Day Model"""
+
     datetime_s: Optional[str] = None  # string representation YYYYMMDD
     datetime: Optional[DateTime] = None
     year: Optional[int] = None
@@ -47,29 +52,33 @@ class CalendarDayType(BaseModel):
     duration: Optional[float] = None  # durations derived from info
     work_hours: Optional[float] = None
     overtime: Optional[float] = None  # Overtime Calculation
-    total_work: Optional[float] = None # Cumulated overtime
+    total_work: Optional[float] = None  # Cumulated overtime
     info: Optional[List] = None  # Additional Info
     info_raw: Optional[List] = None  # Original Info
-    tags: Optional[List] = None # all tags that were extracted from info
-    todos_raw: Optional[List] = None # all todo_txt strings from info
+    tags: Optional[List] = None  # all tags that were extracted from info
+    todos_raw: Optional[List] = None  # all todo_txt strings from info
+
 
 class IndexType(StrEnum):
-    """ CalendarIndex  Type """
+    """CalendarIndex  Type"""
+
     INDEX_NUM = "num"
     INDEX_DAY_IN_YEAR = "day_in_year"
     INDEX_DATETIME = "datetime"
     INDEX_MONTH_DAY = "month_day"
     INDEX_ALL = "all"
 
+
 class CalendarIndexType(BaseModel):
-    """ Summary Calendar Index """
+    """Summary Calendar Index"""
+
     datetime: Optional[DateTime] = None
     year: Optional[int] = None
     month: Optional[int] = None
     day: Optional[int] = None
     day_in_year: Optional[int] = None
     calendar_week: Optional[int] = None
-    month_day: Optional[List|Tuple] = None
+    month_day: Optional[List | Tuple] = None
     weekday: Optional[int] = None
     holiday: Optional[str] = None
     is_leap_year: Optional[bool] = None
@@ -77,13 +86,16 @@ class CalendarIndexType(BaseModel):
     is_weekend: Optional[bool] = None
     is_workday: Optional[bool] = None
 
+
 class CalendarBuffer(BaseModel):
-    """ Calendar Buffer """
+    """Calendar Buffer"""
+
     days_in_month: Optional[dict] = {}
     holidays: Optional[dict] = {}
     year: Optional[int] = None
-    dt_dec31 : Optional[DateTime] = None
-    work_hours : Optional[float]  = None
+    dt_dec31: Optional[DateTime] = None
+    work_hours: Optional[float] = None
+
 
 # derived models
 MonthModel = Dict[str, CalendarDayType]
@@ -94,9 +106,9 @@ YearAdapter = TypeAdapter(YearModel)
 YearModelType = Annotated[YearModel, YearAdapter]
 
 # lists of dayinfo
-CalendarDayDictModel = Dict[str,CalendarDayType]
+CalendarDayDictModel = Dict[str, CalendarDayType]
 CalendarDayDictAdapter = TypeAdapter(CalendarDayDictModel)
-CalendarDayDictType = Annotated[CalendarDayDictModel,CalendarDayDictAdapter]
+CalendarDayDictType = Annotated[CalendarDayDictModel, CalendarDayDictAdapter]
 
 DayTypeDictModel = Dict[DayTypeEnum, List[str]]
 DayTypeDictAdapter = TypeAdapter(DayTypeDictModel)
@@ -116,23 +128,53 @@ class CellRenderOptionType(RootModel):
     root: CellRenderOptionField = "all"
 
 class CalendarColoringType(BaseModel):
-    """ Model containing params to render the Output Tree (allowing to alter it) 
-        also provides default values if used with defaults         
+    """Model containing params to render the Output Tree (allowing to alter it)
+    also provides default values if used with defaults
     """
+
     # line styles are being used for lines in calendar trees
-    # Note that the line styles will only show up for lines of child elements    
-    MONTH_LINE_STYLE : Optional[str] = "bold bright_green"
-    WEEK_LINE_STYLE : Optional[str] = "blue"
-    DAY_LINE_STYLE : Optional[str] = "magenta"
+    # Note that the line styles will only show up for lines of child elements
+    MONTH_LINE_STYLE: Optional[str] = "bold bright_green"
+    WEEK_LINE_STYLE: Optional[str] = "blue"
+    DAY_LINE_STYLE: Optional[str] = "magenta"
     # COLORS FOR THE DAYTYPES, KEYS CORRESPOND TO DAYTYPES
-    WEEKEND : Optional[str]= "bright_black"
-    WORKDAY : Optional[str]= "bright_green"
-    WORKDAY_HOME : Optional[str]= "light_sky_blue1"
-    VACATION : Optional[str]= "gold1"
-    HOLIDAY : Optional[str]= "deep_pink3"
-    FLEXTIME : Optional[str]= "bright_red"  # Gleitzeit
-    PARTTIME : Optional[str]= "bright_black"
-    ONDUTY : Optional[str]= "cyan1" # Bereitschaft
+    WEEKEND: Optional[str] = "bright_black"
+    WORKDAY: Optional[str] = "bright_green"
+    WORKDAY_HOME: Optional[str] = "light_sky_blue1"
+    VACATION: Optional[str] = "gold1"
+    HOLIDAY: Optional[str] = "deep_pink3"
+    FLEXTIME: Optional[str] = "bright_red"  # Gleitzeit
+    PARTTIME: Optional[str] = "bright_black"
+    ONDUTY: Optional[str] = "cyan1"  # Bereitschaft
     # INFO ITEM COLOR
-    INFO : Optional[str] = "white"
+    INFO: Optional[str] = "white"
+
+class CalendarRegex(StrEnum):
+    """ class to parse date related strings as used by calendar filter """
+    # note that the definition of order here is important 
+    # as the regex parsing requires a certain order 
+
+    # capture characters before and after separator (:) 
+    REGEX_FROM_TO: Optional[str] = r"(.+)?:(.+)"
+
+    # #1 NOW or now as marker for today so you can construct things like now-1d
+    REGEX_NOW: Optional[str] = r"(now|NOW)"
+
+    # #2 YYYYMMDD with some date validations
+    REGEX_YYYYMMDD: Optional[str] = r"[12]\d{3}[01][0-9][0-3]\d"
+
+    # #3 MMDD
+    REGEX_MMDD: Optional[str] = r"[01]\d{3}"
+
+    # #4 Parsing weeks, months, days,years offset +/-(NUMBER)(OFFSET UNIT)
+    # But excluding second letters from week days so as to allow excusion
+    # for week day Prefixes Mo Di Mi ... Mo Tu We ...
+    # Lower case: relative to from date 1w = -7days
+    # Upper Case: relative calendar 1W = Date of monday of this week
+    REGEX_DWMY_OFFSET: Optional[str] = r"([^ouehira]|^)([+-]\d+)([dwmyDWMY])"
+    
+    # #5 One Capital Case and one lower capital case for week days
+    # this allows to cpature regexes like MoMi-1d
+    REGEX_DWMY_DAY_OFFSET: Optional[str] = r"((?:[MDFSTW][ouehira])+)([+-]\d+)([dwmyDWMY])"
+
 

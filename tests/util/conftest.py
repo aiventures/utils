@@ -10,10 +10,11 @@ from demo.demo_config import create_demo_config
 from util import constants as C
 from util.abstract_enum import AbstractEnum
 from util.bat_helper import BatHelper
-from util.calendar import CalendarIndex
+from util.calendar_index import CalendarIndex
 from util.config_env import ConfigEnv, Environment
 from util.persistence import Persistence
 from util.utils import Utils
+from util.calendar_filter import CalendarFilter
 
 ### [1] Fixtures for File Analyzer
 
@@ -344,3 +345,9 @@ def fixture_calendar2015_index() ->CalendarIndex:
     _year = 2015
     _cal_index = CalendarIndex(_year)
     return _cal_index
+
+@pytest.fixture(scope="module")
+def fixture_calendar_filter() ->CalendarFilter:
+    """ fixtrue calendar index 2015 has 53 Calendar Weeks at start of year  """
+    _cal_filter = CalendarFilter()
+    return _cal_filter

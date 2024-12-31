@@ -38,12 +38,11 @@ def test_calendar_index():
     # checking the index map
     _index_map = _cal_index.index_map()
     assert isinstance(_index_map, dict)
-    # checking the reverse calendar index 
+    # checking the reverse calendar index
     _weekday_map = _cal_index.weeknum_map(IndexType.INDEX_MONTH_DAY)
-    assert isinstance(_weekday_map,dict)
+    assert isinstance(_weekday_map, dict)
     _weekday_map2 = _cal_index.weeknum_map(IndexType.INDEX_DATETIME)
-    assert isinstance(_weekday_map,dict)    
-
+    assert isinstance(_weekday_map, dict)
 
 def _calender_index_examples() -> list:
     """several variants for calendar index"""

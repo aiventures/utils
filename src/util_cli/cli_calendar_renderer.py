@@ -24,7 +24,8 @@ from util.datetime_util import (
     REGEX_TIME_RANGE,
     WEEKDAY,
 )
-from util.calendar import Calendar, CalendarIndex, REGEX_DATE_RANGE, REGEX_YYYYMMDD
+from util.calendar import Calendar, REGEX_DATE_RANGE, REGEX_YYYYMMDD
+from util.calendar_index import CalendarIndex
 from util.utils import Utils
 
 REGEX_ICON_STR = ":[a-zA-Z0-9_]+:"  # alphanum chars embraced in colons
@@ -152,12 +153,12 @@ class CalendarRenderer:
         """calculates and renders overtime indicator"""
         _idx = Utils.get_nearby_index(overtime, OVERTIME_LEVELS)
         return OVERTIME_EMOJIS[_idx]
-    
+
     @staticmethod
     def get_overtime_color(overtime: float) -> str:
         """calculates and returns an overtime color"""
         _idx = Utils.get_nearby_index(overtime, OVERTIME_LEVELS)
-        return OVERTIME_COLORS[_idx]       
+        return OVERTIME_COLORS[_idx]
 
     @staticmethod
     def show_overtime_indicator() -> None:
@@ -249,7 +250,7 @@ class CalendarRenderer:
                 _overtime = day_info.overtime
                 _indicator = CalendarRenderer.get_overtime_indicator(_overtime)
                 _color = CalendarRenderer.get_overtime_color(_overtime)
-                
+
                 _sign = "+"
                 if _overtime < 0:
                     _sign = ""
@@ -267,7 +268,7 @@ class CalendarRenderer:
                 _ds = f"{_indicator} {_time}/{_overtime}{_emoji_clock}"
             else:
                 _ds = ""
-            
+
             if colorize is True and len(_ds)>0:
                 _ds = f"[{_color}]{_ds}[/]"
 
@@ -282,7 +283,7 @@ class CalendarRenderer:
         # TODO format some items - Defined this in the Base Model
         else:
             _day_type = day_info.day_type.name
-            _color = getattr(self._calendar_colors, _day_type)            
+            _color = getattr(self._calendar_colors, _day_type)
             out_s = f"{_icon} [{_color}]{_dt} {_wd} KW{_w}/{_n} {_t}{_h}[/] {_ds}"
 
         # TODO xxx
@@ -458,7 +459,7 @@ class CalendarTreeRenderer(CalendarRenderer):
     def _render_day_info_nodes(self,day_info:CalendarDayType,day_node:Tree)->None:
         """ renders daily information list and attaches it to the day node """
         # TODO add filter to only add node info according to certain add criteria TBD
-        _infos = day_info.info 
+        _infos = day_info.info
         if _infos is None or not isinstance(_infos,list):
             return
         _color = self._calendar_colors.INFO
@@ -494,7 +495,7 @@ class CalendarTreeRenderer(CalendarRenderer):
             _day_info_s = self._render_day_info(_day_info, self._colorize)
             _week_num = _weeknum_map[_md]
             _week_node = self._week_nodes[_month][_week_num]
-            _day_node = _week_node.add(_day_info_s, guide_style=_line_style, highlight=False)            
+            _day_node = _week_node.add(_day_info_s, guide_style=_line_style, highlight=False)
             self._day_nodes[_month][_week_num].append(_day_node)
             self._render_day_info_nodes(_day_info,_day_node)
         pass

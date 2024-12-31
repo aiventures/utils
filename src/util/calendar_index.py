@@ -15,7 +15,10 @@ from model.model_calendar import (
 from util import constants as C
 from util.datetime_util import DAYS_IN_MONTH, DateTimeUtil
 from util.utils import Utils
-from util.calendar_constants import (REGEX_YYYYMMDD)
+from util.calendar_constants import (REGEX_YYYYMMDD,     
+                                     WEEK_INDEX_PREVIOUS_YEAR,
+                                     WEEK_INDEX_NEXT_YEAR)
+from util.calendar_filter import CalendarFilter
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -47,6 +50,7 @@ class CalendarIndex():
         self._week_indices:list = None
         self._month_indices:list = None
         self._calc_indices()
+        self._calendar_filter = None
 
     @property
     def index_type(self):
@@ -89,6 +93,10 @@ class CalendarIndex():
             self._indices[IndexType.INDEX_DAY_IN_YEAR].append(_idx)
             self._indices[IndexType.INDEX_MONTH_DAY].append([_idx_info.month,_idx_info.day])
 
+    def set_filter(self,filter_s:str=None,date_list:List[List[DateTime]|DateTime]=None)->None:
+        """ setting a calendar filter """
+        self._calendar_filter = CalendarFilter(filter_s,date_list)
+
     @property
     def index(self):
         """ returns the generated index """
@@ -102,6 +110,50 @@ class CalendarIndex():
             value_index = self._index_type
 
         return dict(zip(self._indices[key_index],self._indices[value_index]))
+
+    def index_map_filtered(self,key_index:IndexType=None,value_index:IndexType=None,as_mask:bool=True)->dict:
+        """ returns filtered date index map """
+        out = {}
+        if key_index is None:
+            key_index = IndexType.INDEX_DAY_IN_YEAR
+        if value_index is None:
+            value_index = self._index_type
+
+        if self._calendar_filter is None:
+            return self.index_map(key_index,value_index)
+
+        # create a date index
+        _date_index = self._indices[IndexType.INDEX_DATETIME]
+        _key_index = self._indices[key_index]
+        _value_index = self._indices[value_index]
+        _dates = self._calendar_filter.datelist
+        # create a mask
+        if as_mask:
+            out = dict(zip(_key_index,len(_key_index)*[None]))            
+
+        for _date in _dates:
+            # get the index from date index
+            try:
+                _idx = _date_index.index(_date)
+            # only items for current year will be selected
+            except ValueError:
+                logger.debug(f"[CalendarIndex] Date [{_date}] is out of index of year {self._year}")
+                continue
+            _key = _key_index[_idx]
+            _value = _value_index[_idx]
+            out[_key] = _value
+
+        return out
+    
+    # def month_week_filter_map(self):
+    #     """ returns the dates in the filter as a month- week dict map """
+    #     xxx
+
+    # def month_filter_map(self):
+    #     """ returns the dates in the filter as a month dict map """
+    #     xxx        
+
+
 
     def info(self,key:Any,index_type:IndexType=None)->CalendarIndexType:
         """ retrieves calendar info using key  """
@@ -167,7 +219,7 @@ class CalendarIndex():
         _num_weeks = self._num_weeks
         # 0 and 99 are items reserved for previous year and follow up year
         out = {_w: [] for _w in range(0,_num_weeks+1)}
-        out[99] = []
+        out[WEEK_INDEX_NEXT_YEAR] = []
         for _w in range(_num_weeks):
             # adjust indices
             try:
@@ -178,12 +230,12 @@ class CalendarIndex():
                 pass
         # add edge case for lower end (=last week of previous calender year)
         if _week_indices[0] > 1:
-            out[00] = _values[:_week_indices[0]-1]
+            out[WEEK_INDEX_PREVIOUS_YEAR] = _values[:_week_indices[0]-1]
         # add items to the last bucket, if the new calendar week 1 already begins in the old year
         if self._last_sunday.year == self._year:
             _num_remaining_days = -1 *( DateTime(self._year,12,31) - self._last_sunday ).days
             if _num_remaining_days < 0:
-                out[99] = _values[_num_remaining_days:]
+                out[WEEK_INDEX_NEXT_YEAR] = _values[_num_remaining_days:]
 
         return out
 
@@ -206,4 +258,24 @@ class CalendarIndex():
                     _m_dict[_w] = _w_dict
                 _value = self.info(_md,index_type)
                 _w_dict[_d] = _value
+        return out
+
+    def weeknum_map(self, index_type: IndexType = None) -> Dict[Any, int]:
+        """Returns a lookup dict with index type as key, returning Calendar week"""
+        out = {}
+
+        if index_type is None:
+            index_type = self._index_type
+
+        _monthweek_map = self.monthweek_map(index_type)
+        for _m in range(1, 13):
+            _month_dict = _monthweek_map[_m]
+            for _w, _day_info in _month_dict.items():
+                _day_list = list(_day_info.values())
+                # convert key so it can be used as dict key
+                if index_type == IndexType.INDEX_MONTH_DAY:
+                    _day_list = [tuple(_d) for _d in _day_list]
+
+                _week_list = [_w] * len(_day_list)
+                out.update(dict(zip(_day_list, _week_list)))
         return out

@@ -142,6 +142,19 @@ class DateTimeUtil:
         return _hours
 
     @staticmethod
+    def months_offset(datetime:DateTime,offset:int)->tuple:
+        """ calculates month offset, returns year, month tuple """
+        y = datetime.year + offset // 12
+        m = datetime.month + offset % 12
+        if m < 0:
+            m += 12
+            y -= 1
+        elif m > 12:
+            m -= 12
+            y += 1
+        return (y,m)
+
+    @staticmethod
     def get_datetime_from_string(datetime_s: str, local_tz="Europe/Berlin") -> DateTime:
         """returns datetime for date string with timezone
         allowed formats:  ####:##:## ##:##:##  (datetime localized with local_tz)
