@@ -248,8 +248,8 @@ class DateTimeUtil:
         try:
             ts_gps = DateTime.fromtimestamp(DateTimeUtil.get_timestamp(time_gps))
             ts_cam = DateTime.fromtimestamp(DateTimeUtil.get_timestamp(time_device))
-        except:
-            raise Exception(f"GPS Timestamp {time_gps} or Camera Timestamp {time_device} not correct")
+        except Exception as e:
+            raise ValueError(f"GPS Timestamp {time_gps} or Camera Timestamp {time_device} not correct") from e
 
         delta_time = ts_gps - ts_cam
 

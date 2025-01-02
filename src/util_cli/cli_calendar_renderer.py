@@ -462,7 +462,7 @@ class CalendarTreeRenderer(CalendarRenderer):
         # colorize lines
         self._colorize = colorize
         self._tree = None
-        # TODO PRIO3 in future versions: Add Elements for a year to a multiyear tree
+        # TODO PRIO4 in future versions: Add Elements for a year to a multiyear tree
         if tree is not None:
             self._tree = tree
         self._month_nodes = {}
@@ -635,6 +635,6 @@ if __name__ == "__main__":
         _tree_renderer = CalendarTreeRenderer(
             calendar=_calendar, num_months_in_table=12, icon_render="all", render_duration=True
         )
-        _tree_renderer.set_calendar_filter("MoDi20241016:MoDi20241220")
+        _tree_renderer.set_calendar_filter("MoDiMiDoFr20241016:20241220")
         # _tree_renderer.set_calendar_filter("20241016:20241220")
         _tree_renderer.render_calendar()
