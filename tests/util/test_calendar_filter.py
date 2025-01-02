@@ -11,12 +11,26 @@ from util.calendar_index import CalendarIndex, IndexType
 def _calender_filter_examples() -> list:
     """several variants for calendar index"""
     out = []
-    out.append(pytest.param(True, "-1W", id="A.01 no start date 1 week offset from now implicit"))
-    out.append(pytest.param(True, "now+1w", id="A.02 no start date 1 week offset from now explicit"))
-    out.append(pytest.param(True, "now-1w:now+1w", id="A.03 Time range including separator"))
-    out.append(pytest.param(True, "20241231:+1w", id="A.03 Fixed Date YYYYMMDD and offset including separator"))
-    out.append(pytest.param(True, "now-2w:MoDi+2w", id="A.04 Date Offset and offset including Calendar Days"))
-
+    out.append(pytest.param(True, "-1W", id="A.01 no start date 1 week offset from now implicit [DWMY_OFFSET]"))
+    out.append(pytest.param(True, "now+1w", id="A.02 no start date 1 week offset from now explicit [NOW|DWMY_OFFSET]"))
+    out.append(pytest.param(True, "now-1w:now+1w", id="A.03 Time range including separator [NOW|DWMY_OFFSET]"))
+    out.append(
+        pytest.param(
+            True, "20241231:+1w", id="A.03 Fixed Date YYYYMMDD and offset including separator [YYYYMMDD|DWMY_OFFSET]"
+        )
+    )
+    out.append(
+        pytest.param(
+            True,
+            "now-2w:MoDi+2w",
+            id="A.04 Date Offset and offset including Calendar Days [NOW|DWMY_OFFSET|DWMY_DAY_OFFSET]",
+        )
+    )
+    out.append(
+        pytest.param(
+            True, "MoDi20241130:20241205", id="A.05 Fixed Dates YYYYMMDD with weekday indicator [YYYYMMDD_DAY|YYYYMMDD]"
+        )
+    )
     return out
 
 

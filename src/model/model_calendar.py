@@ -1,6 +1,7 @@
 """models for datetime_util methods"""
 
 from datetime import datetime as DateTime
+from datetime import timedelta
 from typing import Optional, Dict, Annotated, List, Literal, Tuple
 from enum import StrEnum
 from pydantic import BaseModel, TypeAdapter, Field, RootModel
@@ -123,9 +124,12 @@ CellRenderOptionField = Annotated[
     Literal["all", "first", "info", "no_info"], Field(description="Calendar Rendering Option")
 ]
 
+
 class CellRenderOptionType(RootModel):
     """Rendering Option for the calendar"""
+
     root: CellRenderOptionField = "all"
+
 
 class CalendarColoringType(BaseModel):
     """Model containing params to render the Output Tree (allowing to alter it)
@@ -149,32 +153,52 @@ class CalendarColoringType(BaseModel):
     # INFO ITEM COLOR
     INFO: Optional[str] = "white"
 
-class CalendarRegex(StrEnum):
-    """ class to parse date related strings as used by calendar filter """
-    # note that the definition of order here is important 
-    # as the regex parsing requires a certain order 
 
-    # capture characters before and after separator (:) 
+class CalendarRegex(StrEnum):
+    """class to parse date related strings as used by calendar filter"""
+
+    # note that the definition of order here is important
+    # as the regex parsing requires a certain order
+
+    # capture characters before and after separator (:)
     REGEX_FROM_TO: Optional[str] = r"(.+)?:(.+)"
 
     # #1 NOW or now as marker for today so you can construct things like now-1d
     REGEX_NOW: Optional[str] = r"(now|NOW)"
 
     # #2 YYYYMMDD with some date validations
-    REGEX_YYYYMMDD: Optional[str] = r"[12]\d{3}[01][0-9][0-3]\d"
+    # REGEX_YYYYMMDD: Optional[str] = r"[12]\d{3}[01][0-9][0-3]\d"
+    REGEX_YYYYMMDD: Optional[str] = r"([^ouehira]|^)([12]\d{3}[01][0-9][0-3]\d)"
 
-    # #3 MMDD
-    REGEX_MMDD: Optional[str] = r"[01]\d{3}"
+    # #3 MMDD, short form, year will be appended
+    # REGEX_MMDD: Optional[str] = r"([^ouehira]|^)([01]\d{3})"
 
-    # #4 Parsing weeks, months, days,years offset +/-(NUMBER)(OFFSET UNIT)
+    # #4 regex to capture DATE with week days
+    REGEX_YYYYMMDD_DAY: Optional[str] = r"((?:[MDFSTW][ouehira])+)([12]\d{3}[01][0-9][0-3]\d)"
+
+    # #5 Parsing weeks, months, days,years offset +/-(NUMBER)(OFFSET UNIT)
     # But excluding second letters from week days so as to allow excusion
     # for week day Prefixes Mo Di Mi ... Mo Tu We ...
     # Lower case: relative to from date 1w = -7days
     # Upper Case: relative calendar 1W = Date of monday of this week
     REGEX_DWMY_OFFSET: Optional[str] = r"([^ouehira]|^)([+-]\d+)([dwmyDWMY])"
-    
-    # #5 One Capital Case and one lower capital case for week days
+
+    # #6 One Capital Case and one lower capital case for week days
     # this allows to cpature regexes like MoMi-1d
+
     REGEX_DWMY_DAY_OFFSET: Optional[str] = r"((?:[MDFSTW][ouehira])+)([+-]\d+)([dwmyDWMY])"
 
 
+class CalendarParseInfo(BaseModel):
+    """Model to allow for processing of parsing strings to dates"""
+
+    # original string
+    filter_s: Optional[str] = None
+    filter_matches: Optional[dict] = {}
+    regex_result: Optional[dict] = {}
+    date: Optional[DateTime] = None
+    # for info: record all rules and their results
+    dates: Optional[Dict[str, DateTime]] = {}
+    timedeltas: Optional[Dict[str, timedelta]] = {}
+    weekdays: Optional[List[int]] = None
+    date_calculated: Optional[DateTime] = None

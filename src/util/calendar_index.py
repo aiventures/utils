@@ -54,6 +54,11 @@ class CalendarIndex:
         self._calendar_filter = None
 
     @property
+    def calendar_filter(self):
+        """returns the filter"""
+        return self._calendar_filter
+
+    @property
     def index_type(self):
         """index type getter"""
         return self._index_type
@@ -96,7 +101,10 @@ class CalendarIndex:
 
     def set_filter(self, filter_s: str = None, date_list: List[List[DateTime] | DateTime] = None) -> None:
         """setting a calendar filter"""
-        self._calendar_filter = CalendarFilter(filter_s, date_list)
+        if filter_s is None and date_list is None:
+            self._calendar_filter = None
+        else:
+            self._calendar_filter = CalendarFilter(filter_s, date_list)
 
     @property
     def index(self):
@@ -130,7 +138,7 @@ class CalendarIndex:
         _date_index = self._indices[IndexType.INDEX_DATETIME]
         _key_index = self._indices[key_index]
         _value_index = self._indices[value_index]
-        _dates = self._calendar_filter.datelist
+        _dates = self.calendar_filter.datelist
         # create a mask
         if as_mask:
             out = dict(zip(_key_index, len(_key_index) * [None]))
@@ -155,7 +163,7 @@ class CalendarIndex:
         """returns the months and weeks as lists in a month-weeks tuple"""
         # if no filter is set return nothing
         if self._calendar_filter is None:
-            return
+            return None
 
         out = {}
         _, _value_index = self._default_key_value_index(key_index, value_index)
