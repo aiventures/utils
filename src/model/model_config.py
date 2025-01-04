@@ -43,7 +43,7 @@ class ConfigItemProcessed(ConfigItem):
     #    type Literal['config_item_processed']
     kk: Optional[str] = None  # This is the configuration json dictionary key.
     # if k is not supplied in values dictionary key will be used instead
-    ref: Optional[str] = None  # dereferenced path object
+    ref: Optional[str | dict] = None  # dereferenced path object
     dep: Optional[List[str]] = None  # List of dependencies to other keys in config
     st: Optional[ConfigStatus] = None  # status whether an entry could be validated
     o: Optional[str] = None  # original value
@@ -290,7 +290,7 @@ class ConfigValidator:
         except ValidationError as e:
             _errors = e.errors()
             _errors_verbose = ConfigValidator.get_config_errors(config_dict, _errors)
-            _err = f"Couldn't parse as Pydantic Model, founf [{len(_errors)}] errors"
+            _err = f"Couldn't parse as Pydantic Model, found [{len(_errors)}] errors"
             logger.warning(_err)
             validated = {C.ERROR: _errors_verbose}
 

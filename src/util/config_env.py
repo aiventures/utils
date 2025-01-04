@@ -1,6 +1,7 @@
 """Managing Configuration for a given command line"""
 
 import json
+from json import JSONDecodeError
 import logging
 import os
 import re
@@ -14,6 +15,7 @@ from datetime import datetime as DateTime
 from functools import wraps
 from pathlib import Path
 from typing import Dict, List
+import json
 
 from rich import print as rprint
 from rich import print_json
@@ -410,7 +412,6 @@ class ConfigEnv:
         _config = self._config
         _ruledict_keys = list(C.RULEDICT_FILENAME.keys())
         for key, _ in _config.items():
-            # _config_type =
             if C.ConfigKey.get_configtype(key) != C.ConfigKey.RULE:
                 continue
         return out_wrong_keys
@@ -465,6 +466,25 @@ class ConfigEnv:
         return _resolved
 
     @config_key
+    def _resolve_json_object(self, key: str) -> bool:
+        """resolves the where variable and returns whether it was resolved"""
+        _config = self._config.get(key)
+        _json_value = _config.get(C.ConfigAttribute.VALUE.value)
+        _resolved = True
+        _parsed = None
+        if isinstance(_json_value, dict):
+            _parsed = _json_value
+        elif isinstance(_json_value, str):
+            try:
+                _parsed = json.loads(_json_value)
+            except JSONDecodeError:
+                logger.warning(f"[ConfigEnv] Couldn't parse json FROM config [{key}], value {_json_value}")
+                _resolved = None
+
+        _config[C.ConfigAttribute.REFERENCE.value] = _parsed
+        return _resolved
+
+    @config_key
     def _resolve_where_object(self, key: str) -> bool:
         """resolves the where variable and returns whether it was resolved"""
         _config = self._config.get(key)
@@ -513,22 +533,24 @@ class ConfigEnv:
 
         # analyze file object types
         # only further anaylsis is required for types of path, file, cmd and where
-        _types_to_analyze = [
-            C.ConfigKey.FILE,
-            C.ConfigKey.PATH,
-            C.ConfigKey.CMD,
-            C.ConfigKey.WHERE,
-            C.ConfigKey.RULE,
-            C.ConfigKey.ENV,
-        ]
+        # _types_to_analyze = [
+        #     C.ConfigKey.FILE,
+        #     C.ConfigKey.PATH,
+        #     C.ConfigKey.CMD,
+        #     C.ConfigKey.WHERE,
+        #     C.ConfigKey.RULE,
+        #     C.ConfigKey.ENV,
+        # ]
 
         # almost all config types could contain path reference data
         _resolved = True
-        if _config_type not in [C.ConfigKey.DATA, C.ConfigKey.ENV]:
+        if _config_type not in [C.ConfigKey.DATA, C.ConfigKey.ENV, C.ConfigKey.JSON]:
             _resolved = self._resolve_path_object(key)
 
         if _config_type == C.ConfigKey.WHERE:
             _resolved = self._resolve_where_object(key)
+        elif _config_type == C.ConfigKey.JSON:
+            _resolved = self._resolve_json_object(key)
         elif _config_type == C.ConfigKey.CMD:
             _resolved = self._resolve_command(key)
         elif _config_type == C.ConfigKey.ENV:
@@ -537,7 +559,7 @@ class ConfigEnv:
             _resolved = True
 
         # set the Config Status
-        self.set_status(key, _resolved)
+        self.set_status(key, status=_resolved)
 
         return _resolved
 

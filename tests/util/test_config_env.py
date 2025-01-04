@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 
-def test_config_setup(fixture_sample_config_json):
+def test_config_create_and_setup(fixture_sample_config_json):
     """test the reading of the configuration"""
     config_env = ConfigEnv(fixture_sample_config_json)
     config = config_env._config
@@ -117,7 +117,7 @@ def test_parse_commands(fixture_sample_config_json, cmd, cmd_params, mocker):
         assert _contains is True, "A.02 CMD Parsing with a Config Reference did fail"
 
 
-def create_testcases_get_ref() -> list:
+def create_testcases_get_fileref() -> list:
     """returns a list of pytest params as input for the test_get_ref unit test"""
     out = []
     # get valid refs to real paths
@@ -165,8 +165,8 @@ def create_testcases_get_ref() -> list:
     return out
 
 
-@pytest.mark.parametrize("valid_config,ref_exists,file_ref", create_testcases_get_ref())
-def test_get_ref(fixture_config_env, valid_config, ref_exists, file_ref):
+@pytest.mark.parametrize("valid_config,ref_exists,file_ref", create_testcases_get_fileref())
+def test_get_file_ref(fixture_config_env, valid_config, ref_exists, file_ref):
     """testing the get ref method"""
     _config_env = fixture_config_env
     _ref = _config_env.get_file_ref(file_ref, exists=False)
@@ -184,3 +184,25 @@ def test_get_ref(fixture_config_env, valid_config, ref_exists, file_ref):
         assert _ref_exists is None, "Invalid Configuration should be None"
         if _ref is not None:
             assert not os.path.isfile(_ref) or not os.path.isdir(_ref), "There should be no real OS Object"
+
+
+def create_testcases_get_ref() -> list:
+    out = []
+    out.append(pytest.param(True, "J_DICT_STR", id="A.01 Valid JSON string J_DICT_STR"))
+    out.append(pytest.param(True, "J_DICT", id="A.02 Valid JSON dict J_DICT"))
+    out.append(pytest.param(False, "J_DICT_WRONG", id="A.02 Invalid JSON dict J_DICT_WRONG"))
+    return out
+
+
+@pytest.mark.parametrize("is_valid_config,config_key", create_testcases_get_ref())
+def test_get_ref(fixture_config_env, is_valid_config, config_key):
+    """checking retrieval of the get ref method"""
+    _config_env = fixture_config_env.get_ref(config_key)
+
+    assert fixture_config_env.config_is_valid(config_key) == is_valid_config
+    # config is valid
+    _ref = fixture_config_env.get_ref(config_key)
+    if is_valid_config:
+        assert isinstance(_ref, dict)
+    else:
+        assert _ref is None

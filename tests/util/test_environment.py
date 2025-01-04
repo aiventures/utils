@@ -190,12 +190,7 @@ def test_env_model(fixture_environment):
     _config_env = fixture_environment.config_env
     _config = _config_env.config
     # Prefixes
-    _config_item_types = [
-        "F",
-        "P",
-        "E",
-        "W",
-    ]
+    _config_item_types = ["F", "P", "E", "W", "J"]
 
     # try to parse each item with a fitting model
     for _key, _config_item in _config.items():

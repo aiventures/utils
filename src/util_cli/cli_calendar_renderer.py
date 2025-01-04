@@ -404,25 +404,31 @@ class CalendarTableRenderer(CalendarRenderer):
 
         return out
 
-    def get_markdown(self, month: int = None, add_info: bool = True, only_info: bool = False) -> list:
+    def get_markdown(self, add_info: bool = True, only_info: bool = False) -> list:
         """create markdown snippet for given month
         if month is None, the whole year will be
         returned
         add_info: if info is maintained add it to output
         only_info: only items with info are output
         """
-        _stats = self.calendar.stats
         out = []
-        # TODO PRIO1 REPLACE SELECTION OF BY USING DATE RANGE FILTER
-        if month is None:
+        # get filter settings
+        _date_list = self._filter_datelist
+        _month_week_filter_map = self._month_week_filter_map
+        # no filter is set display all
+        _m_range = range(12, 0, -1)
+        if _month_week_filter_map is None:
             out.append(f"# **CALENDAR {self.calendar.year}**")
-            _m_range = range(12, 0, -1)
         else:
-            _m_range = range(month, month + 1)
+            _m_range = list(_month_week_filter_map.keys())
+            _m_range.sort(reverse=True)
+
+        _stats = self.calendar.stats
+
         for _month in _m_range:
             _has_info = len(_stats[_month]["days_with_info"]) > 0
             # only add month if there are infos in case only_info is selected
-            # TODO put rendering options into a model
+            # TODO PRIO3 put rendering options into a model
             if only_info is False or (only_info is True and _has_info):
                 out.append("\n---")
                 _month_emoji = Emoji.replace(MONTH_EMOJIS[_month])
@@ -432,13 +438,14 @@ class CalendarTableRenderer(CalendarRenderer):
             _days.sort(reverse=True)
             for _day in _days:
                 _day_info = _month_info.get(_day)
-                if only_info and _day_info.info is None:
+                _datetime = _day_info.datetime
+                if (_date_list is not None and _datetime not in _date_list) or (only_info and _day_info.info is None):
                     continue
-                # TODO REFACTOR
+
                 _markdown = self.create_markdown(_day_info, add_info)
                 out.extend(_markdown)
 
-        if month is None and only_info is False:
+        if _month is None and only_info is False:
             out.append("--- ")
         return out
 
@@ -607,19 +614,19 @@ if __name__ == "__main__":
         "@FLEX 20241010 JUST INFO 0934-1134",
     ]
     _calendar = Calendar(2024, 8, _daytype_list)
-    if False:
+    if True:
         # rendering the calendar and markdown list
         # icon_render is "all","first","info","no_info"
         _table_renderer = CalendarTableRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all")
         # set date filter for rendering last 3 months
         _table_renderer.set_calendar_filter("20241015:20241231")
-
         # render the calendar as table
-        _table_renderer.render_calendar()
+        if False:
+            _table_renderer.render_calendar()
+
         # render the calendar as markdown list (only_info=only items with INFO will be printed)
         _markdown_list = _table_renderer.get_markdown(only_info=False)
         console = _table_renderer.console
-    if False:
         console.print(Markdown("\n".join(_markdown_list)))
     # overtime indicator
     if False:
@@ -631,7 +638,7 @@ if __name__ == "__main__":
         _stats_sum = _table_renderer.calendar.stats_sum
         console.print(_stats_sum)
 
-    if True:
+    if False:
         _tree_renderer = CalendarTreeRenderer(
             calendar=_calendar, num_months_in_table=12, icon_render="all", render_duration=True
         )

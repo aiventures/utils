@@ -265,6 +265,7 @@ class Persistence:
         show_progress: bool = False,
         max_path_depth: int = None,
         paths_only: bool = False,
+        add_empty_paths: bool = False,
     ) -> int:
         """walks the path in a given root directory
         is used in find method as a way to get objects without rendering
@@ -311,9 +312,14 @@ class Persistence:
             }
 
             _p_rel = os.path.relpath(_p, p_root)
-            _s = f"[{Color['OUT_TITLE']}]  - ({str(len(_files)).zfill(3)}) [{Color['OUT_PATH']}].\{_p_rel:<60}"
+            _s = f"[{Color['OUT_TITLE'].value}]  - ({str(len(_files)).zfill(3)}) [{Color['OUT_PATH'].value}].\{_p_rel:<60}"
+            _color_progress = Color["PROGRESS_BAR"].value
             for _f in track(
-                _files, description=_s, style=Color["PROGRESS_BAR"], refresh_per_second=2, disable=not show_progress
+                _files,
+                description=_s,
+                style=_color_progress,
+                refresh_per_second=2,
+                disable=not show_progress,
             ):
                 _file_params["f_abs"] = os.path.join(_p, _f)
                 _passed = Persistence._passes_filecheck(**_file_params)
@@ -341,6 +347,7 @@ class Persistence:
         show_progress: bool = True,
         max_path_depth: int = None,
         paths_only: bool = False,
+        add_empty_paths: bool = True,
     ) -> list | dict:
         """finds files and paths according to path names / a slightly slimmer version than the FileAnalyzer
         regex can be used (differewntly for filename only, path only or abs path)
@@ -385,6 +392,7 @@ class Persistence:
                 "show_progress": show_progress,
                 "max_path_depth": max_path_depth,
                 "paths_only": paths_only,
+                "add_empty_paths": add_empty_paths,
             }
 
             # do the analysis
@@ -403,7 +411,7 @@ class Persistence:
             _out = {}
             for _path, _file_list in _path_dict.items():
                 # only skip paths if files are expected
-                if paths_only is False and len(_file_list) == 0:
+                if paths_only is False and len(_file_list) == 0 and add_empty_paths is False:
                     continue
                 _out[_path] = _file_list
             return _out

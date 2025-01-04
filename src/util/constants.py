@@ -332,6 +332,7 @@ class ConfigKey(AbstractEnum):
     """
 
     ENV = "E_"  # ENV should mainly contain configuration stuff but also things like date and file format
+    JSON = "J_"  # JSON CONFIGURATION
     PATH = "P_"  # 1st resolve paths
     WHERE = "W_"  # WHERE can be resolved next (maybe some paths from previous steps are required)
     FILE = "F_"  # FILES MIGHT COME NEXT
@@ -436,6 +437,8 @@ class EnvType(AbstractEnum):
 
     # as env attribute of a config key
     ATTRIBUTE = "attribute"
+    # JSON or dictionary configuration
+    JSON = "json"
     # only to be used within the program
     INTERNAL = "internal"
     # published in the OS environment

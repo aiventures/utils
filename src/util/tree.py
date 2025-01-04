@@ -329,17 +329,17 @@ if __name__ == "__main__":
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    tree = {
-        1: {"parent": None, "value": "value 1"},
-        2: {"parent": 1},
-        4: {"parent": 2},
-        5: {"parent": 2},
-        3: {"parent": 1},
-        6: {"parent": 3},
-        7: {"parent": 6},
-        8: {"parent": 6},
-        9: {"parent": 6},
-    }
+    # tree = {
+    #     1: {"parent": None, "value": "value 1"},
+    #     2: {"parent": 1},
+    #     4: {"parent": 2},
+    #     5: {"parent": 2},
+    #     3: {"parent": 1},
+    #     6: {"parent": 3},
+    #     7: {"parent": 6},
+    #     8: {"parent": 6},
+    #     9: {"parent": 6},
+    # }
 
     tree = {
         1: {"parent": None, "value": "value 1"},
@@ -372,9 +372,9 @@ if __name__ == "__main__":
     my_element = my_tree.get_element(4)
     my_key_path = my_tree.get_key_path(7)
     # display tree as json
-    # print("TREE AS JSON")
-    # print(json.dumps(my_nested_tree,indent=3))
-    # print("TREE AS YAML")
-    # print(yaml.dump(my_nested_tree))
+    print("TREE AS JSON")
+    print(json.dumps(my_nested_tree, indent=3))
+    print("TREE AS YAML")
+    print(yaml.dump(my_nested_tree))
     print(str(my_tree))
     print(my_tree.yaml())

@@ -17,12 +17,21 @@
                             "v":"hugo"},
     "E_SIMPLE":            {"d":"Example for minimal ENV definition, key is the main key ",
                             "v":"env_simple_value_example"},
+    "J_DICT":              {"d":"Example for an ENV with a json config",
+                            "k":"j_dict_key",
+                            "v":{"k1j":"jv1","k2j":1}},
+    "J_DICT_WRONG":         {"d":"Example for wrong json",
+                            "k":"j_dict_key",
+                            "v":"INVALID JSON"},
+    "J_DICT_STR":          {"d":"Example for an ENV with a json config as json str",
+                            "k":"j_dict_str",
+                            "v":"{\"k1\":\"v1\",\"k2\":2}\"}"},
     "E_SAMPLE_WHERE":        {"d": "Example for a value with a ref to a where key",
                             "v": "[W_PYTHON]"
                             },
      "E_SAMPLE_REF2":       {"d": "Example for a value with a ref to another config key",
                              "v": "[CMD_EXAMPLE1]"
-                            },                            
+                            },
     "E_SAMPLE_WRONGREF": {"d": "Example for a value with a wrong ref ",
                            "v": "[WRONG_REF]"
                           },
@@ -40,7 +49,7 @@
                            "k": "key_sample_fileref",
                            "v": "value_sample_with_all_types",
                            "et": ["internal","os_environ","env_file","key_file","bat"]
-                           },                                                     
+                           },
     "W_PYTHON":            {"d":"(W)here Python, tries to get the Python command usually the VENV Python using where on OS level"},
     "W_GIT_234":           {"d":"(W)here Git, other vars are used to store an env file in ff format. The _CWD_ is a shortcut to current path",
                             "k":"git",

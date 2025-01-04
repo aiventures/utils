@@ -10,18 +10,11 @@ from typing import List
 from model.model_calendar import (
     CalendarRegex,
     CalendarParseInfo,
-    #     CalendarIndexType,
-    #     IndexType,
 )
 
 # regex to extract todo_txt string matching signature @(...)
 from util import constants as C
 from util.datetime_util import WEEKDAY_NUM, WEEKDAY, DateTimeUtil
-
-# from util.datetime_util import DAYS_IN_MONTH, DateTimeUtil
-# from util.utils import Utils
-# from util.calendar_constants import (REGEX_YYYYMMDD)
-
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -36,11 +29,11 @@ class CalendarFilter:
 
     def __init__(self, filter_s: str = None, date_list: List[List[DateTime] | DateTime] = None):
         """Constructor"""
-        self._filter_s_raw = filter_s
-        self._filter_list_raw = date_list
-        self._d_now = DateTime.now()
+        self._filter_s_raw: str = filter_s
+        self._filter_list_raw: List[List[DateTime] | DateTime] = date_list
+        self._d_now: DateTime = DateTime.now()
         self._d_now = self._d_now.replace(hour=0, minute=0, second=0, microsecond=0)
-        self._parse_func = {
+        self._parse_func: dict = {
             CalendarRegex.REGEX_NOW: self._parse_now,
             CalendarRegex.REGEX_YYYYMMDD: self._parse_yyyymmdd,
             CalendarRegex.REGEX_DWMY_OFFSET: self._parse_dwmy_offset,
@@ -48,8 +41,11 @@ class CalendarFilter:
             CalendarRegex.REGEX_YYYYMMDD_DAY: self._parse_yyyymmdd_day,
         }
         # track the origin of found dateranges
-        self._daterange_origin = {}
-        self._daterange_list = []
+        self._daterange_origin: dict = {}
+        self._daterange_list: list = []
+
+        # information only storing artifacts
+        self._parsed_infos: dict = {}
         # parse raw date strings into date ranges
         self._parse_filter_str_list()
         # adding the datetime filter lists
@@ -336,3 +332,5 @@ class CalendarFilter:
             if _parse_infos[0].date_calculated > _parse_infos[1].date_calculated:
                 _parse_infos = [_parse_infos[1], _parse_infos[0]]
             self._add_date_ranges(_parse_infos, _filter)
+            # adding intermediate parsing results to this attribute for inspection purposes
+            self._parsed_infos[_filter] = _parse_infos
