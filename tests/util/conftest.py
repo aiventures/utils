@@ -16,6 +16,7 @@ from util.persistence import Persistence
 from util.utils import Utils
 from util.calendar_filter import CalendarFilter
 from util.tree import Tree
+from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel, DateTimeFilterModel
 
 ### [1] Fixtures for File Analyzer
 
@@ -391,3 +392,20 @@ def fixture_tree() -> Tree:
     # my_tree.create_tree(tree,name_field="value")
     _tree.create_tree(_tree_dict)
     return _tree
+
+
+@pytest.fixture(scope="module")
+def fixture_numerical_filter() -> NumericalFilterModel:
+    """returning a numerical filter"""
+    _fields = {
+        "key": "",
+        "description": "",
+        "group": ["group1"],
+        "operator": "any",
+        "include": "include",
+        "operator_min": "gt",
+        "value_min": 5,
+        "value_max": 10,
+        "operator_max": "lt",
+    }
+    return NumericalFilterModel(**_fields)

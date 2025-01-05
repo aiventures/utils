@@ -6,7 +6,7 @@ from enum import Enum
 from datetime import datetime as DateTime
 
 
-class Filter(BaseModel):
+class FilterModel(BaseModel):
     """Atomic Filter as Base Class for other filter types"""
 
     # key
@@ -19,18 +19,18 @@ class Filter(BaseModel):
     operator: Optional[Literal["any", "all"]] = "any"
     # include or exclude filter result (NOT logic)
     include: Optional[Literal["include", "exclude"]] = "include"
-    # object type
-    type: Optional[Any] = None
 
 
-class NumericalFilter(Filter):
+class NumericalFilterModel(FilterModel):
     """Filter for a numeric value"""
 
     value_min: Optional[float | int] = None
+    operator_min: Optional[Literal["gt", "ge", "eq"]] = None
+
     value_max: Optional[float | int] = None
+    operator_max: Optional[Literal["lt", "le", "eq"]] = None
+
     # lower / lower equal operators
-    operator_min: Optional[Literal["lt", "le", "eq"]] = None
-    operator_max: Optional[Literal["gt", "ge", "eq"]] = None
 
     @field_validator("value_min", "value_max")
     @classmethod
@@ -41,20 +41,20 @@ class NumericalFilter(Filter):
         return value
 
 
-class RegexFilter(Filter):
+class RegexFilterModel(FilterModel):
     """Filter for a regex string"""
 
     regex: Optional[str] = None  # simply the regex string
 
 
-class StringFilter(Filter):
+class StringFilterModel(FilterModel):
     """Filtering a string"""
 
     filter_strings: Optional[str | List[str]] = None  # string or list of strings to be matched
     match: Optional[Literal["exact", "contains"]] = None  # str need to match excatly or only parts of it
 
 
-class DateTimeFilter(Filter):
+class DateTimeFilterModel(FilterModel):
     """Filtering DateTime"""
 
     filter_str: Optional[str] = None  # Filter String to be used for Calendar
@@ -62,7 +62,7 @@ class DateTimeFilter(Filter):
     date_to: Optional[DateTime] = None
 
 
-class FilterResult(BaseModel):
+class FilterResultModel(BaseModel):
     """result for given Base filters"""
 
     # total match
