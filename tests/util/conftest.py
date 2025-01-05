@@ -15,6 +15,7 @@ from util.config_env import ConfigEnv, Environment
 from util.persistence import Persistence
 from util.utils import Utils
 from util.calendar_filter import CalendarFilter
+from util.tree import Tree
 
 ### [1] Fixtures for File Analyzer
 
@@ -313,41 +314,80 @@ def fixture_testfile_tablizer() -> str:
     f_test_file = str(C.PATH_ROOT.joinpath("test_data", "test_path", "testfile_for_table.txt"))
     return f_test_file
 
-@pytest.fixture(scope="module")
-def fixture_day_info_list() -> list:
-    """ Fixture for worklog list """
-    out = ["20240929-20241004 Test Info @part", # testing upper lower case sensitive
-           "20240901 MORE INFO", # no additional metatag check for default value assignment
-           "20240901 EVEN MORE INFO 1000-1800", # testing two lines
-           "20240919-20240923 20240927 @VACA ", # Testing raw info without additional info only
-           "20240501 :brain: :maple_leaf: Testing with icons @flex", # testing icons and additional comments
-           "20241001 @flex 1024-1235 1300-1730 1800-1830", # testing flextime
-           "20240213 @TOTALWORK40.45", # testing totalwork
-           "20241001 1024-1235 1300-1730 1800-1830", # testing datetime calculation
-           "20241001 1024-9999 1300-1730 1800-1830", # testing invalid datetimes
-           "20251001 1024-1100 1300-1730 1800-1830", # testing date outside of range
-           "20231211-20240103 TESTING CALENDAR 2023",
-           "@HOME Mo Di Mi Fr",
-           "@WORK Do 1000-1800" # testing default duration on each work day
-           ]
-    return out
 
 @pytest.fixture(scope="module")
-def fixture_calendar2024_index() ->CalendarIndex:
-    """ fixture calendar index """
+def fixture_day_info_list() -> list:
+    """Fixture for worklog list"""
+    out = [
+        "20240929-20241004 Test Info @part",  # testing upper lower case sensitive
+        "20240901 MORE INFO",  # no additional metatag check for default value assignment
+        "20240901 EVEN MORE INFO 1000-1800",  # testing two lines
+        "20240919-20240923 20240927 @VACA ",  # Testing raw info without additional info only
+        "20240501 :brain: :maple_leaf: Testing with icons @flex",  # testing icons and additional comments
+        "20241001 @flex 1024-1235 1300-1730 1800-1830",  # testing flextime
+        "20240213 @TOTALWORK40.45",  # testing totalwork
+        "20241001 1024-1235 1300-1730 1800-1830",  # testing datetime calculation
+        "20241001 1024-9999 1300-1730 1800-1830",  # testing invalid datetimes
+        "20251001 1024-1100 1300-1730 1800-1830",  # testing date outside of range
+        "20231211-20240103 TESTING CALENDAR 2023",
+        "@HOME Mo Di Mi Fr",
+        "@WORK Do 1000-1800",  # testing default duration on each work day
+    ]
+    return out
+
+
+@pytest.fixture(scope="module")
+def fixture_calendar2024_index() -> CalendarIndex:
+    """fixture calendar index"""
     _year = 2024
     _cal_index = CalendarIndex(_year)
     return _cal_index
 
+
 @pytest.fixture(scope="module")
-def fixture_calendar2015_index() ->CalendarIndex:
-    """ fixtrue calendar index 2015 has 53 Calendar Weeks at start of year  """
+def fixture_calendar2015_index() -> CalendarIndex:
+    """fixtrue calendar index 2015 has 53 Calendar Weeks at start of year"""
     _year = 2015
     _cal_index = CalendarIndex(_year)
     return _cal_index
 
+
 @pytest.fixture(scope="module")
-def fixture_calendar_filter() ->CalendarFilter:
-    """ fixtrue calendar index 2015 has 53 Calendar Weeks at start of year  """
+def fixture_calendar_filter() -> CalendarFilter:
+    """fixture calendar index 2015 has 53 Calendar Weeks at start of year"""
     _cal_filter = CalendarFilter()
     return _cal_filter
+
+
+@pytest.fixture(scope="module")
+def fixture_tree() -> Tree:
+    """tree model
+    [1] ROOT (has no parents)
+     +---[2]
+          +---[4]
+          +---[5]
+     +---[3]
+          +---[6]
+               +---[7]
+               +---[8]
+               +---[9]
+    """
+
+    _tree_dict = {
+        1: {"parent": None, "value": "value 1"},
+        2: {"parent": 1, "value": "value 3"},
+        4: {"parent": 2, "value": "value 4"},
+        5: {"parent": 2, "value": "value 5"},
+        3: {"parent": 1, "value": "value 3"},
+        6: {"parent": 3, "value": "value 6"},
+        7: {"parent": 6, "value": "value 7"},
+        8: {"parent": 6, "value": "value 8"},
+        9: {"parent": 6, "value": "value 9"},
+    }
+
+    _tree = Tree()
+
+    # use name to get a different field
+    # my_tree.create_tree(tree,name_field="value")
+    _tree.create_tree(_tree_dict)
+    return _tree

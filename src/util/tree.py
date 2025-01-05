@@ -5,8 +5,7 @@ import logging
 import os
 import sys
 
-import yaml
-
+# import yaml
 import util.constants as C
 
 logger = logging.getLogger(__name__)
@@ -311,11 +310,11 @@ class Tree:
         nested_tree = self.get_nested_tree()
         return json.dumps(nested_tree, indent=3)
 
-    def yaml(self) -> str:
-        """returns yaml string"""
-        logger.debug("[Tree] yaml()")
-        nested_tree = self.get_nested_tree()
-        return yaml.dump(nested_tree)
+    # def yaml(self) -> str:
+    #     """returns yaml string"""
+    #     logger.debug("[Tree] yaml()")
+    #     nested_tree = self.get_nested_tree()
+    #     return yaml.dump(nested_tree)
 
     def __str__(self) -> str:
         return self.json()
@@ -375,6 +374,6 @@ if __name__ == "__main__":
     print("TREE AS JSON")
     print(json.dumps(my_nested_tree, indent=3))
     print("TREE AS YAML")
-    print(yaml.dump(my_nested_tree))
+    # print(yaml.dump(my_nested_tree))
     print(str(my_tree))
-    print(my_tree.yaml())
+    # print(my_tree.yaml())

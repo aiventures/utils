@@ -3,3 +3,5 @@ rich-cli>=1.8.0
 rich-theme-manager>=0.11.0
 pydantic~=2.9.2
 pytz>=2024.1
+# https://pypi.org/project/PyYAML/
+# pyyaml>=6.0.2

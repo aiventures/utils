@@ -81,7 +81,6 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20241216` make worklog_txt and todo_txt work together
 * `20241216` Create the styles via command line (By simply Calling the constructor)
 * `20241216` Create a Pydantic CSV Model for several files (which ones?)
-* `20241216` Add a tag for setting total cumulated overtime
 * `20241215` Use Rich Text to highlight text searches
 * `20241215` Create a Tree explorer view (including sizes)
 * `20241215` Create Pydantic Model to render the Calendar markdown list with different options such as
@@ -91,7 +90,6 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20240929` Parsing links, add numbers and allow to launch links from CLI
 * `20240929` Create the possibility to store/load the parsed data without processing
 * `20240929` Add a logic to update a value in a configuration in any case (for example when the config is not build up from scratch )
-* `20240927` Create an Utility to create Markdown with Date Lines
 * `20240923` Generate envs to export Configuration as shell / batch setup scripts
 * `20240923` Enable `Yaml`
 * `20240923` Additional attribute to indicate file path conversions (with no info implicitly leading to no conversion)
@@ -99,6 +97,8 @@ Configuration should be OS independent, but only tested on Win Os.
 
 **DONE**
 
+* ~~`20240927` Create an Utility to create Markdown with Date Lines~~ 20250105
+* ~~`20241216` Add a tag for setting total cumulated overtime from a start date~~ 20250105
 * ~~`20241215` Render Calendar as Tree~~ 20250104
 * ~~`20241215` Override an Office Time by Home Office~~ 20250104
 * ~~`20241215` Create gliding overtime~~ 20250104
