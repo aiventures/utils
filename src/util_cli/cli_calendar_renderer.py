@@ -609,6 +609,7 @@ if __name__ == "__main__":
         "@HOME 20241218 1000-1800 :notebook: 8H Test Info ",
         "@WORK 20241219 1000-1900 :notebook: 9H Test Info ",
         "@WORK 20241220 1000-2000 :notebook: 10H Test Info ",
+        "@WORK 20241201 1000-1800 :notebook: Test Change of Daily Work Regular Time Info @REGULARWORKTIME7.5",
         "@WORK 20240929-20241004 :notebook: Test Info ",
         "@WORK 20240901 :red_circle: :green_square: MORE INFO 1230-1450 1615-1645",
         "@FLEX 20241010 JUST INFO 0934-1134",

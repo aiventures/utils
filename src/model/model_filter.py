@@ -3,6 +3,7 @@
 from pydantic import BaseModel, field_validator
 from typing import List, Optional, Union, Dict, Literal, Any
 from enum import Enum
+from datetime import datetime as DateTime
 
 
 class Filter(BaseModel):
@@ -51,6 +52,14 @@ class StringFilter(Filter):
 
     filter_strings: Optional[str | List[str]] = None  # string or list of strings to be matched
     match: Optional[Literal["exact", "contains"]] = None  # str need to match excatly or only parts of it
+
+
+class DateTimeFilter(Filter):
+    """Filtering DateTime"""
+
+    filter_str: Optional[str] = None  # Filter String to be used for Calendar
+    date_from: Optional[DateTime] = None
+    date_to: Optional[DateTime] = None
 
 
 class FilterResult(BaseModel):

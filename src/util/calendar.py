@@ -32,8 +32,12 @@ from util.calendar_constants import (
     REGEX_WEEKDAY,
     REGEX_YYYYMMDD,
     WORKDAYS,
+    REGEX_REGULAR_WORKTIME,
+    TAG_REGULAR_WORKTIME,
 )
 from util.datetime_util import DAYS_IN_MONTH, REGEX_TIME_RANGE, WEEKDAY, DateTimeUtil
+from util.calendar_index import CalendarIndex
+from model.model_calendar import IndexType
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -53,13 +57,20 @@ class Calendar:
         if year is None:
             year = DateTime.now().year
         self._year: int = year
-        # regular working time, used for calculating overtime
+        # regular working time as default , used for calculating overtime,
+        # will  be overridden using TAG_REGULAR_WORKTIME tag in dayinfo list
         self._work_hours: float = work_hours
+        # dictionary containing daily work hours
+        self._work_hours_dict: Dict[tuple, float] = None
+        # sets the workhours dict
+        self._set_workhours()
+
         # get first monday of isoweek
         self._isoweek_info: dict = DateTimeUtil.get_isoweekyear(year)
         self._year_info: YearModelType = None
         self._create_year_info()
         self._dayinfo_list: List[str] = []
+
         if isinstance(dayinfo_list, list):
             self._dayinfo_list = dayinfo_list
         self._daytype_dict: DayTypeDictType = {}
@@ -68,7 +79,6 @@ class Calendar:
             self._short_codes = short_codes
         self._short_code_list = [f"{_short_code.name}" for _short_code in self._short_codes]
         self._parse_shortcodes()
-        # TODO REFACTOR THIS PART
         self._set_daytypes()
         # adds information from info file
         self._add_info()
@@ -230,6 +240,35 @@ class Calendar:
         dates = [_d for _d in dates if _d.year == self._year]
         return dates
 
+    def _set_workhours(
+        self, month: int = None, day: int = None, work_hours: float = None, readjust: bool = False
+    ) -> None:
+        """calculates the workhours info"""
+
+        if self._work_hours_dict is None:
+            self._work_hours_dict = {}
+            _calendar_index = CalendarIndex(self._year, index_type=IndexType.INDEX_MONTH_DAY)
+            _monthday_list = list(_calendar_index.index_map().values())
+            for month_day in _monthday_list:
+                self._work_hours_dict[tuple(month_day)] = None
+            # set the first workdays
+            self._work_hours_dict[(1, 1)] = self._work_hours
+        # set a single day in the list
+        if month is not None and day is not None:
+            self._work_hours_dict[(month, day)] = work_hours
+        # readjust: fill up all None values
+        if readjust:
+            _calendar_index = CalendarIndex(self._year, index_type=IndexType.INDEX_MONTH_DAY)
+            _workhours_current = self._work_hours_dict[(1, 1)]
+            _monthday_list = list(_calendar_index.index_map().values())
+            for month_day in _monthday_list:
+                _key = tuple(month_day)
+                _workhours = self._work_hours_dict.get(_key)
+                if _workhours is not None:
+                    _workhours_current = _workhours
+                self._work_hours_dict[_key] = _workhours_current
+            pass
+
     def _parse_shortcodes(self) -> None:
         """parse shortcodes and set infodict"""
         self._daytype_dict = {}
@@ -269,6 +308,21 @@ class Calendar:
                 except ValueError:
                     pass
         return totalwork
+
+    def _parse_tags(self, tags: list, dayinfo: str) -> dict:
+        """parses and adapts tag list for special cases, returns the tags as dict
+        and parsed context info as dict
+        """
+        out = {}
+        for _tag in tags:
+            _context = None
+            # cut off working time
+            if TAG_REGULAR_WORKTIME in _tag:
+                _tag = TAG_REGULAR_WORKTIME
+                # get work times
+                _context = float(re.findall(REGEX_REGULAR_WORKTIME, dayinfo)[0].replace(",", "."))
+            out[_tag] = _context
+        return out
 
     def parse_dayinfo(self, dayinfo: str) -> CalendarDayDictType:
         """parses a dayinfo line"""
@@ -316,8 +370,19 @@ class Calendar:
         _total_duration = DateTimeUtil.duration_from_str(_s_adapted)
 
         _string_matches.extend(_durations)
+        # get work_hours
+        _work_hours = self._work_hours
         # get all tags
         _tags = re.findall(REGEX_TAGS, dayinfo)
+        _work_hours_new = None
+        # TODO PRIO1 check tag for work time
+        if len(_tags) > 0:
+            _tag_dict = self._parse_tags(_tags, dayinfo)
+            _tags = list(_tag_dict.keys())
+            _work_hours_new = _tag_dict.get(TAG_REGULAR_WORKTIME)
+            if _work_hours_new is not None:
+                _work_hours = _work_hours_new
+
         # get DayTypeInfo / use only the first occurence
         _daytype_short = None
         _daytypes = [_tag for _tag in _tags if _tag.upper() in self._short_code_list]
@@ -346,17 +411,23 @@ class Calendar:
         _s_adapted = _s_adapted.strip()
 
         for _date in _dates:
-            _ymdh = (_date.year, _date.month, _date.day, self._work_hours)
+            _ymdh = (_date.year, _date.month, _date.day, _work_hours)
+            # skip dates outside of current year
+            if _date.year != self._year:
+                continue
+            # set new work hours
+            if _work_hours_new:
+                self._set_workhours(_date.month, _date.day, _work_hours_new)
             # create_day_info type
             _day_info = Calendar.create_day_info(*_ymdh)
             # add parts from the string parsing above
             Calendar._merge_daytype(_day_info, [_day_type])
             _day_info.duration = _total_duration
-            _day_info.work_hours = self._work_hours
+            # replace work hours
+            _day_info.work_hours = _work_hours
             if isinstance(_total_duration, (float, int)) and isinstance(self._work_hours, (float, int)):
-                _day_info.overtime = _total_duration - self._work_hours
+                _day_info.overtime = _total_duration - _work_hours
             _day_info.total_work = _total_work
-            # TODO _day_info.overtime
             if len(_s_adapted) > 0:
                 _day_info.info = [_s_adapted]
             _day_info.info_raw = [dayinfo]
@@ -452,7 +523,7 @@ class Calendar:
     def _add_info(self) -> None:
         """adds information to calendar and merges multiple information lines"""
         _out = {}
-        _dayinfo_dicts = {}
+        _dayinfo_dicts: Dict[str, CalendarDayType] = {}
 
         # get dayinfos for each additional info line, blend them together
         for _day_info_s in self._dayinfo_list:
@@ -461,6 +532,9 @@ class Calendar:
                 _day_infos = _dayinfo_dicts.get(_date, [])
                 _day_infos.append(_dayinfo)
                 _dayinfo_dicts[_date] = _day_infos
+
+        # calculate the daily worktimes (worktime changs for the year were collected before)
+        self._set_workhours(readjust=True)
 
         for _date, _day_info in _dayinfo_dicts.items():
             if len(_day_info) == 1:
@@ -480,13 +554,19 @@ class Calendar:
                 logger.warning("[Calendar] Additional Information: Year not matching")
                 continue
 
+            # calculate working times based on daily regular working hours
+            _work_hours = self._work_hours_dict.get((_dt.month, _dt.day), self._work_hours)
+            _duration = _dayinfo.duration
+            if _duration is not None:
+                _dayinfo.overtime = _duration - _work_hours
+
             # adjust working times
             if _dayinfo.holiday is not None:
                 _dayinfo.duration = None
                 _dayinfo.overtime = None
             elif _dayinfo.day_type == DayTypeEnum.FLEXTIME:
                 _dayinfo.duration = 0.0
-                _dayinfo.overtime = -1 * self._work_hours
+                _dayinfo.overtime = -1 * _work_hours
             elif _dayinfo.day_type in [
                 DayTypeEnum.VACATION,
                 DayTypeEnum.HOLIDAY,

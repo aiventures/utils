@@ -73,6 +73,7 @@ Configuration should be OS independent, but only tested on Win Os.
 
 **OPEN**
 
+* `20250105` Create Multi Year Calendar
 * `20250104` Output of Calendar list as filter list but filtered
 * `20250104` Create a Tree Model of Paths
 * `20250104` Add a generic Filter Model to parse data
