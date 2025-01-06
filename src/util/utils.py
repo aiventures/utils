@@ -837,3 +837,7 @@ if __name__ == "__main__":
     out = Utils.convert(C.Conversion.VIRTUAL_ENV.name)
     out = Utils.convert(C.Conversion.GIT_BRANCH.name)
     out = Utils.convert(C.Conversion.PYTHON.name)
+    if True:
+        s = "test_string"
+        hash = Utils.get_hash(s)
+        pass

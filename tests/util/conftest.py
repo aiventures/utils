@@ -3,6 +3,7 @@
 import os
 from copy import deepcopy
 from pathlib import Path
+from datetime import datetime as DateTime
 
 import pytest
 
@@ -16,7 +17,8 @@ from util.persistence import Persistence
 from util.utils import Utils
 from util.calendar_filter import CalendarFilter
 from util.tree import Tree
-from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel, DateTimeFilterModel
+from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel, CalendarFilterModel
+
 
 ### [1] Fixtures for File Analyzer
 
@@ -353,11 +355,11 @@ def fixture_calendar2015_index() -> CalendarIndex:
     return _cal_index
 
 
-@pytest.fixture(scope="module")
-def fixture_calendar_filter() -> CalendarFilter:
-    """fixture calendar index 2015 has 53 Calendar Weeks at start of year"""
-    _cal_filter = CalendarFilter()
-    return _cal_filter
+# @pytest.fixture(scope="module")
+# def fixture_calendar_filter() -> CalendarFilter:
+#     """fixture calendar index 2015 has 53 Calendar Weeks at start of year"""
+#     _cal_filter = CalendarFilter()
+#     return _cal_filter
 
 
 @pytest.fixture(scope="module")
@@ -398,8 +400,8 @@ def fixture_tree() -> Tree:
 def fixture_numerical_filter() -> NumericalFilterModel:
     """returning a numerical filter"""
     _fields = {
-        "key": "",
-        "description": "",
+        "key": "num filter key",
+        "description": "description",
         "group": ["group1"],
         "operator": "any",
         "include": "include",
@@ -409,3 +411,65 @@ def fixture_numerical_filter() -> NumericalFilterModel:
         "operator_max": "lt",
     }
     return NumericalFilterModel(**_fields)
+
+
+@pytest.fixture(scope="function")
+def fixture_numerical_filter_date() -> NumericalFilterModel:
+    """returning a numerical filter"""
+    _fields = {
+        "key": "num filter date key",
+        "description": "description",
+        "group": ["group1"],
+        "operator": "any",
+        "include": "include",
+        "operator_min": "gt",
+        "value_min": DateTime(2024, 12, 5),
+        "value_max": DateTime(2024, 12, 10),
+        "operator_max": "lt",
+    }
+    return NumericalFilterModel(**_fields)
+
+
+@pytest.fixture(scope="function")
+def fixture_regex_filter() -> RegexFilterModel:
+    """returning a regex filter"""
+    _fields = {
+        "key": "num filter date key",
+        "description": "description",
+        "group": ["group1"],
+        "operator": "any",
+        "include": "include",
+        "regex": "hu(.+)go",
+    }
+    return RegexFilterModel(**_fields)
+
+
+@pytest.fixture(scope="function")
+def fixture_string_filter() -> StringFilterModel:
+    """returning a string filter"""
+    _fields = {
+        "key": "num filter date key",
+        "description": "description",
+        "group": ["group1"],
+        "operator": "any",
+        "include": "include",
+        "filter_strings": ["test", "another"],
+        "match": "contains",
+    }
+    return StringFilterModel(**_fields)
+
+
+@pytest.fixture(scope="function")
+def fixture_calendar_filter() -> CalendarFilterModel:
+    """returning a calendar filter"""
+    _fields = {
+        "key": "num filter date key",
+        "description": "description",
+        "group": ["group1"],
+        "operator": "any",
+        "include": "include",
+        "filter_str": "20241210:20241220",
+        "date_list": None,
+        "calendar_filter": None,
+    }
+    return CalendarFilterModel(**_fields)

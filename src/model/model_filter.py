@@ -1,9 +1,10 @@
 """Generic Filter Model"""
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ConfigDict
 from typing import List, Optional, Union, Dict, Literal, Any
 from enum import Enum
 from datetime import datetime as DateTime
+from util.calendar_filter import CalendarFilter
 
 
 class FilterModel(BaseModel):
@@ -24,19 +25,19 @@ class FilterModel(BaseModel):
 class NumericalFilterModel(FilterModel):
     """Filter for a numeric value"""
 
-    value_min: Optional[float | int] = None
+    value_min: Optional[float | int | DateTime] = None
     operator_min: Optional[Literal["gt", "ge", "eq"]] = None
 
-    value_max: Optional[float | int] = None
+    value_max: Optional[float | int | DateTime] = None
     operator_max: Optional[Literal["lt", "le", "eq"]] = None
 
     # lower / lower equal operators
 
     @field_validator("value_min", "value_max")
     @classmethod
-    def validate(cls, value) -> float | int:
+    def validate(cls, value) -> float | int | DateTime:
         """validation for numerical value"""
-        if value is not None and not isinstance(value, (int, float)):
+        if value is not None and not isinstance(value, (int, float, DateTime)):
             raise ValueError(f"[Filter] Got Value [{value}],expecting numerical type")
         return value
 
@@ -51,15 +52,17 @@ class StringFilterModel(FilterModel):
     """Filtering a string"""
 
     filter_strings: Optional[str | List[str]] = None  # string or list of strings to be matched
-    match: Optional[Literal["exact", "contains"]] = None  # str need to match excatly or only parts of it
+    match: Optional[Literal["exact", "contains"]] = "contains"  # str need to match excatly or only parts of it
 
 
-class DateTimeFilterModel(FilterModel):
-    """Filtering DateTime"""
+class CalendarFilterModel(FilterModel):
+    """Filtering DateTime in a Calenfdar Object"""
 
+    # allow to use non pydantic model and skip any validation
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     filter_str: Optional[str] = None  # Filter String to be used for Calendar
-    date_from: Optional[DateTime] = None
-    date_to: Optional[DateTime] = None
+    date_list: Optional[List[List[DateTime] | DateTime]] = None
+    calendar_filter: Optional[CalendarFilter] = None
 
 
 class FilterResultModel(BaseModel):
