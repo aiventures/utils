@@ -1,4 +1,4 @@
-"""Unit Tests for the Constants Class"""
+"""Unit Tests for the Filter Class"""
 
 import logging
 import os

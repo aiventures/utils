@@ -15,7 +15,7 @@ class FilterModel(BaseModel):
     # description
     description: Optional[str] = None
     # group assignment
-    group: Optional[List] = []  # assignment to a filter group
+    groups: Optional[List[Any] | str] = None  # assignment to a filter group
     # AND/OR filter link: match for any or all within a filter group
     operator: Optional[Literal["any", "all"]] = "any"
     # include or exclude filter result (NOT logic)
@@ -53,6 +53,7 @@ class StringFilterModel(FilterModel):
 
     filter_strings: Optional[str | List[str]] = None  # string or list of strings to be matched
     match: Optional[Literal["exact", "contains"]] = "contains"  # str need to match excatly or only parts of it
+    string_operator: Optional[Literal["any", "all"]] = "any"  # same as oprator but on atomic filter level
 
 
 class CalendarFilterModel(FilterModel):

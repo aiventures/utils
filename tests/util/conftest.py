@@ -18,6 +18,10 @@ from util.utils import Utils
 from util.calendar_filter import CalendarFilter
 from util.tree import Tree
 from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel, CalendarFilterModel
+from util.filter import NumericalFilter, RegexFilter, StringFilter, CalendarFilter
+
+
+from util.filter_set import FilterSet
 
 
 ### [1] Fixtures for File Analyzer
@@ -402,7 +406,7 @@ def fixture_numerical_filter() -> NumericalFilterModel:
     _fields = {
         "key": "num filter key",
         "description": "description",
-        "group": ["group1"],
+        "groups": ["group1"],
         "operator": "any",
         "include": "include",
         "operator_min": "gt",
@@ -419,7 +423,7 @@ def fixture_numerical_filter_date() -> NumericalFilterModel:
     _fields = {
         "key": "num filter date key",
         "description": "description",
-        "group": ["group1"],
+        "groups": ["group1"],
         "operator": "any",
         "include": "include",
         "operator_min": "gt",
@@ -434,9 +438,9 @@ def fixture_numerical_filter_date() -> NumericalFilterModel:
 def fixture_regex_filter() -> RegexFilterModel:
     """returning a regex filter"""
     _fields = {
-        "key": "num filter date key",
+        "key": "num filter regex key",
         "description": "description",
-        "group": ["group1"],
+        "groups": ["group1", "group2"],
         "operator": "any",
         "include": "include",
         "regex": "hu(.+)go",
@@ -448,11 +452,11 @@ def fixture_regex_filter() -> RegexFilterModel:
 def fixture_string_filter() -> StringFilterModel:
     """returning a string filter"""
     _fields = {
-        "key": "num filter date key",
+        "key": "num filter string key",
         "description": "description",
-        "group": ["group1"],
+        "groups": "group2",
         "operator": "any",
-        "include": "include",
+        "string_operator": "any",
         "filter_strings": ["test", "another"],
         "match": "contains",
     }
@@ -463,13 +467,32 @@ def fixture_string_filter() -> StringFilterModel:
 def fixture_calendar_filter() -> CalendarFilterModel:
     """returning a calendar filter"""
     _fields = {
-        "key": "num filter date key",
         "description": "description",
-        "group": ["group1"],
-        "operator": "any",
+        "operator": "all",
+        "groups": "group1",
         "include": "include",
         "filter_str": "20241210:20241220",
         "date_list": None,
         "calendar_filter": None,
     }
     return CalendarFilterModel(**_fields)
+
+
+@pytest.fixture(scope="function")
+def test_filter_set(
+    fixture_numerical_filter,
+    fixture_numerical_filter_date,
+    fixture_regex_filter,
+    fixture_string_filter,
+    fixture_calendar_filter,
+):
+    """testing filter set"""
+    _filter_list = [
+        NumericalFilter(fixture_numerical_filter),
+        NumericalFilter(fixture_numerical_filter_date),
+        RegexFilter(fixture_regex_filter),
+        StringFilter(fixture_string_filter),
+        CalendarFilter(fixture_calendar_filter),
+    ]
+    _filter_set = FilterSet(_filter_list)
+    return _filter_set

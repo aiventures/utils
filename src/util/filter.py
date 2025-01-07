@@ -1,20 +1,26 @@
 """Generic Filter"""
 
-from typing import Any, List
-from datetime import datetime as DateTime
-from abc import ABC, abstractmethod
+import logging
+import os
 import re
+from abc import ABC, abstractmethod
+from datetime import datetime as DateTime
 from re import Pattern
-from util.calendar_filter import CalendarFilter as CalendarFilterObject
-
+from typing import Any, List
 
 from model.model_filter import (
-    FilterModel,
-    RegexFilterModel,
     CalendarFilterModel,
-    StringFilterModel,
+    FilterModel,
     NumericalFilterModel,
+    RegexFilterModel,
+    StringFilterModel,
 )
+from util import constants as C
+from util.calendar_filter import CalendarFilter as CalendarFilterObject
+
+logger = logging.getLogger(__name__)
+# get log level from environment if given
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 
 class AbstractAtomicFilter(ABC):
@@ -23,6 +29,31 @@ class AbstractAtomicFilter(ABC):
     def __init__(self, obj_filter: FilterModel | None = None):
         """constructor"""
         self._filter = obj_filter
+
+    @property
+    def key(self) -> Any:
+        """return filter key"""
+        return self._filter.key
+
+    @key.setter
+    def key(self, key: object) -> Any:
+        """return filter key"""
+        self._filter.key = key
+
+    @property
+    def groups(self) -> List[Any]:
+        """return filter groups"""
+        return self._filter.groups
+
+    @property
+    def description(self) -> str | None:
+        """return filter key"""
+        return self._filter.groups
+
+    @property
+    def operator(self) -> str | None:
+        """return all or any operator"""
+        return self._filter.operator
 
     @property
     def obj_filter(self) -> FilterModel:
@@ -41,11 +72,25 @@ class NumericalFilter(AbstractAtomicFilter):
         """constructor"""
         super().__init__()
         self._filter: NumericalFilterModel = obj_filter
+        self._filter_type = None
+        if obj_filter.value_max is not None:
+            self._filter_type = type(obj_filter.value_max)
+        if self._filter_type is None:
+            self._filter_type = type(obj_filter.value_min)
 
     def filter(self, obj) -> bool:
         """filter passed object"""
         if not isinstance(obj, (int, float, DateTime)):
-            raise ValueError(f"[NumericalFilter] Passed {obj} of type [{type(obj)}], expected number or Date")
+            raise ValueError(
+                f"[NumericalFilter] Passed {obj} of type [{type(obj).__name__}], expected [{self._filter_type.__name__}]"
+            )
+
+        # type checking
+        if not self._filter_type is type(obj):
+            raise ValueError(
+                f"[NumericalFilter] Passed {obj} of type [{type(obj).__name__}], expected [{self._filter_type.__name__}]"
+            )
+
         passed = True
         # if filter is not set then the result will be undefined
         if self._filter.value_max is None and self._filter.value_min is None:
@@ -95,7 +140,7 @@ class RegexFilter(AbstractAtomicFilter):
     def filter(self, obj) -> bool:
         """filter passed object"""
         if not isinstance(obj, str):
-            raise ValueError(f"[RegexFilter] Passed {obj} of type [{type(obj)}], expected str")
+            raise ValueError(f"[RegexFilter] Passed {obj} of type [{type(obj).__name__}], expected str")
         passed = True
         self._last_str = obj
 
@@ -127,7 +172,7 @@ class StringFilter(AbstractAtomicFilter):
         """filter passed object"""
 
         if not isinstance(obj, str):
-            raise ValueError(f"[StringFilter] Passed {obj} of type [{type(obj)}], expected str")
+            raise ValueError(f"[StringFilter] Passed {obj} of type [{type(obj).__name__}], expected str")
         passed = False
 
         _filter_strings = self._filter.filter_strings
@@ -151,7 +196,7 @@ class StringFilter(AbstractAtomicFilter):
                 if _filter_s == obj:
                     _passed = True
             _passed_list.append(_passed)
-        if self._filter.operator == "all":
+        if self._filter.string_operator == "all":
             passed = all(_passed_list)
         else:
             passed = any(_passed_list)
@@ -180,8 +225,13 @@ class CalendarFilter(AbstractAtomicFilter):
             self._calendar_filter_obj = CalendarFilterObject(self._filter_str, self._date_list_in)
         self._datelist = self._calendar_filter_obj.datelist
 
-    def filter(self, obj) -> bool:
+    def filter(self, obj: DateTime) -> bool:
         """filtering the calendar object"""
+        if not isinstance(obj, DateTime):
+            raise ValueError(
+                f"[CalendarFilter] Passed {obj} of type [{type(obj).__name__}], expected datetime.datetime"
+            )
+
         passed = True if obj in self._datelist else False
 
         if self._filter.include == "exclude":
