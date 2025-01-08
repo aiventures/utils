@@ -1,8 +1,8 @@
 """Pydantic model for the persistence class"""
 
+from typing import Optional, Union
+
 from pydantic import BaseModel
-from typing import List, Optional, Union, Dict
-from enum import Enum
 
 
 class ParamsFind(BaseModel):
@@ -23,5 +23,7 @@ class ParamsFind(BaseModel):
     ignore_case: Optional[bool] = True
     show_progress: Optional[bool] = True
     max_path_depth: Optional[int] = None
+    max_num_files: Optional[int] = None
+    max_num_dirs: Optional[int] = None
     paths_only: Optional[bool] = False
     add_empty_paths: Optional[bool] = True

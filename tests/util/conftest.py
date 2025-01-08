@@ -18,6 +18,7 @@ from util.utils import Utils
 from util.calendar_filter import CalendarFilter
 from util.tree import Tree
 from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel, CalendarFilterModel
+from model.model_persistence import ParamsFind
 from util.filter import NumericalFilter, RegexFilter, StringFilter, CalendarFilter
 
 
@@ -479,7 +480,7 @@ def fixture_calendar_filter() -> CalendarFilterModel:
 
 
 @pytest.fixture(scope="function")
-def test_filter_set(
+def fixture_filter_set(
     fixture_numerical_filter,
     fixture_numerical_filter_date,
     fixture_regex_filter,
@@ -496,3 +497,30 @@ def test_filter_set(
     ]
     _filter_set = FilterSet(_filter_list)
     return _filter_set
+
+
+@pytest.fixture(scope="module")
+def fixture_params_find(fixture_testpath) -> ParamsFind:
+    """findall params"""
+    _params = {
+        "p_root_paths": str(fixture_testpath),
+        "include_abspaths": None,
+        "exclude_abspaths": None,
+        "include_files": None,
+        "exclude_files": None,
+        "include_paths": None,
+        "exclude_paths": None,
+        "paths": True,
+        "files": True,
+        "as_dict": True,
+        "root_path_only": False,
+        "match_all": False,
+        "ignore_case": True,
+        "show_progress": False,
+        "max_path_depth": None,
+        "max_num_files": None,
+        "max_num_dirs": None,
+        "paths_only": False,
+        "add_empty_paths": True,
+    }
+    return ParamsFind(**_params)

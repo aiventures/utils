@@ -264,6 +264,8 @@ class Persistence:
         match_all: bool = False,
         show_progress: bool = False,
         max_path_depth: int = None,
+        max_num_files: int = None,
+        max_num_dirs: int = None,
         paths_only: bool = False,
         add_empty_paths: bool = False,
     ) -> int:
@@ -277,7 +279,18 @@ class Persistence:
             rprint(f"[{Color['OUT_TITLE']}]### Path  [{Color['OUT_PATH']}][{p_root}]")
         # determine depth of root path
         _depth_root_path = len(Path(os.path.abspath(p_root)).parts)
+        _num_total_files = 0
+        _num_total_dirs = 0
         for _subpath, _, _files in os.walk(p_root):
+            _num_total_dirs += 1
+            if max_num_dirs is not None and _num_total_dirs > max_num_dirs:
+                logger.info(f"[Persistence] Read more than [{_num_total_dirs}] dirs, will end here")
+                break
+            _num_total_files += len(_files)
+            if max_num_files is not None and _num_total_files > max_num_files:
+                logger.info(f"[Persistence] Read more than [{_num_total_files}] files, will end here")
+                break
+
             _cur_path = Path(_subpath).absolute()
             if root_path_only and str(_cur_path) != p_root:
                 continue
@@ -329,6 +342,7 @@ class Persistence:
 
         return out
 
+    # TODO PRIO3 refactor params to pydantic model
     @staticmethod
     def find(
         p_root_paths: list | str = None,
@@ -346,6 +360,8 @@ class Persistence:
         ignore_case: bool = True,
         show_progress: bool = True,
         max_path_depth: int = None,
+        max_num_files: int = None,
+        max_num_dirs: int = None,
         paths_only: bool = False,
         add_empty_paths: bool = True,
     ) -> list | dict:
@@ -391,6 +407,8 @@ class Persistence:
                 "match_all": match_all,
                 "show_progress": show_progress,
                 "max_path_depth": max_path_depth,
+                "max_num_files": max_num_files,
+                "max_num_dirs": max_num_dirs,
                 "paths_only": paths_only,
                 "add_empty_paths": add_empty_paths,
             }

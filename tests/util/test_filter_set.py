@@ -40,16 +40,16 @@ def test_filter_set_setup(
     assert len(_filter_keys) == 5
 
 
-def test_filter_set(test_filter_set):
+def test_filter_set(fixture_filter_set):
     """testing filter operation"""
     test_object = 13
-    _filter_result_verbose = test_filter_set.filter(test_object, short=False)
+    _filter_result_verbose = fixture_filter_set.filter(test_object, short=False)
     assert isinstance(_filter_result_verbose, dict)
     assert isinstance(_filter_result_verbose.get("group1"), dict)
-    _filter_result_short = test_filter_set.filter(test_object, short=True)
+    _filter_result_short = fixture_filter_set.filter(test_object, short=True)
     assert isinstance(_filter_result_short, dict)
     assert isinstance(_filter_result_short.get("group1"), bool)
     # only one group
-    _filter_result_onegroup = test_filter_set.filter(test_object, groups="group1", short=True)
+    _filter_result_onegroup = fixture_filter_set.filter(test_object, groups="group1", short=True)
     assert isinstance(_filter_result_onegroup, bool)
     pass

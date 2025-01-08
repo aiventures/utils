@@ -216,14 +216,14 @@ class Tree:
         """returns the keys list required to navigate to the element"""
         keys = []
         # get all predecessors
-        predecessor_ids = self.get_predecessors(node_id)
-        node_ids = [node_id, *predecessor_ids]
-        for id in node_ids:
-            tree_elem = self.get_element(id)
+        _predecessor_ids = self.get_predecessors(node_id)
+        _node_ids = [node_id, *_predecessor_ids]
+        for _id in _node_ids:
+            _tree_elem = self.get_element(_id)
             if not self._name_field:
-                keys.append(tree_elem["node"])
+                keys.append(_tree_elem["node"])
             else:
-                keys.append(tree_elem[self._name_field])
+                keys.append(_tree_elem[self._name_field])
         keys.reverse()
         return keys
 
