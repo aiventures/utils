@@ -1,10 +1,10 @@
 """File objects as tree representation"""
 
-import json
+from os import lstat
 import logging
 import os
 from pathlib import Path
-
+from datetime import datetime as DateTime
 from model.model_persistence import ParamsFind
 from util import constants as C
 from util.persistence import Persistence
@@ -21,6 +21,10 @@ VALUE = "value"
 ROOT = "root"
 FILES = "files"
 PATHS = "paths"
+SIZE = "size"
+CHDATE = "chdate"
+IS_FILE = "is_file"
+TOTAL_SIZE = "total_size"
 
 # TODO PRIO3 Add Progress Bar Indicator
 
@@ -28,7 +32,7 @@ PATHS = "paths"
 class FileTree:
     """Files as tree representation"""
 
-    def __init__(self, file_filter: ParamsFind = None, progress: bool = False):
+    def __init__(self, file_filter: ParamsFind = None, metadata: bool = False, progress: bool = False):
         """Constructor"""
         self._file_filter: ParamsFind = file_filter
         self._file_filter.as_dict = True
@@ -37,6 +41,7 @@ class FileTree:
         self._stats = {FILES: 0, PATHS: 0}
         self._tree = None
         self._progress = progress
+        self._metadata = metadata
         self._read()
 
     def _add_file_dict_to_tree(self, path: str, files: list) -> None:
@@ -45,17 +50,35 @@ class FileTree:
         _hash_parent = Utils.get_hash(_parent_path)
         _hash_path = Utils.get_hash(path)
         if self._tree_dict.get(_hash_path) is None:
-            self._tree_dict[_hash_path] = {PARENT: _hash_parent, VALUE: path}
+            _out = {PARENT: _hash_parent, VALUE: path}
+            if self._metadata:
+                _meta = lstat(path)
+                _ch_time = DateTime.fromtimestamp(_meta.st_ctime)
+                _metadict = {IS_FILE: False, SIZE: _meta.st_size, CHDATE: _ch_time}
+                _out.update(_metadict)
+            self._tree_dict[_hash_path] = _out
             self._stats[PATHS] += 1
         for _file in files:
             self._stats[FILES] += 1
             _hash_file = Utils.get_hash(_file)
-            self._tree_dict[_hash_file] = {PARENT: _hash_path, VALUE: _file}
+            _out = {PARENT: _hash_path, VALUE: _file}
+            if self._metadata:
+                _meta = lstat(_file)
+                _ch_time = DateTime.fromtimestamp(_meta.st_ctime)
+                _metadict = {IS_FILE: True, SIZE: _meta.st_size, CHDATE: _ch_time}
+                _out.update(_metadict)
+            self._tree_dict[_hash_file] = _out
 
     def _add_path_to_root(self, path: str) -> None:
         """add a path to the tree root"""
         _hash = Utils.get_hash(path)
-        self._tree_dict[_hash] = {PARENT: ROOT, VALUE: path}
+        _out = {PARENT: ROOT, VALUE: path}
+        if self._metadata:
+            _meta = lstat(path)
+            _ch_time = DateTime.fromtimestamp(_meta.st_ctime)
+            _metadict = {IS_FILE: False, SIZE: _meta.st_size, CHDATE: _ch_time}
+            _out.update(_metadict)
+        self._tree_dict[_hash] = _out
 
     def _read(self) -> None:
         """read all file objects and get the tree"""
@@ -75,6 +98,35 @@ class FileTree:
                 self._add_path_to_root(_p_root)
                 for _path, _files in _file_dict.items():
                     self._add_file_dict_to_tree(_path, _files)
+
+    def _calc_total_sizes(self, leaves: list = None) -> None:
+        """Calculate subotal size of the whole tree or only for some leaf nodes"""
+        # can't calculate size since no metadata were read
+        if self._metadata is False:
+            logger.info("[FileTree] Calculation of subtotal file sizes not possible since no metadata were read")
+            return
+        # get all children (=Files) and adf file size to each predecessor
+        _tree = self.tree
+        # get all leaves in case no leaf ids are transferred
+        if leaves is None:
+            _leaves = _tree.get_leaves()
+        # can be used to calculate trees only for some sub trees
+        else:
+            _leaves = leaves
+
+        for _leaf_id in _leaves:
+            # get the info
+            _info = self._tree_dict.get(_leaf_id)
+            # only add size of files
+            if _info[IS_FILE] is False:
+                continue
+            _size = _info.get(SIZE, 0)
+            # get all predecessors and add size of leaf node (=file)
+            _pred_ids = _tree.get_predecessors(_leaf_id)
+            for _pred_id in _pred_ids:
+                _info_pred = self._tree_dict.get(_pred_id)
+                _pred_size = _info_pred.get(TOTAL_SIZE, 0) + _size
+                _info_pred[TOTAL_SIZE] = _pred_size
 
     @property
     def stats(self):
