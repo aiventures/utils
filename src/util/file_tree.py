@@ -1,18 +1,19 @@
 """File objects as tree representation"""
 
-from os import lstat
 import logging
 import os
-from pathlib import Path
 from datetime import datetime as DateTime
+from os import lstat
+from pathlib import Path
+
+from model.model_file_tree import ParamsFileTreeModel
 from model.model_persistence import ParamsFind
 from util import constants as C
+from util.filter import DictFilter
+from util.filter_set import FilterSet
 from util.persistence import Persistence
 from util.tree import Tree
 from util.utils import Utils
-from model.model_file_tree import ParamsFileTree
-from util.filter import AbstractAtomicFilter, DictFilter
-from util.filter_set import FilterSet
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ TOTAL_SIZE = "total_size"
 class FileTree:
     """Files as tree representation"""
 
-    def __init__(self, params_file_tree: ParamsFileTree):
+    def __init__(self, params_file_tree: ParamsFileTreeModel):
         """Constructor"""
         # file_filter: ParamsFind = None, metadata: bool = False, progress: bool = False
 

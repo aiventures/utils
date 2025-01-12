@@ -420,7 +420,7 @@ class Persistence:
 
         if show_progress:
             rprint(
-                f"[{Color['OUT_TITLE']}]### ({str(_num_total).zfill(3)}) Files found in [{Color['OUT_PATH']}]{p_root_paths}"
+                f"[{Color.OUT_TITLE.value}]### ({str(_num_total).zfill(3)}) Files found in [{Color.OUT_PATH.value}]{p_root_paths}"
             )
 
         # either return dict or list of files

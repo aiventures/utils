@@ -97,9 +97,10 @@ class Utils:
         ld_x = log(x, 2**10)  # exponent to base 1024
         exp_int = floor(ld_x)
         exp_frac = ld_x - exp_int
-        units = ("", "Kilo", "Mega", "Giga", "Tera", "Peta", "Exa", "Zetta", "Yotta")
+        # units = ("", "Kilo", "Mega", "Giga", "Tera", "Peta", "Exa", "Zetta", "Yotta")
+        units = ("", "k", "M", "G", "T", "P", "E", "Z", "Y")
         value = (2**10) ** exp_frac
-        text = str(round(value, num_decimals)) + " " + units[exp_int] + "bytes"
+        text = str(round(value, num_decimals)) + " " + units[exp_int] + "B"
         if short:
             r = text
         else:

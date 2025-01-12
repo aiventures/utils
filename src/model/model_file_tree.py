@@ -9,13 +9,27 @@ from util.filter import AbstractAtomicFilter, DictFilter
 from util.filter_set import FilterSet
 
 
-class ParamsFileTree(BaseModel):
+class ParamsFileTreeModel(BaseModel):
     """Input Params for File Tree Constructor"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
     file_filter_params: Optional[ParamsFind] = None
     add_metadata: Optional[bool] = False
     add_filesize: Optional[bool] = False
     file_filter: Optional[FilterSet | DictFilter] = None
     path_filter: Optional[FilterSet | DictFilter] = None
+
+
+class FileTreeNodeRenderModel(BaseModel):
+    """rendering"""
+
+    extension: Optional[str] = None
+    name: Optional[str] = None
+    path: Optional[str] = None
+    size: Optional[int] = None
+    size_str: Optional[str] = None
+    icon: Optional[str] = None
+    color: Optional[str] = None
+    is_file: Optional[bool] = None
+    is_path: Optional[bool] = None
+    is_empty: Optional[bool] = None

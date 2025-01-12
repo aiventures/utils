@@ -34,7 +34,7 @@ class ParamsFind(BaseModel):
     ignore_case: Optional[bool] = True
     # show progress bar
     show_progress: Optional[bool] = True
-    # check up to a macimum depth level
+    # check up to a maximum depth level
     max_path_depth: Optional[int] = None
     # process up to a max number
     max_num_files: Optional[int] = None

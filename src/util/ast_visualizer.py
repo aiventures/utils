@@ -71,6 +71,7 @@ FORMAT_NODES = {
         "fontcolor": "white",
     },
     "Constant": {"style": "filled", "color": "grey50", "fillcolor": "grey50", "fontcolor": "white"},
+    "Dict": {"style": "filled", "color": "darkslategray2", "fillcolor": "darkslategray2", "fontcolor": "black"},
     "AnnAssign": {"style": "filled", "color": "lightsalmon1", "fillcolor": "lightsalmon1", "fontcolor": "black"},
     "Attribute": {"style": "filled", "color": "orchid1", "fillcolor": "orchid1", "fontcolor": "black"},
     "Assign": {"style": "filled", "color": "lightsalmon1", "fillcolor": "lightsalmon1", "fontcolor": "black"},
@@ -88,6 +89,7 @@ FORMAT_NODES = {
     "Call": {"style": "filled", "color": "plum1", "fillcolor": "plum1", "fontcolor": "gray33", "shape": "cds"},
     "Return": {"style": "filled", "color": "plum1", "fillcolor": "plum1", "fontcolor": "gray33", "shape": "larrow"},
     "Name": {"style": "filled", "color": "darkturquoise", "fillcolor": "darkturquoise", "fontcolor": "black"},
+    "Subscript": {"style": "filled", "color": "darkslategrey", "fillcolor": "darkslategrey", "fontcolor": "white"},
 }
 
 
@@ -302,9 +304,13 @@ class AstVisualizer:
         try:
             self._tree = ast.parse(_code)
         except SyntaxError as e:
-            logger.error(f"[AstVisualizer] Code is not valid [{str(e.args)}]")
-            self._tree = None
-            self._code = None
+            # fallback also try to parse json strings
+            try:
+                self._tree = ast.literal_eval(_code)
+            except SyntaxError:
+                logger.error(f"[AstVisualizer] Code is not valid [{str(e.args)}]")
+                self._tree = None
+                self._code = None
 
     def dump(self) -> str | None:
         """gets the object tree as string dump"""
@@ -379,7 +385,18 @@ _sample_error = """
 no valid python
 """
 
-SAMPLE_CODE = _sample_class
+_sample_pydantic = """
+class CalendarIndexType(BaseModel):
+
+    datetime: Optional[DateTime] = None
+    year: Optional[int] = None
+    xyz: int = 5
+"""
+
+# also supporting dict
+_sample_dict = """{"a":2,"b":{2:"4"}}"""
+
+SAMPLE_CODE = _sample_dict
 
 if __name__ == "__main__":
     loglevel = DEFAULT_LOGLEVEL

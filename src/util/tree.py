@@ -137,8 +137,10 @@ class Tree:
 
         return hierarchy_nodes_dict
 
-    def get_children(self, node_id, only_leaves=False) -> list:
-        """gets children nodes as list (option to select only leaves)"""
+    def get_children(self, node_id, only_leaves=False) -> list | bool:
+        """gets children nodes as list (option to select only leaves)
+        also may check if children exist
+        """
         logger.debug("[Tree] Get Children Nodes")
         children_nodes = []
         parent_node = self._hierarchy_nodes_dict.get(node_id)
@@ -170,6 +172,11 @@ class Tree:
             children_nodes = leaves
 
         return children_nodes
+
+    def has_children(self, node_id) -> bool:
+        """checks if node has children"""
+        _hier_node = self.hierarchy.get(node_id)
+        return len(_hier_node.get(Tree.CHILDREN, [])) > 0
 
     def get_predecessors(self, node_id) -> list:
         """gets the parent nodes in a list"""
