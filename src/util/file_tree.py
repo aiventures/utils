@@ -10,6 +10,9 @@ from util import constants as C
 from util.persistence import Persistence
 from util.tree import Tree
 from util.utils import Utils
+from model.model_file_tree import ParamsFileTree
+from util.filter import AbstractAtomicFilter, DictFilter
+from util.filter_set import FilterSet
 
 logger = logging.getLogger(__name__)
 
@@ -32,17 +35,38 @@ TOTAL_SIZE = "total_size"
 class FileTree:
     """Files as tree representation"""
 
-    def __init__(self, file_filter: ParamsFind = None, metadata: bool = False, progress: bool = False):
+    def __init__(self, params_file_tree: ParamsFileTree):
         """Constructor"""
-        self._file_filter: ParamsFind = file_filter
-        self._file_filter.as_dict = True
-        self._file_dict = {}
-        self._tree_dict = {ROOT: {PARENT: None, VALUE: "root"}}
-        self._stats = {FILES: 0, PATHS: 0}
-        self._tree = None
-        self._progress = progress
-        self._metadata = metadata
+        # file_filter: ParamsFind = None, metadata: bool = False, progress: bool = False
+
+        self._file_filter_params: ParamsFind = params_file_tree.file_filter_params
+        self._file_filter_params.as_dict = True
+        self._add_metadata: bool = params_file_tree.add_metadata
+        self._show_progress: bool = self._file_filter_params.show_progress
+        self._filesize: bool = params_file_tree.add_filesize
+        self._path_filterset = None
+        self._file_filterset = None
+        self._file_filter = None
+        self._path_filter = None
+        # a bit awkward but allow for quick access to Filter
+
+        if isinstance(params_file_tree.file_filter, DictFilter):
+            self._file_filter = params_file_tree.file_filter
+        elif isinstance(params_file_tree.file_filter, FilterSet):
+            self._file_filterset = params_file_tree.file_filters
+
+        if isinstance(params_file_tree.path_filter, DictFilter):
+            self._path_filter = params_file_tree.path_filter
+        elif isinstance(params_file_tree.path_filter, FilterSet):
+            self._path_filterset = params_file_tree.path_filter
+
+        self._file_dict: dict = {}
+        self._tree_dict: dict = {ROOT: {PARENT: None, VALUE: "root"}}
+        self._stats: dict = {FILES: 0, PATHS: 0}
+        self._tree: Tree = None
         self._read()
+        if self._filesize:
+            self._calc_total_sizes()
 
     def _add_file_dict_to_tree(self, path: str, files: list) -> None:
         """adding items to tree"""
@@ -51,7 +75,7 @@ class FileTree:
         _hash_path = Utils.get_hash(path)
         if self._tree_dict.get(_hash_path) is None:
             _out = {PARENT: _hash_parent, VALUE: path}
-            if self._metadata:
+            if self._add_metadata:
                 _meta = lstat(path)
                 _ch_time = DateTime.fromtimestamp(_meta.st_ctime)
                 _metadict = {IS_FILE: False, SIZE: _meta.st_size, CHDATE: _ch_time}
@@ -62,7 +86,7 @@ class FileTree:
             self._stats[FILES] += 1
             _hash_file = Utils.get_hash(_file)
             _out = {PARENT: _hash_path, VALUE: _file}
-            if self._metadata:
+            if self._add_metadata:
                 _meta = lstat(_file)
                 _ch_time = DateTime.fromtimestamp(_meta.st_ctime)
                 _metadict = {IS_FILE: True, SIZE: _meta.st_size, CHDATE: _ch_time}
@@ -73,7 +97,7 @@ class FileTree:
         """add a path to the tree root"""
         _hash = Utils.get_hash(path)
         _out = {PARENT: ROOT, VALUE: path}
-        if self._metadata:
+        if self._add_metadata:
             _meta = lstat(path)
             _ch_time = DateTime.fromtimestamp(_meta.st_ctime)
             _metadict = {IS_FILE: False, SIZE: _meta.st_size, CHDATE: _ch_time}
@@ -82,7 +106,7 @@ class FileTree:
 
     def _read(self) -> None:
         """read all file objects and get the tree"""
-        _paths = self._file_filter.p_root_paths
+        _paths = self._file_filter_params.p_root_paths
         if isinstance(_paths, str):
             _paths = _paths.split(",")
 
@@ -90,7 +114,7 @@ class FileTree:
             if not os.path.isdir(_p_root):
                 logger.warning(f"[FileTree] [{_p_root}] is not a valid path")
                 continue
-            _params = self._file_filter.model_dump()
+            _params = self._file_filter_params.model_dump()
             _params["p_root_paths"] = _p_root
             _file_dict = self._file_dict = Persistence.find(**_params)
             if _file_dict:
@@ -102,7 +126,7 @@ class FileTree:
     def _calc_total_sizes(self, leaves: list = None) -> None:
         """Calculate subotal size of the whole tree or only for some leaf nodes"""
         # can't calculate size since no metadata were read
-        if self._metadata is False:
+        if self._add_metadata is False:
             logger.info("[FileTree] Calculation of subtotal file sizes not possible since no metadata were read")
             return
         # get all children (=Files) and adf file size to each predecessor
@@ -140,3 +164,9 @@ class FileTree:
             self._tree = Tree()
             _ = self._tree.create_tree(self._tree_dict, name_field="value", parent_field="parent")
         return self._tree
+
+    @property
+    def tree_dict(self) -> Tree:
+        """returns the tree dict"""
+        _ = self.tree
+        return self._tree_dict

@@ -243,3 +243,11 @@ class CalendarFilter(AbstractAtomicFilter):
     def datelist(self) -> List[DateTime]:
         """returns the date list"""
         return self._datelist
+
+
+class DictFilter(AbstractAtomicFilter):
+    """Filtering a Dictionary"""
+
+    def __init__(self, obj_filter=None):
+        """constructor"""
+        super().__init__(obj_filter)
