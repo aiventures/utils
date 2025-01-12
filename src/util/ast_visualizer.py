@@ -62,7 +62,7 @@ FORMAT_DEFAULT = {"style": "filled", "color": "white", "fillcolor": "white", "fo
 # Formatting the output Nodes
 FORMAT_NODES = {
     "Module": {"style": "filled", "color": "darkblue", "fillcolor": "darkblue", "fontcolor": "white"},
-    "ClassDef": {"style": "filled", "color": "lime", "fillcolor": "lime", "fontcolor": "black"},
+    "ClassDef": {"style": "filled", "color": "dodgerblue4", "fillcolor": "dodgerblue4", "fontcolor": "white"},
     # function
     "FunctionDef": {
         "style": "filled",
@@ -287,9 +287,14 @@ class AstVisualizer:
         return self._code
 
     @code.setter
-    def code(self, code: str) -> None:
-        """setting the code string"""
+    def code(self, code: str | AstNode) -> None:
+        """setting the code string or directly the node"""
         _code = code
+        if isinstance(code, AstNode):
+            self._tree = code
+            self._code = ast.unparse(code)
+            return
+
         if os.path.isfile(code):
             _code = self._read_source(code)
         self._code = _code
@@ -309,14 +314,23 @@ class AstVisualizer:
             return None
 
 
+def visualize(
+    code: str | AstNode,
+    show_code: bool = True,
+    add_date: bool = False,
+    filename: str = None,
+    path: str = None,
+    view: bool = True,
+):
+    """convenience method to render a python code snippet"""
+    _visualizer = AstVisualizer(show_code, add_date, filename, path, view)
+    _visualizer.code = code
+    _visualizer.render()
+
+
 def main(code_s: str):
     """do something"""
-    _viusalizer = AstVisualizer()
-    # assure everything is set up
-    if not _viusalizer.is_executable:
-        exit(1)
-    _viusalizer.code = code_s
-    _viusalizer.render()
+    visualize(code_s)
 
 
 # code snippet to show what is going on
@@ -342,7 +356,7 @@ class MyClass:
     class_att:int = 5
     def __init__(self):
         self.attr:str = "hello"
-        pass        
+        pass
     def meth(self,p1:str,p2:str="xxx"):
         myvar = "5"
         pass
@@ -350,17 +364,19 @@ class MyClass:
     @mydecorator2
     def myprop(self)->str|None:
         return self.attr
+def HUGO():
+    pass
 """
 
 _sample_decorator = """
 @mydecorator1
 @mydecorator2
 def myprop(myparam0:int,myparam1:str="default")->str|None:
-    return "HUGO"    
+    return "HUGO"
 """
 
 _sample_error = """
-no valid python  
+no valid python
 """
 
 SAMPLE_CODE = _sample_class
