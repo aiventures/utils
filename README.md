@@ -73,6 +73,9 @@ Configuration should be OS independent, but only tested on Win Os.
 
 **OPEN**
 
+* `20250112` Adding Metrics derived from AST Trees
+* `20250112` Adding Classes to transform AST Trees into PlantUML Models
+* `20250112` Adding Code Parser using AST as Preparation for PlantUML Rendering
 * `20250105` Create Multi Year Calendar
 * `20250104` Output of Calendar list as filter list but filtered
 * `20250104` Create a Tree Model of Paths
@@ -97,6 +100,7 @@ Configuration should be OS independent, but only tested on Win Os.
 
 **DONE**
 
+* ~~`20250111` Adding AST Tree Visualizer (GraphViz)~~
 * ~~`20240927` Create an Utility to create Markdown with Date Lines~~ 20250105
 * ~~`20241216` Add a tag for setting total cumulated overtime from a start date~~ 20250105
 * ~~`20241215` Render Calendar as Tree~~ 20250104
