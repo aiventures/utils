@@ -13,22 +13,13 @@ from util.filter import DictFilter
 from util.filter_set import FilterSet
 from util.persistence import Persistence
 from util.tree import Tree
-from util.utils import Utils
+from util.utils import Utils, ROOT, PARENT, VALUE, FILES, PATHS, IS_FILE, SIZE, TOTAL_SIZE
+
 
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
-
-PARENT = "parent"
-VALUE = "value"
-ROOT = "root"
-FILES = "files"
-PATHS = "paths"
-SIZE = "size"
-CHDATE = "chdate"
-IS_FILE = "is_file"
-TOTAL_SIZE = "total_size"
 
 # TODO PRIO3 Add Progress Bar Indicator
 
@@ -77,9 +68,7 @@ class FileTree:
         if self._tree_dict.get(_hash_path) is None:
             _out = {PARENT: _hash_parent, VALUE: path}
             if self._add_metadata:
-                _meta = lstat(path)
-                _ch_time = DateTime.fromtimestamp(_meta.st_ctime)
-                _metadict = {IS_FILE: False, SIZE: _meta.st_size, CHDATE: _ch_time}
+                _metadict = Utils.get_lstat_metadata(path)
                 _out.update(_metadict)
             self._tree_dict[_hash_path] = _out
             self._stats[PATHS] += 1
@@ -88,9 +77,7 @@ class FileTree:
             _hash_file = Utils.get_hash(_file)
             _out = {PARENT: _hash_path, VALUE: _file}
             if self._add_metadata:
-                _meta = lstat(_file)
-                _ch_time = DateTime.fromtimestamp(_meta.st_ctime)
-                _metadict = {IS_FILE: True, SIZE: _meta.st_size, CHDATE: _ch_time}
+                _metadict = Utils.get_lstat_metadata(_file)
                 _out.update(_metadict)
             self._tree_dict[_hash_file] = _out
 
@@ -99,9 +86,7 @@ class FileTree:
         _hash = Utils.get_hash(path)
         _out = {PARENT: ROOT, VALUE: path}
         if self._add_metadata:
-            _meta = lstat(path)
-            _ch_time = DateTime.fromtimestamp(_meta.st_ctime)
-            _metadict = {IS_FILE: False, SIZE: _meta.st_size, CHDATE: _ch_time}
+            _metadict = Utils.get_lstat_metadata(path)
             _out.update(_metadict)
         self._tree_dict[_hash] = _out
 

@@ -9,6 +9,9 @@ import re
 import shlex
 import subprocess
 import sys
+from os import lstat
+import stat
+
 from configparser import Error as ConfigParserError
 from datetime import datetime as DateTime
 from math import floor, inf, log
@@ -35,6 +38,19 @@ P_WORK = "p_work"
 F_WORK = "f_work"
 F_SAVE = "f_save"
 P_SAVE = "p_save"
+
+# lstat data
+PARENT = "parent"
+VALUE = "value"
+ROOT = "root"
+FILES = "files"
+PATHS = "paths"
+SIZE = "size"
+CHDATE = "chdate"
+PERMISSION = "permission"
+PERMISSION_CHMOD = "chmod"
+IS_FILE = "is_file"
+TOTAL_SIZE = "total_size"
 
 
 class Utils:
@@ -63,6 +79,67 @@ class Utils:
             s += [fill] * (n - mod_s)
             num_chars = len(s)
         return [s[i : i + n] for i in range(0, num_chars, n)]
+
+    @staticmethod
+    def get_lstat_metadata(p: str) -> dict:
+        """adds metadata to output dict from meta lstat data"""
+        out = {}
+
+        try:
+            _lstat = lstat(p)
+            _st_mode = _lstat.st_mode
+            if stat.S_ISREG(_st_mode):
+                out[IS_FILE] = True
+            elif stat.S_ISDIR(_st_mode):
+                out[IS_FILE] = False
+            else:
+                out[IS_FILE] = None
+            out[SIZE] = _lstat.st_size
+            _permission = Utils.parse_st_mode(_lstat.st_mode)
+            out[PERMISSION_CHMOD] = _permission[0]
+            out[PERMISSION] = _permission[1]
+            out[CHDATE] = DateTime.fromtimestamp(_lstat.st_ctime)
+        except OSError:
+            logger.error(f"[FileTree] {p} is not a valid path")
+            _meta = None
+        return out
+
+    @staticmethod
+    def parse_st_mode(st_mode: int) -> tuple:
+        """parses st_mode from the os lstat module
+        User-Group-Others
+        4: Read permission
+        2: Write permission
+        1: Execute permission
+        0: No permission
+        """
+        permissions_rwx = ""
+        permissions_chmod = ""
+        for i in range(3):
+            _chmod = 0
+            # r
+            permission = True if st_mode & (0o400 >> (i * 3)) else False
+            if permission:
+                _chmod += 4
+                permissions_rwx += "r"
+            else:
+                permissions_rwx += "-"
+            # w
+            permission = True if st_mode & (0o200 >> (i * 3)) else False
+            if permission:
+                _chmod += 2
+                permissions_rwx += "w"
+            else:
+                permissions_rwx += "-"
+            # x
+            permission = True if st_mode & (0o100 >> (i * 3)) else False
+            if permission:
+                _chmod += 1
+                permissions_rwx += "x"
+            else:
+                permissions_rwx += "-"
+            permissions_chmod += str(_chmod)
+        return permissions_chmod, permissions_rwx
 
     @staticmethod
     def byte_info(x: int, short: bool = True, num_decimals: int = 1):

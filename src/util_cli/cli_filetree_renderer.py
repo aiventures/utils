@@ -3,7 +3,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Literal
 
 from rich.console import Console
 from rich.emoji import Emoji as RichEmoji
@@ -18,7 +18,8 @@ from model.model_file_tree import FileTreeNodeRenderModel, ParamsFileTreeModel
 from model.model_persistence import ParamsFind
 from util import constants as C
 
-from util.file_tree import PARENT, ROOT, SIZE, TOTAL_SIZE, VALUE, FileTree
+from util.file_tree import FileTree
+from util.utils import PARENT, ROOT, SIZE, TOTAL_SIZE, VALUE, IS_FILE, CHDATE, PERMISSION_CHMOD
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -32,12 +33,12 @@ FOLDER_CLOSE = "folder_close"
 STYLE_QUERY = "deep_sky_blue1"
 GUIDE_STYLE_DEFAULT = {"guide_style": "bold bright_black"}
 GUIDE_STYLE_BY_LEVEL = {
-    0: {"guide_style": "bold red"},
-    1: {"guide_style": "bold orange_red1"},
-    2: {"guide_style": "bold green"},
-    3: {"guide_style": "bold blue"},
-    4: {"guide_style": "purple4"},
-    5: {"guide_style": "light_steel_blue3"},
+    0: {"guide_style": "bold orange_red1"},
+    1: {"guide_style": "bold green"},
+    2: {"guide_style": "bold dodger_blue3"},
+    3: {"guide_style": "bold purple4"},
+    4: {"guide_style": "light_steel_blue3"},
+    5: {"guide_style": "gray70"},
 }
 
 SKINS_FILE_EXTENSIONS = {
@@ -85,11 +86,16 @@ class FileTreeRenderer:
         params_file_tree: ParamsFileTreeModel,
         filetree_skin_dict: dict = None,
         show_query_info: bool = True,
+        sorted_by: Literal["name", "size", "permission", "date", "extension"] = "name",
+        reverse: bool = False,
     ):
         """render a file Tree object"""
 
         # also show the query information
         self._show_query_info = show_query_info
+        # sorting options
+        self._sorted_by = sorted_by
+        self._reverse = reverse
         # gets the rendering skin and creates default values
         self._default_icon = None
         self._default_color = None
@@ -142,11 +148,25 @@ class FileTreeRenderer:
     def _render_node(self, _node_id, node_info: dict) -> dict:
         """renders the tree node"""
         out = ""
-        _is_file = node_info.get("is_file", None)
-        _path = Path(node_info.get("value", None))
+        _is_file = node_info.get(IS_FILE, None)
+        _path = Path(node_info.get(VALUE, None))
         _name = _path.name
-        _change_date = node_info.get("chdate", None)
-        _chdate_s = _change_date.strftime(C.DATEFORMAT_DD_MM_JJJJ_HH_MM_SS)
+        # TODO PRIO2 If there is a link with spaces convert it to windows
+        _winpath = _path
+
+        _change_date = node_info.get(CHDATE, None)
+        _chdate_s = _change_date.strftime(C.DATEFORMAT_DD_MM_JJJJ_HH_MM)
+        _permissions = node_info.get(PERMISSION_CHMOD)
+        _level_depth = len(_path.parts) - self._folder_depth_root
+        # for file we use hte same chmod color as its parent
+        if _is_file:
+            _level_depth -= 1
+        # guide color to be used for CHMOD
+        _guide_color = GUIDE_STYLE_BY_LEVEL.get(_level_depth, GUIDE_STYLE_DEFAULT)["guide_style"]
+        _permissions_text = f"[{_guide_color}] [{_permissions}] "
+
+        # _text_permissions = Text(_permissions, "")
+
         _icon = None
         _color = None
         _size = None
@@ -164,18 +184,17 @@ class FileTreeRenderer:
             _icon = _skin.icon
             if _icon is None:
                 _icon = self._default_icon
-
-            _text_filename = Text(_name, _color)
+            _text_chdate = Text(f"{_chdate_s}", _color)
+            _text_filename = Text(f"{_name}", _color)
             # TODO PRIO3 ADD HIGHLIGHTS DEOPENDING ON SEARCh ITEMS WHEN SEARCHING
             # text_filename.highlight_regex(r"\..*$", "bold bright_blue")
-            _text_filename.stylize(f"link file://{_path}")
+            _text_filename.stylize(f"link file://{_winpath}")
             _text_filename.append(f" ({decimal(_size)})", _color)
-            _label = Text(_icon) + " " + _text_filename
+            _label = Text(f"[{_permissions}] ", _guide_color) + _text_chdate + " " + Text(_icon) + " " + _text_filename
             out = {"label": _label}
         # path
         else:
             # todo change color depending on level depth
-            _level_depth = len(_path.parts) - self._folder_depth_root
             out = GUIDE_STYLE_BY_LEVEL.get(_level_depth, GUIDE_STYLE_DEFAULT)
             _path_is_empty = not self._file_tree.tree.has_children(_node_id)
             _style = "dim" if (_name.startswith("__") or _name.startswith(".")) else ""
@@ -195,13 +214,13 @@ class FileTreeRenderer:
                 _icon = _skin.icon
                 _default_icon = self._icon_folder_close
                 _size = node_info.get(TOTAL_SIZE, 0)
-                _extra_format = "bold "
+                _extra_format = "[bold]"
 
             if _color is None:
                 _color = self._default_color
             if _icon is None:
                 _icon = _default_icon
-            _label = f"[{_extra_format}{_color}]{_icon} [link file://{_path}]{escape(_name)} ({decimal(_size)})"
+            _label = f"{_extra_format}{_icon}{_permissions_text}[{_color}]{_chdate_s} [link file://{_winpath}]{escape(_name)} ({decimal(_size)})"
             out["label"] = _label
             out["style"] = _style
 
@@ -250,8 +269,45 @@ class FileTreeRenderer:
         for _line in _lines:
             _query_richtree_root.add(_line)
 
+    def _create_rich_tree_new(self):
+        """also allows for sorting of files"""
+
+        #         mydict = {
+        #     "B": {"value": 2, "d": DateTime(1990, 1, 1)},
+        #     "A": {"value": 1, "d": DateTime(2000, 1, 1)},
+        #     "C": {"value": 3, "d": DateTime(1980, 1, 1)},
+        # }
+        # sorted_dict = dict(sorted(mydict.items(), key=lambda item: item[1]["d"], reverse=True))
+        # pass
+        pass
+        _sorted_leaves = {}
+        _predecessor_dict = {}
+        _tree = self._file_tree.tree
+        _file_tree_dict = self._file_tree_dict
+        _leaves = _tree.get_leaves()
+        siblings = _tree.get_leaf_siblings()
+        for _node_id in _leaves:
+            # add all siblings and the parent node
+            _node = _file_tree_dict.get(_node_id)
+            _parent_id = _node.get("parent")
+            if _parent_id in _sorted_leaves:
+                continue
+            _siblings = _tree.get_siblings(_node_id, only_leaves=True)
+            _siblings.append(_node_id)
+            _node_dict = {_node_id: _file_tree_dict[_node_id] for _node_id in _siblings}
+            _sorted_leaves[_parent_id] = _node_dict
+            # now get all the prdecessors for the found parent
+            # _predecessors = _tree.get_predecessors(_parent_id)
+            # _predecessors.reverse()
+            # _predecessor_dict[_parent_id] = _predecessors
+            # sort order of folders is kept by name
+            # recursively create folders in sorted order
+
+        pass
+
     def _create_rich_tree(self):
         """creates the rich tree"""
+        self._create_rich_tree_new()
         _root = self._file_tree_dict.pop(ROOT)
         # TODO ADD ROOT LEVELS
         self._rich_tree = RichTree(
@@ -261,6 +317,9 @@ class FileTreeRenderer:
         self._rich_tree_dict[ROOT] = self._rich_tree
         self._render_query_info(self._rich_tree)
 
+        # TODO PRIO2 ADD SORT ORDER BY SIZE OR BY DATE OR BY NAME
+        # This requires to build up the tree differently
+
         for _node_id, _node_info in self._file_tree_dict.items():
             # render the item
 
@@ -268,12 +327,6 @@ class FileTreeRenderer:
             _rich_tree_parent = self._rich_tree_dict.get(_parent)
             if _rich_tree_parent is None:
                 continue
-
-            # _name = _node_info[VALUE].split("\\")[-1]
-            if _parent == ROOT:
-                _name = _node_info[VALUE]
-            # else:
-            #     _name = _node_info[VALUE].split("\\")[-1]
             _rendered_node = self._render_node(_node_id, _node_info)
             _rich_tree = _rich_tree_parent.add(**_rendered_node)
             self._rich_tree_dict[_node_id] = _rich_tree
