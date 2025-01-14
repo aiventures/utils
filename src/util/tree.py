@@ -137,8 +137,12 @@ class Tree:
 
         return hierarchy_nodes_dict
 
-    def get_children(self, node_id, only_leaves=False) -> list | bool:
-        """gets children nodes as list (option to select only leaves)
+    def get_children(self, node_id) -> list:
+        """returns ids of direct children"""
+        return self.hierarchy.get(node_id, {}).get(Tree.CHILDREN, [])
+
+    def get_all_children(self, node_id, only_leaves=False) -> list | bool:
+        """gets all children nodes below node as list (option to select only leaves)
         also may check if children exist
         """
         logger.debug("[Tree] Get Children Nodes")
@@ -367,7 +371,7 @@ if __name__ == "__main__":
     my_hierarchy = my_tree.hierarchy
     my_levels = my_tree.max_level
 
-    children = my_tree.get_children(1, only_leaves=False)
+    children = my_tree.get_all_children(1, only_leaves=False)
     print(children)
     my_parents = my_tree.get_predecessors(8)
     my_siblings = my_tree.get_siblings(8)

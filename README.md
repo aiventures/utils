@@ -73,6 +73,8 @@ Configuration should be OS independent, but only tested on Win Os.
 
 **OPEN**
 
+* `20250114` Rewrite [recurse_dict.py](./src/util/recurse_dict.py)
+* `20250113` Parse Yaml + JSON Into AST Tree
 * `20250112` Adding Metrics derived from AST Trees
 * `20250112` Adding Classes to transform AST Trees into PlantUML Models
 * `20250112` Adding Code Parser using AST as Preparation for PlantUML Rendering

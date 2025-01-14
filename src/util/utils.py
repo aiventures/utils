@@ -11,6 +11,7 @@ import subprocess
 import sys
 from os import lstat
 import stat
+import ctypes
 
 from configparser import Error as ConfigParserError
 from datetime import datetime as DateTime
@@ -26,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+
+# get a global variable since this might be used for any file operations
+is_win = True if platform.system() == "Windows" else False
 
 # environemnt variables (either from DOS or bash)
 
@@ -55,6 +59,52 @@ TOTAL_SIZE = "total_size"
 
 class Utils:
     """util collection"""
+
+    @staticmethod
+    def get_short_win_path(path: str):
+        """Returns Windows 8.3 Short Path without spaces"""
+        # create a buffer and get the short path from Windows
+        _buffer_size = 256
+        try:
+            _buffer = ctypes.create_unicode_buffer(_buffer_size)
+            _get_short_path_name = ctypes.windll.kernel32.GetShortPathNameW
+            _length = _get_short_path_name(path, _buffer, _buffer_size)
+
+            if _length == 0:
+                raise ctypes.WinError()
+
+            return _buffer[:_length]
+        except OSError as e:
+            logger.warning(f"[Utils] error occured trying to get Windows 8.3 Short Path [{path}], [{e.args}]")
+            return None
+
+    @staticmethod
+    def get_unspaced_path(path: str, quotes: bool = False, is_link: bool = False) -> str:
+        """OS dependent resolve issues with spaces in path
+        optionally surround with quotes
+        WIN: get 8.3 Short path
+        Other/Linux: add quotes
+        """
+        _s_link = ""
+        if is_link:
+            _s_link = "file://"
+
+        _path = path
+        if path[0] in ["'", '"'] and path[-1] == path[0]:
+            _path = f"{_s_link}{_path[1:-1]}"
+
+        _path = f"{_s_link}{_path}"
+
+        # do not convert for unix
+        if not " " in _path:
+            return f"'{_path}'" if quotes else f"{_path}"
+
+        if is_win:
+            _path = f"{_s_link}{Utils.get_short_win_path(path)}"
+        else:
+            quotes = True  # override path setting
+
+        return f'"{_path}"' if quotes else _path
 
     @staticmethod
     def is_list_or_tuple(obj):

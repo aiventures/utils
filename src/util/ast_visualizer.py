@@ -347,6 +347,8 @@ _sample_imports = """
 import sys
 from os import chdir
 from pathlib import Path as MyPath
+from a.b import z
+from .xyz import abc
 """
 
 _sample_hello_world = """
@@ -396,7 +398,7 @@ class CalendarIndexType(BaseModel):
 # also supporting dict
 _sample_dict = """{"a":2,"b":{2:"4"}}"""
 
-SAMPLE_CODE = _sample_dict
+SAMPLE_CODE = _sample_imports
 
 if __name__ == "__main__":
     loglevel = DEFAULT_LOGLEVEL
