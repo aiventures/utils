@@ -239,7 +239,7 @@ class FileTreeRenderer:
 
     def _render_query_info(self, rich_tree_root: RichTree) -> None:
         """Renders the query information to be added to the output tree"""
-        if self._render_query_info is False:
+        if self._show_query_info is False:
             return
 
         _query_title = RichEmoji.replace(f"[{STYLE_QUERY}]:magnifying_glass_tilted_right: QUERY PARAMS")
@@ -260,7 +260,14 @@ class FileTreeRenderer:
             if _value is None:
                 continue
             _params[_field] = _value
+        _order = "DESCENDING" if self._paths_reverse else "ASCENDING"
+        _paths_sorted_by = f"Paths sorted by \[{self._paths_sorted_by.upper()}] {_order}"
+        _order = "DESCENDING" if self._files_reverse else "ASCENDING"
+        _files_sorted_by = f"Files sorted by \[{self._files_sorted_by.upper()}] {_order}"
+
         _lines = [
+            _paths_sorted_by,
+            _files_sorted_by,
             f'Only Root Path [{_params.get("root_path_only","NA")}], Add Empty Paths [{_params.get("add_empty_paths","NA")}]',
             f'Match All [{_params.get("match_all","NA")}], Ignore Case [{_params.get("ignore_case","NA")}]',
         ]
