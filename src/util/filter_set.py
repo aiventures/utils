@@ -15,7 +15,7 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 
 class FilterSet:
-    """Combining sets of filters"""
+    """Combining sets of (atomic) filters"""
 
     def __init__(self, filter_list: List[AbstractAtomicFilter]):
         """constructor"""
@@ -56,6 +56,7 @@ class FilterSet:
         if isinstance(groups, str):
             groups = [groups]
         _groups = self.group_list
+        # restrict filter groups to any of the existing ones
         if isinstance(groups, list):
             _groups = [_g for _g in groups if _g in _groups]
         _passed_list = {}

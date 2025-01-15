@@ -86,7 +86,7 @@ class NumericalFilter(AbstractAtomicFilter):
             )
 
         # type checking
-        if not self._filter_type is type(obj):
+        if self._filter_type is not type(obj):
             raise ValueError(
                 f"[NumericalFilter] Passed {obj} of type [{type(obj).__name__}], expected [{self._filter_type.__name__}]"
             )

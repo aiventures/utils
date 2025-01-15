@@ -1,10 +1,12 @@
 """Generic Filter Model"""
 
-from pydantic import BaseModel, field_validator, ConfigDict
-from typing import List, Optional, Union, Dict, Literal, Any
-from enum import Enum
+from typing import List, Optional, Dict, Literal, Any
 from datetime import datetime as DateTime
+
+from pydantic import BaseModel, field_validator, ConfigDict
 from util.calendar_filter import CalendarFilter
+from util.filter_set import FilterSet
+from util.filter import AbstractAtomicFilter
 
 
 class FilterModel(BaseModel):
@@ -66,6 +68,7 @@ class CalendarFilterModel(FilterModel):
     calendar_filter: Optional[CalendarFilter] = None
 
 
+# TODO PRIO3 Do we still need this class
 class FilterResultModel(BaseModel):
     """result for given Base filters"""
 
@@ -77,3 +80,14 @@ class FilterResultModel(BaseModel):
     filters: Optional[List[str] | str] = None
     # optional filed that allows for explanation of matches
     origin: Optional[Dict[str, Any]]
+
+
+class ObjectFilterModel(FilterModel):
+    """filters on attributes of dict fields or object attributes
+    filters can be filters or filter sets
+    """
+
+    # Model is a dict of [object_attribute_name][rulename][filter|filterset]
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    # Model is a dict of [object_attribute_name][rulename][filter|filterset]
+    object_filter_dict = Dict[str, Dict[str, AbstractAtomicFilter | FilterSet]]

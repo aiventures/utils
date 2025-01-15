@@ -2,8 +2,6 @@
 
 import logging
 import os
-from datetime import datetime as DateTime
-from os import lstat
 from pathlib import Path
 
 from model.model_file_tree import ParamsFileTreeModel
@@ -13,8 +11,7 @@ from util.filter import DictFilter
 from util.filter_set import FilterSet
 from util.persistence import Persistence
 from util.tree import Tree
-from util.utils import Utils, ROOT, PARENT, VALUE, FILES, PATHS, IS_FILE, SIZE, TOTAL_SIZE
-
+from util.utils import FILES, IS_FILE, PARENT, PATHS, ROOT, SIZE, TOTAL_SIZE, VALUE, Utils
 
 logger = logging.getLogger(__name__)
 
