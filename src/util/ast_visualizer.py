@@ -23,6 +23,7 @@ from ast import AST as AstNode
 import subprocess
 from pathlib import Path
 from enum import StrEnum
+import json
 import os
 import logging
 import sys
@@ -34,6 +35,12 @@ try:
     from graphviz import Digraph
 except ImportError:
     PY_GRAPHVIZ_INSTALLED = False
+
+PY_YAML_INSTALLED = True
+try:
+    import yaml
+except ImportError:
+    PY_YAML_INSTALLED = False
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +148,13 @@ class AstVisualizer:
         self._save_path = os.path.join(self._path, self._filename)
 
     def __init__(
-        self, show_code: bool = True, add_date: bool = False, filename: str = None, path: str = None, view: bool = True
+        self,
+        show_code: bool = True,
+        add_date: bool = False,
+        filename: str = None,
+        path: str = None,
+        view: bool = True,
+        max_chars: int = None,
     ):
         """Constructor"""
         self._is_executable = self._check_graphviz_executable()
@@ -170,6 +183,10 @@ class AstVisualizer:
         self._save_path = None
         self._view = view
         self._set_save_path()
+        self._in_file: str = None
+        self._in_filetype: str = None
+        # max num of chars to display
+        self._max_chars = max_chars
 
     def _set_code(self, code: str) -> None:
         """setting the code"""
@@ -178,7 +195,7 @@ class AstVisualizer:
             _code = self._read_source(code)
         self._code = code
 
-    def _get_format(self, node_type: str) -> dict:
+    def _get_format(self) -> dict:
         """returns the formatting dict"""
         return FORMAT_DEFAULT
 
@@ -189,11 +206,12 @@ class AstVisualizer:
         _label = str(node.__class__.__name__)
         _format_dict = FORMAT_NODES.get(_label, FORMAT_DEFAULT)
         _original_s = str(ast.unparse(node))
+        if isinstance(self._max_chars, int) and len(_original_s) > self._max_chars:
+            _original_s = _original_s[: self._max_chars] + f"\n ... [{len(_original_s)-self._max_chars}] dropped chars "
         out[AstNodeInfo.NAME.value] = _name
         if self._show_code:
             _label += "\n" + _original_s
         out[AstNodeInfo.LABEL.value] = _label
-        # out[AstNodeInfo.CODE.value] = _original_s
         out.update(_format_dict)
         return out
 
@@ -227,7 +245,6 @@ class AstVisualizer:
 
             _returns = _field_dict.get("returns")
             _type_comment = _field_dict.get("type_comment")
-            pass
 
         self._dot.node(**_node_info)
 
@@ -288,17 +305,51 @@ class AstVisualizer:
         """return code string"""
         return self._code
 
+    def _load_yaml(self, f: str) -> dict:
+        """loads the yaml"""
+        if PY_YAML_INSTALLED is False:
+            logger.error("[AstVisualizer] pyYAML is not installed, will return empty dict")
+            return {"ERROR": "NO_PYYAML_INSTALLED"}
+        with open(f, "r", encoding="UTF-8") as _f:
+            _dict = yaml.safe_load(_f)
+        return _dict
+
+    def _load_json(self, f: str) -> dict:
+        """loads the json"""
+        with open("data.json", "r", encoding="UTF-8") as f:
+            _dict = json.load(f)
+        return _dict
+
     @code.setter
-    def code(self, code: str | AstNode) -> None:
+    def code(self, code: str | AstNode | dict) -> None:
         """setting the code string or directly the node"""
         _code = code
-        if isinstance(code, AstNode):
-            self._tree = code
-            self._code = ast.unparse(code)
+
+        # treat special formats first: get json and yaml files
+        if isinstance(_code, str) and os.path.isfile(_code):
+            _file = code
+            self._in_file = _file
+            self._in_filetype = Path(_file).suffix[1:]
+            if self._in_filetype.lower() == "json":
+                _code = self._load_json(_file)
+            elif self._in_filetype.lower() in ["yaml", "yml"]:
+                _code = self._load_yaml(_file)
+            # TODO PRIO4 parsing TOML files ?
+            # load text file like python files
+            else:
+                _code = self._read_source(_file)
+
+        if isinstance(_code, AstNode):
+            self._tree = _code
+            self._code = ast.unparse(self._tree)
             return
 
-        if os.path.isfile(code):
-            _code = self._read_source(code)
+        elif isinstance(_code, dict):
+            _code_s = json.dumps(_code)
+            self._code = _code_s
+            self._tree = ast.parse(_code_s)
+            return
+
         self._code = _code
         # get the ast tree
         try:
@@ -321,22 +372,23 @@ class AstVisualizer:
 
 
 def visualize(
-    code: str | AstNode,
+    code: str | AstNode | dict,
     show_code: bool = True,
     add_date: bool = False,
     filename: str = None,
     path: str = None,
     view: bool = True,
+    max_chars: int = None,
 ):
     """convenience method to render a python code snippet"""
-    _visualizer = AstVisualizer(show_code, add_date, filename, path, view)
+    _visualizer = AstVisualizer(show_code, add_date, filename, path, view, max_chars)
     _visualizer.code = code
     _visualizer.render()
 
 
 def main(code_s: str):
     """do something"""
-    visualize(code_s)
+    visualize(code=code_s, max_chars=None)
 
 
 # code snippet to show what is going on
@@ -396,9 +448,10 @@ class CalendarIndexType(BaseModel):
 """
 
 # also supporting dict
-_sample_dict = """{"a":2,"b":{2:"4"}}"""
+_sample_dict_str = """{"a":2,"b":{2:"4"}}"""
+_sample_dict = {"a": 2, "b": {2: "4"}}
 
-SAMPLE_CODE = _sample_imports
+SAMPLE_CODE = _sample_dict
 
 if __name__ == "__main__":
     loglevel = DEFAULT_LOGLEVEL
@@ -409,4 +462,5 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
+    # TODO PRIO2 UNIT TESTS for jsons yamls dicts pseudo file codes ...
     main(SAMPLE_CODE)
