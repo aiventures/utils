@@ -14,7 +14,7 @@ from rich.text import Text
 from rich.tree import Tree as RichTree
 
 from cli.bootstrap_env import LOG_LEVEL
-from model.model_file_tree import FileTreeNodeRenderModel, ParamsFileTreeModel
+from model.model_tree import FileTreeNodeRenderModel, ParamsFileTreeModel
 from model.model_persistence import ParamsFind
 from util import constants as C
 
