@@ -5,8 +5,8 @@ import os
 from util import constants as C
 from datetime import datetime as DateTime
 
-from util.filter import NumericalFilter, RegexFilter, StringFilter, CalendarFilter
-from copy import deepcopy
+from util.filter import NumericalFilter, RegexFilter, StringFilter, CalendarFilterWrapper
+# from util.calendar_filter import CalendarFilter
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -88,7 +88,7 @@ def test_string_filter(fixture_string_filter):
 def test_calendar_filter(fixture_calendar_filter):
     """testing calendar filter"""
     # 20241205-20241210
-    _calendar_filter = CalendarFilter(fixture_calendar_filter)
+    _calendar_filter = CalendarFilterWrapper(fixture_calendar_filter)
     _date_list = _calendar_filter.datelist
     assert isinstance(_date_list, list)
     _passed = _calendar_filter.filter(DateTime(2024, 12, 3))

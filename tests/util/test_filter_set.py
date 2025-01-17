@@ -3,11 +3,8 @@
 import logging
 import os
 from util import constants as C
-from datetime import datetime as DateTime
 
-from util.filter import NumericalFilter, RegexFilter, StringFilter, CalendarFilter
 from util.filter_set import FilterSet
-from copy import deepcopy
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given

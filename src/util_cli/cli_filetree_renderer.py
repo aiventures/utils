@@ -14,9 +14,10 @@ from rich.text import Text
 from rich.tree import Tree as RichTree
 
 from cli.bootstrap_env import LOG_LEVEL
-from model.model_tree import FileTreeNodeRenderModel, ParamsFileTreeModel
+from model.model_tree import FileTreeNodeRenderModel
 from model.model_persistence import ParamsFind
 from util import constants as C
+from util.filter_set import ParamsFileTreeModel
 
 from util.file_tree import FileTree
 from util.utils import PARENT, ROOT, SIZE, TOTAL_SIZE, VALUE, IS_FILE, CHDATE, PERMISSION_CHMOD, Utils, is_win

@@ -28,7 +28,7 @@ def test_tree(fixture_tree):
     assert len(_hierarchy) == 9
     _max_level = fixture_tree.max_level
     assert _max_level == 4
-    _children = fixture_tree.get_children(1, only_leaves=False)
+    _children = fixture_tree.get_all_children(1, only_leaves=False)
     assert len(_children) == 8
     _parents = fixture_tree.get_predecessors(8)
     assert len(_parents) == 3

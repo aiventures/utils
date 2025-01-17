@@ -4,7 +4,7 @@ import logging
 import os
 from pathlib import Path
 
-from model.model_tree import ParamsFileTreeModel
+from util.filter_set import ParamsFileTreeModel
 from model.model_persistence import ParamsFind
 from util import constants as C
 from util.filter import DictFilter

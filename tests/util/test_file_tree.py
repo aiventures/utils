@@ -1,7 +1,7 @@
 """testing the file tree"""
 
 from util.file_tree import FileTree
-from model.model_tree import ParamsFileTreeModel
+from util.filter_set import ParamsFileTreeModel
 
 
 def test_file_tree(fixture_params_find):

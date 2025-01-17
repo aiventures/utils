@@ -1,23 +1,7 @@
 """ " model for file tree"""
 
-from pydantic import BaseModel, field_validator, ConfigDict
-from typing import List, Optional, Union, Dict, Literal, Any
-from enum import Enum
-from datetime import datetime as DateTime
-from model.model_persistence import ParamsFind
-from util.filter import AbstractAtomicFilter, DictFilter
-from util.filter_set import FilterSet
-
-
-class ParamsFileTreeModel(BaseModel):
-    """Input Params for File Tree Constructor"""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    file_filter_params: Optional[ParamsFind] = None
-    add_metadata: Optional[bool] = False
-    add_filesize: Optional[bool] = False
-    file_filter: Optional[FilterSet | DictFilter] = None
-    path_filter: Optional[FilterSet | DictFilter] = None
+from typing import List, Optional
+from pydantic import BaseModel
 
 
 class FileTreeNodeRenderModel(BaseModel):
@@ -33,3 +17,16 @@ class FileTreeNodeRenderModel(BaseModel):
     is_file: Optional[bool] = None
     is_path: Optional[bool] = None
     is_empty: Optional[bool] = None
+
+
+class TreeInfo(BaseModel):
+    """generic model for storing tree information"""
+
+    id: Optional[object] = None
+    name: Optional[str] = None
+    node_type: Optional[str] = None
+    value: Optional[object] = None
+    parent_id: Optional[object] = None
+    parent_ids: Optional[List[object]] = []
+    child_ids: Optional[List[object]] = []
+    is_leaf: Optional[bool] = None

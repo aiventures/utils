@@ -5,18 +5,22 @@ import os
 import re
 from abc import ABC, abstractmethod
 from datetime import datetime as DateTime
+from pydantic import ConfigDict
 from re import Pattern
 from typing import Any, List
 
 from model.model_filter import (
-    CalendarFilterModel,
     FilterModel,
     NumericalFilterModel,
     RegexFilterModel,
     StringFilterModel,
 )
 from util import constants as C
+
+from typing import Optional
+
 from util.calendar_filter import CalendarFilter as CalendarFilterObject
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -207,7 +211,17 @@ class StringFilter(AbstractAtomicFilter):
         return passed
 
 
-class CalendarFilter(AbstractAtomicFilter):
+class CalendarFilterModel(FilterModel):
+    """Filtering DateTime in a Calenfdar Object"""
+
+    # allow to use non pydantic model and skip any validation
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    filter_str: Optional[str] = None  # Filter String to be used for Calendar
+    date_list: Optional[List[List[DateTime] | DateTime]] = None
+    calendar_filter: Optional[CalendarFilterObject] = None
+
+
+class CalendarFilterWrapper(AbstractAtomicFilter):
     """Calendar Filter (basically a wrapper around the calendar filter object)"""
 
     def __init__(self, obj_filter: CalendarFilterModel):

@@ -3,10 +3,7 @@
 from typing import List, Optional, Dict, Literal, Any
 from datetime import datetime as DateTime
 
-from pydantic import BaseModel, field_validator, ConfigDict
-from util.calendar_filter import CalendarFilter
-from util.filter_set import FilterSet
-from util.filter import AbstractAtomicFilter
+from pydantic import BaseModel, field_validator
 
 
 class FilterModel(BaseModel):
@@ -58,16 +55,6 @@ class StringFilterModel(FilterModel):
     string_operator: Optional[Literal["any", "all"]] = "any"  # same as oprator but on atomic filter level
 
 
-class CalendarFilterModel(FilterModel):
-    """Filtering DateTime in a Calenfdar Object"""
-
-    # allow to use non pydantic model and skip any validation
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    filter_str: Optional[str] = None  # Filter String to be used for Calendar
-    date_list: Optional[List[List[DateTime] | DateTime]] = None
-    calendar_filter: Optional[CalendarFilter] = None
-
-
 # TODO PRIO3 Do we still need this class
 class FilterResultModel(BaseModel):
     """result for given Base filters"""
@@ -80,14 +67,3 @@ class FilterResultModel(BaseModel):
     filters: Optional[List[str] | str] = None
     # optional filed that allows for explanation of matches
     origin: Optional[Dict[str, Any]]
-
-
-class ObjectFilterModel(FilterModel):
-    """filters on attributes of dict fields or object attributes
-    filters can be filters or filter sets
-    """
-
-    # Model is a dict of [object_attribute_name][rulename][filter|filterset]
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    # Model is a dict of [object_attribute_name][rulename][filter|filterset]
-    object_filter_dict = Dict[str, Dict[str, AbstractAtomicFilter | FilterSet]]

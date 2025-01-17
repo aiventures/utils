@@ -17,9 +17,9 @@ from util.persistence import Persistence
 from util.utils import Utils
 from util.calendar_filter import CalendarFilter
 from util.tree import Tree
-from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel, CalendarFilterModel
+from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel
 from model.model_persistence import ParamsFind
-from util.filter import NumericalFilter, RegexFilter, StringFilter, CalendarFilter
+from util.filter import NumericalFilter, RegexFilter, StringFilter, CalendarFilterModel, CalendarFilterWrapper
 
 
 from util.filter_set import FilterSet
@@ -493,7 +493,7 @@ def fixture_filter_set(
         NumericalFilter(fixture_numerical_filter_date),
         RegexFilter(fixture_regex_filter),
         StringFilter(fixture_string_filter),
-        CalendarFilter(fixture_calendar_filter),
+        CalendarFilterWrapper(fixture_calendar_filter),
     ]
     _filter_set = FilterSet(_filter_list)
     return _filter_set

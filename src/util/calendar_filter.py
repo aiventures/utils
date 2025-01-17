@@ -6,11 +6,12 @@ import re
 from datetime import datetime as DateTime
 from datetime import timedelta
 from typing import List
-
+from pydantic import ConfigDict
 from model.model_calendar import (
     CalendarRegex,
     CalendarParseInfo,
 )
+
 
 # regex to extract todo_txt string matching signature @(...)
 from util import constants as C
@@ -334,3 +335,4 @@ class CalendarFilter:
             self._add_date_ranges(_parse_infos, _filter)
             # adding intermediate parsing results to this attribute for inspection purposes
             self._parsed_infos[_filter] = _parse_infos
+
