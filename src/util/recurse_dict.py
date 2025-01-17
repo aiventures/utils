@@ -90,11 +90,31 @@ class DictParser:
         """turns lists into dicts, each list item gets an index"""
         logging.debug(f"Iteration {self._num_nodes}")
 
+        _list_idx = list_idx
+        # process list item with an inner iterable type
+        _inner_iterable = None
+        if list_idx is not None:
+            _list_item = d[list_idx]
+            # check whether it is an inner iterable
+            if not isinstance(_list_item, str):
+                try:
+                    _ = iter(d[list_idx])
+                    _inner_iterable = d[list_idx]
+                    # self._traverse_dict(d=_inner_iterable, parent_id=parent_id, list_idx=list_idx)
+                except TypeError:
+                    pass
+        pass
         # when traversing a list, there is no key
         if not isinstance(d, dict):
             self._num_nodes += 1
-            # treat iterables
-            self._hierarchy[self._num_nodes] = self._parse_object(obj=d, parent_id=parent_id, list_idx=list_idx)
+            # treat iterables / add the list item
+            self._hierarchy[self._num_nodes] = self._parse_object(obj=d, parent_id=parent_id, list_idx=_list_idx)
+            # now if there is an inner nested type, parse it as well
+            if _inner_iterable is not None:
+                if isinstance(_inner_iterable, dict):
+                    self._traverse_dict(_inner_iterable, parent_id=self._num_nodes, list_idx=None)
+                else:
+                    self._traverse_iterable(_inner_iterable, parent_id=self._num_nodes)
             return
 
         # traverse the dict
@@ -102,7 +122,7 @@ class DictParser:
             if parent_id is not None:
                 self._num_nodes += 1
                 self._hierarchy[self._num_nodes] = self._parse_object(
-                    obj=v, parent_id=parent_id, key=k, list_idx=list_idx
+                    obj=v, parent_id=parent_id, key=k, list_idx=_list_idx
                 )
             else:
                 _obj_id = 0
@@ -110,7 +130,7 @@ class DictParser:
             if isinstance(v, (str, bool, float, int)):
                 continue
             elif isinstance(v, dict):  # For DICT
-                self._traverse_dict(d=v, parent_id=self._num_nodes, list_idx=list_idx)
+                self._traverse_dict(d=v, parent_id=self._num_nodes, list_idx=_list_idx)
             else:
                 self._traverse_iterable(d=v, parent_id=self._num_nodes)
 
@@ -171,7 +191,15 @@ if __name__ == "__main__":
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    test_struc = '{"k1":"value1",' '"test_key":500,' '"k2":{"k2.1":5,"k2.2":"v2.2",' '"k2.3":["l1","test value","l3"]}}'
+    test_struc = (
+        '{"k1":"value1",'
+        '"test_key":500,'
+        '"k2":{"k2.1":5,"k2.2":"v2.2",'
+        '"k2.3":["l1","test value","l3",{"dict_inner":["a","b","c"]}]}}'
+    )
+    test_struc = '{"k1":{"k1":"v1","k2":[1,2,3]},"k_nested_list_dict":["a",{"b":"c"}]}'
+    # test_struc = '{"k1":"value1","k_nested_list_list":["a",["b","c"]]}'
     test_dict = json.loads(test_struc)
     dict_parser = DictParser(test_dict)
+    # here's the pulbic methods
     pass
