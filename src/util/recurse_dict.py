@@ -30,7 +30,7 @@ from util import constants as C
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+# logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 
 class DictParser:
@@ -72,14 +72,16 @@ class DictParser:
         out[OBJ_TYPE] = _type
         out[LIST_IDX] = list_idx
         logger.debug(
-            f"[DictParser] {self._num_nodes}: Key {key} type {_type}, parent {parent_id}, list index: [{list_idx}]"
+            f"[DictParser] OBJECT Parent->Node [{parent_id}->{self._num_nodes}], key [{key}], index [{list_idx}]"
         )
 
         return out
 
     def _traverse_iterable(self, d: iter, parent_id: int):
+        """traverse all items in a list / iterable"""
         try:
             iter(d)
+            logger.debug(f"[DictParser] ITERABLE Parent [{parent_id}]")
             _parent_id = parent_id
             for _idx, _item in enumerate(d):
                 self._traverse_dict(d, parent_id=parent_id, list_idx=_idx)
@@ -88,8 +90,7 @@ class DictParser:
 
     def _traverse_dict(self, d: object, parent_id: int, list_idx: int = None) -> None:
         """turns lists into dicts, each list item gets an index"""
-        logging.debug(f"Iteration {self._num_nodes}")
-
+        logger.debug(f"[DictParser] DICT Parent->Node [{parent_id}->{self._num_nodes}], index [{list_idx}]")
         _list_idx = list_idx
         # process list item with an inner iterable type
         _inner_iterable = None
@@ -111,6 +112,7 @@ class DictParser:
             self._hierarchy[self._num_nodes] = self._parse_object(obj=d, parent_id=parent_id, list_idx=_list_idx)
             # now if there is an inner nested type, parse it as well
             if _inner_iterable is not None:
+                logger.debug(f"[DictParser] INNER ITERABLE [{self._num_nodes}]")
                 if isinstance(_inner_iterable, dict):
                     self._traverse_dict(_inner_iterable, parent_id=self._num_nodes, list_idx=None)
                 else:
@@ -121,6 +123,7 @@ class DictParser:
         for k, v in d.items():
             if parent_id is not None:
                 self._num_nodes += 1
+                logger.debug(f"[DictParser] Parsing KEY [{k}], IDX [{self._num_nodes}]")
                 self._hierarchy[self._num_nodes] = self._parse_object(
                     obj=v, parent_id=parent_id, key=k, list_idx=_list_idx
                 )
@@ -150,6 +153,7 @@ class DictParser:
                 out.append(_key)
             if _index is not None:
                 out.append(_index)
+        logger.debug(f"[DictParser] Key [{node_id}], Path {out}")
         return out
 
     def _get_key_maps(self):
@@ -197,7 +201,7 @@ if __name__ == "__main__":
         '"k2":{"k2.1":5,"k2.2":"v2.2",'
         '"k2.3":["l1","test value","l3",{"dict_inner":["a","b","c"]}]}}'
     )
-    test_struc = '{"k1":{"k1":"v1","k2":[1,2,3]},"k_nested_list_dict":["a",{"b":"c"}]}'
+    # test_struc = '{"k1":{"k1":"v1","k2":[1,2,3]},"k_nested_list_dict":["a",{"b":"c"}]}'
     # test_struc = '{"k1":"value1","k_nested_list_list":["a",["b","c"]]}'
     test_dict = json.loads(test_struc)
     dict_parser = DictParser(test_dict)
