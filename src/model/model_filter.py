@@ -55,15 +55,8 @@ class StringFilterModel(FilterModel):
     string_operator: Optional[Literal["any", "all"]] = "any"  # same as oprator but on atomic filter level
 
 
-# TODO PRIO3 Do we still need this class
-class FilterResultModel(BaseModel):
-    """result for given Base filters"""
+class ObjectFilterModel(FilterModel):
+    """Basically a Filter that can host Filters and Filter Sets by attribute"""
 
-    # total match
-    match: Optional[bool] = None
-    # filter group
-    groups: Optional[List[str] | str] = None
-    # filters that led to the result
-    filters: Optional[List[str] | str] = None
-    # optional filed that allows for explanation of matches
-    origin: Optional[Dict[str, Any]]
+    # Model is a dict of [object_attribute_name][rulename][filter|filterset]
+    field_filter_dict: Optional[Dict[str, Dict[str, object]]]

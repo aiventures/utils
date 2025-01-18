@@ -2,14 +2,13 @@
 
 import logging
 import os
-from typing import List, Dict, Optional
-from util.filter import AbstractAtomicFilter
-from util import constants as C
-from util.utils import Utils
 from datetime import datetime as DateTime
-from util.filter import DictFilter
-from pydantic import ConfigDict, BaseModel
-from model.model_persistence import ParamsFind
+from typing import Dict, List
+
+
+from util import constants as C
+from util.filter import AbstractAtomicFilter
+from util.utils import Utils
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -109,27 +108,3 @@ class FilterSet:
     def filter_keys(self):
         """get the filter keys"""
         return list(self._filter_key_dict.keys())
-
-
-# TODO CHECK
-# class ObjectFilterModel(FilterModel):
-#     """filters on attributes of dict fields or object attributes
-#     filters can be filters or filter sets
-#     """
-
-#     # Model is a dict of [object_attribute_name][rulename][filter|filterset]
-#     model_config = ConfigDict(arbitrary_types_allowed=True)
-#     # Model is a dict of [object_attribute_name][rulename][filter|filterset]
-#     object_filter_dict = Dict[str, Dict[str, AbstractAtomicFilter | FilterSet]]
-
-
-# TODO FIX IMPORT
-class ParamsFileTreeModel(BaseModel):
-    """Input Params for File Tree Constructor"""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    file_filter_params: Optional[ParamsFind] = None
-    add_metadata: Optional[bool] = False
-    add_filesize: Optional[bool] = False
-    file_filter: Optional[FilterSet | DictFilter] = None
-    path_filter: Optional[FilterSet | DictFilter] = None

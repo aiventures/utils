@@ -9,6 +9,7 @@ from util.filter import AbstractAtomicFilter
 from util.filter_set import FilterSet
 
 logger = logging.getLogger(__name__)
+
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
@@ -19,7 +20,7 @@ class ObjectFilter(AbstractAtomicFilter):
     """generic superclass for objet type filters"""
 
     def __init__(self, obj_filter: ObjectFilterModel = None):
-        """use object filter moel to filter objects"""
+        """use object filter model to filter objects"""
         super().__init__(obj_filter)
         self._filter: ObjectFilterModel = obj_filter
 

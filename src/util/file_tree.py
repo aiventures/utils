@@ -3,11 +3,13 @@
 import logging
 import os
 from pathlib import Path
+from typing import Optional
+from pydantic import ConfigDict, BaseModel
 
-from util.filter_set import ParamsFileTreeModel
+# from util.filter_set import ParamsFileTreeModel
 from model.model_persistence import ParamsFind
 from util import constants as C
-from util.filter import DictFilter
+from util.filter_object import ObjectFilter
 from util.filter_set import FilterSet
 from util.persistence import Persistence
 from util.tree import Tree
@@ -19,6 +21,17 @@ logger = logging.getLogger(__name__)
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 # TODO PRIO3 Add Progress Bar Indicator
+
+
+class ParamsFileTreeModel(BaseModel):
+    """Input Params for File Tree Constructor"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    file_filter_params: Optional[ParamsFind] = None
+    add_metadata: Optional[bool] = False
+    add_filesize: Optional[bool] = False
+    # file_filter: Optional[FilterSet | ObjectFilter] = None
+    # path_filter: Optional[FilterSet | ObjectFilter] = None
 
 
 class FileTree:
@@ -33,21 +46,20 @@ class FileTree:
         self._add_metadata: bool = params_file_tree.add_metadata
         self._show_progress: bool = self._file_filter_params.show_progress
         self._filesize: bool = params_file_tree.add_filesize
-        self._path_filterset = None
-        self._file_filterset = None
-        self._file_filter = None
-        self._path_filter = None
-        # a bit awkward but allow for quick access to Filter
-
-        if isinstance(params_file_tree.file_filter, DictFilter):
-            self._file_filter = params_file_tree.file_filter
-        elif isinstance(params_file_tree.file_filter, FilterSet):
-            self._file_filterset = params_file_tree.file_filters
-
-        if isinstance(params_file_tree.path_filter, DictFilter):
-            self._path_filter = params_file_tree.path_filter
-        elif isinstance(params_file_tree.path_filter, FilterSet):
-            self._path_filterset = params_file_tree.path_filter
+        # Check whether we can replace it by some sort of a tree filter
+        # self._path_filterset = None
+        # self._file_filterset = None
+        # self._file_filter = None
+        # self._path_filter = None
+        # # a bit awkward but allow for quick access to Filter
+        # if isinstance(params_file_tree.file_filter, ObjectFilter):
+        #     self._file_filter = params_file_tree.file_filter
+        # elif isinstance(params_file_tree.file_filter, FilterSet):
+        #     self._file_filterset = params_file_tree.file_filters
+        # if isinstance(params_file_tree.path_filter, ObjectFilter):
+        #     self._path_filter = params_file_tree.path_filter
+        # elif isinstance(params_file_tree.path_filter, FilterSet):
+        #     self._path_filterset = params_file_tree.path_filter
 
         self._file_dict: dict = {}
         self._tree_dict: dict = {ROOT: {PARENT: None, VALUE: "root"}}

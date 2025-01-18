@@ -5,22 +5,14 @@ import os
 import re
 from abc import ABC, abstractmethod
 from datetime import datetime as DateTime
-from pydantic import ConfigDict
 from re import Pattern
-from typing import Any, List
+from typing import Any, List, Optional
 
-from model.model_filter import (
-    FilterModel,
-    NumericalFilterModel,
-    RegexFilterModel,
-    StringFilterModel,
-)
+from pydantic import ConfigDict
+
+from model.model_filter import FilterModel, NumericalFilterModel, RegexFilterModel, StringFilterModel
 from util import constants as C
-
-from typing import Optional
-
 from util.calendar_filter import CalendarFilter as CalendarFilterObject
-
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -257,11 +249,3 @@ class CalendarFilterWrapper(AbstractAtomicFilter):
     def datelist(self) -> List[DateTime]:
         """returns the date list"""
         return self._datelist
-
-
-class DictFilter(AbstractAtomicFilter):
-    """Filtering a Dictionary"""
-
-    def __init__(self, obj_filter=None):
-        """constructor"""
-        super().__init__(obj_filter)

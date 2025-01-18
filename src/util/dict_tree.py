@@ -4,13 +4,12 @@ import copy
 import json
 import logging
 
-from typing import Literal, Annotated, List, Union
-
 # from datetime import datetime as DateTime
 import sys
+from typing import Annotated, List, Literal, Union
 
 # using the tree util to create a tree
-from tools.util.tree import (
+from model.model_tree import (
     CHILDREN,
     DICT_PATH,
     ID,
@@ -23,22 +22,14 @@ from tools.util.tree import (
     PARENT,
     PREDECESSORS,
     ROOT,
-    Tree,
 )
 
-EMPTY_NODE = {
-    ID: None,
-    PARENT: None,
-    PREDECESSORS: None,
-    CHILDREN: None,
-    IS_LEAF: None,
-    DICT_PATH: None,
-    KEY: None,
-    LIST_IDX: None,
-    LEVEL: None,
-    OBJ_TYPE: None,
-    OBJECT: None,
-}
+from util.tree import Tree
+
+from model.model_tree import DictTreeInfo
+
+EMPTY_NODE = DictTreeInfo().model_dump()
+
 
 NodeType = Annotated[Literal["leaf", "node", "any"], "Node Type"]
 
