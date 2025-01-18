@@ -148,11 +148,12 @@ class DictTree:
             else:
                 _obj_id = 0
 
+            # atomic types
             if isinstance(v, (str, bool, float, int)):
                 continue
             elif isinstance(v, dict):  # For DICT
                 self._traverse_dict(d=v, parent_id=self._num_nodes, list_idx=_list_idx)
-            else:
+            else:  # Assume we habe an iterable
                 self._traverse_iterable(d=v, parent_id=self._num_nodes)
 
     def _get_dict_path(self, node_id: int) -> list:
