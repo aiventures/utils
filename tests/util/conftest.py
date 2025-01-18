@@ -2,28 +2,24 @@
 
 import os
 from copy import deepcopy
-from pathlib import Path
 from datetime import datetime as DateTime
+from pathlib import Path
 
 import pytest
 
 from demo.demo_config import create_demo_config
+from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel
+from model.model_persistence import ParamsFind
 from util import constants as C
 from util.abstract_enum import AbstractEnum
 from util.bat_helper import BatHelper
 from util.calendar_index import CalendarIndex
 from util.config_env import ConfigEnv, Environment
-from util.persistence import Persistence
-from util.utils import Utils
-from util.calendar_filter import CalendarFilter
-from util.tree import Tree
-from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel
-from model.model_persistence import ParamsFind
-from util.filter import NumericalFilter, RegexFilter, StringFilter, CalendarFilterModel, CalendarFilterWrapper
-
-
+from util.filter import CalendarFilterModel, CalendarFilterWrapper, NumericalFilter, RegexFilter, StringFilter
 from util.filter_set import FilterSet
-
+from util.persistence import Persistence
+from util.tree import Tree
+from util.utils import Utils
 
 ### [1] Fixtures for File Analyzer
 
@@ -524,3 +520,62 @@ def fixture_params_find(fixture_testpath) -> ParamsFind:
         "add_empty_paths": True,
     }
     return ParamsFind(**_params)
+
+
+@pytest.fixture(scope="module")
+def fixture_str_filter_match_va_x() -> StringFilter:
+    """fixture atomic string filter"""
+    _s_model_matches = StringFilterModel(
+        key="filter_str_matches_va_x",
+        description="str matches va AND x",
+        groups=["matches"],
+        filter_strings=["va", "x"],
+        match="contains",
+        string_operator="all",
+        include="include",
+    )
+    _str_filter_match_va_x = StringFilter(_s_model_matches)
+    return _str_filter_match_va_x
+
+
+@pytest.fixture(scope="module")
+def fixture_regex_filter_match_v_begin() -> RegexFilter:
+    """fixture atomic regex filter"""
+    _regex_model_matches_v = RegexFilterModel(
+        key="regex_str_matches_v",
+        description="str matches v at start",
+        groups=["matches"],
+        include="include",
+        regex="^v",
+    )
+    _regex_filter_match_v_begin = RegexFilter(_regex_model_matches_v)
+
+    return _regex_filter_match_v_begin
+
+
+@pytest.fixture(scope="module")
+def fixture_regex_filter_match_z_begin() -> RegexFilter:
+    """fixture atomic regex filter"""
+    _regex_model_matches_z = RegexFilterModel(
+        key="regex_str_matches_z",
+        description="str matches z at start",
+        groups=["matches"],
+        include="include",
+        operator="all",
+        regex="^z",
+    )
+    _regex_filter_match_v_begin = RegexFilter(_regex_model_matches_z)
+
+    return _regex_filter_match_v_begin
+
+
+@pytest.fixture(scope="module")
+def fixture_filter_set_match_va_x_begin(fixture_str_filter_match_va_x, fixture_regex_filter_match_v_begin) -> FilterSet:
+    """fixture filter set"""
+    return FilterSet([fixture_str_filter_match_va_x, fixture_regex_filter_match_v_begin])
+
+
+@pytest.fixture(scope="module")
+def fixture_filter_set_match_va_z_begin(fixture_str_filter_match_va_x, fixture_regex_filter_match_z_begin) -> FilterSet:
+    """fixture filter set"""
+    return FilterSet([fixture_str_filter_match_va_x, fixture_regex_filter_match_z_begin])
