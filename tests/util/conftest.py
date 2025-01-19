@@ -491,6 +491,10 @@ def fixture_filter_set(
         StringFilter(fixture_string_filter),
         CalendarFilterWrapper(fixture_calendar_filter),
     ]
+    # _filter_list = [
+    #     NumericalFilter(fixture_numerical_filter_date),
+    # ]
+
     _filterset_model = FilterSetModel(filter_list=_filter_list)
     _filter_set = FilterSet(obj_filter=_filterset_model)
     return _filter_set

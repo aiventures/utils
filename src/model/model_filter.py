@@ -34,7 +34,7 @@ class FilterModel(BaseModel):
     # if attributes are set, ignore errors in filter checks when these are not found
     ignore_missing_attributes: Optional[bool] = True
     # if filter results is producing None results, ignore them
-    ignore_none_filter_results = Optional[bool] = True
+    ignore_none_filter_results: Optional[bool] = True
 
 
 class NumericalFilterModel(FilterModel):

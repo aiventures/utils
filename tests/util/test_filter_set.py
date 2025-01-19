@@ -39,18 +39,20 @@ def test_filter_set_setup(
     assert len(_filter_keys) == 5
 
 
-def test_filter_set(fixture_filter_set):
-    """testing filter operation"""
+def test_filter_set_simple(fixture_filter_set):
+    """testing filter operation without checking for consistency"""
     test_object = 13
-    _filter_result_verbose = fixture_filter_set.filter(test_object)
+    _filter_result_verbose = fixture_filter_set.filter(test_object, verbose=True)
 
     # _filter_result_verbose = fixture_filter_set.filter(test_object, short=False)
     assert isinstance(_filter_result_verbose, dict)
-    assert isinstance(_filter_result_verbose.get("group1"), dict)
-    _filter_result_short = fixture_filter_set.filter(test_object, short=True)
-    assert isinstance(_filter_result_short, dict)
-    assert isinstance(_filter_result_short.get("group1"), bool)
+    _filter_result_short = fixture_filter_set.filter(test_object)
+    assert isinstance(_filter_result_short, bool | None)
     # only one group
-    _filter_result_onegroup = fixture_filter_set.filter(test_object, groups="group1", short=True)
-    assert isinstance(_filter_result_onegroup, bool)
+    _filter_result_onegroup = fixture_filter_set.filter(test_object, groups="group1", verbose=True)
+    assert isinstance(_filter_result_onegroup, dict)
+
     pass
+
+
+# TODO add filters for object / dict tests

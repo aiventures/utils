@@ -125,11 +125,12 @@ class NumericalFilter(AbstractAtomicFilter):
         """constructor"""
         super().__init__(obj_filter)
         self._filter: NumericalFilterModel = obj_filter
-        self._filter_type = None
+        self._numerical_type = None
+
         if obj_filter.value_max is not None:
-            self._filter_type = type(obj_filter.value_max)
-        if self._filter_type is None:
-            self._filter_type = type(obj_filter.value_min)
+            self._numerical_type = type(obj_filter.value_max)
+        if self._numerical_type is None:
+            self._numerical_type = type(obj_filter.value_min)
 
     def filter(self, obj: Any, groups: list = None) -> bool | None:
         """filter passed object"""
@@ -139,9 +140,9 @@ class NumericalFilter(AbstractAtomicFilter):
             )
 
         # type checking
-        if self._filter_type is not type(obj):
+        if self._numerical_type is not type(obj):
             raise ValueError(
-                f"[NumericalFilter] Passed {obj} of type [{type(obj).__name__}], expected [{self._filter_type.__name__}]"
+                f"[NumericalFilter] Passed {obj} of type [{type(obj).__name__}], expected [{self._numerical_type}]"
             )
 
         passed = True

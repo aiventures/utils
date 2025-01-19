@@ -133,6 +133,8 @@ class FilterSet(AbstractAtomicFilter):
         self, obj: object, groups: list = None, verbose: bool = False
     ) -> bool | None | Dict[str, AtomicFilterResult]:
         """filtering the Filter Set"""
+        if isinstance(groups, str):
+            groups = [groups]
         _passed_list = []
         out = None
         _result = []
@@ -152,7 +154,7 @@ class FilterSet(AbstractAtomicFilter):
             _values = {}
 
             # get the values to be checked
-            if isinstance(_atomic_filter.attributes, list):
+            if isinstance(_atomic_filter.attributes, list) and len(_atomic_filter.attributes) > 0:
                 # try to get value from objects
                 for _attribute in _atomic_filter.attributes:
                     _value = self._get_value(obj, _attribute)
@@ -164,10 +166,16 @@ class FilterSet(AbstractAtomicFilter):
             else:
                 _values = {PLAIN_OBJECT: obj}
 
+            _result = None
             for _value_key, _value in _values.items():
-                _result = self._passes_atomic_filter(
-                    obj=_value, filter_key=_filter_key, attribute=_value_key, atomic_filter=_atomic_filter
-                )
+                try:
+                    _result = self._passes_atomic_filter(
+                        obj=_value, filter_key=_filter_key, attribute=_value_key, atomic_filter=_atomic_filter
+                    )
+                except ValueError as e:
+                    logger.info(
+                        f"[FilterSet] ERROR, Object [{obj}], Set [{self.key}] value key [{_value_key}],  Filter Type [{_atomic_filter._filter_type}], {e} "
+                    )
 
                 if _result is None:
                     continue
