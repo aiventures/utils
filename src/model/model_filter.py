@@ -14,7 +14,7 @@ class FilterModel(BaseModel):
     # description
     description: Optional[str] = None
     # group assignment
-    groups: Optional[List[Any] | str] = None  # assignment to a filter group
+    groups: Optional[List[Any] | str] = []  # assignment to a filter group
     # AND/OR filter link: match for any or all within a filter group
     operator: Optional[Literal["any", "all"]] = "any"
     # include or exclude filter result (NOT logic)

@@ -25,16 +25,26 @@ class AbstractAtomicFilter(ABC):
     def __init__(self, obj_filter: FilterModel | None = None):
         """constructor"""
         self._filter = obj_filter
+        self._filter_type = type(obj_filter).__name__
+        _key = obj_filter.key
+        if _key is None:
+            _key = f"{self._filter_type}_{str(id(obj_filter))}"
+        self.key = _key
+        _description = obj_filter.description
+        if _description is None:
+            _description = f"{self.key} [No Description]"
+        self.description = _description
 
     @property
     def key(self) -> Any:
         """return filter key"""
-        return self._filter.key
+        return self._key
 
     @key.setter
-    def key(self, key: object) -> Any:
-        """return filter key"""
+    def key(self, key: object) -> None:
+        """set filter key"""
         self._filter.key = key
+        self._key = key
 
     @property
     def groups(self) -> List[Any]:
@@ -44,7 +54,13 @@ class AbstractAtomicFilter(ABC):
     @property
     def description(self) -> str | None:
         """return filter key"""
-        return self._filter.groups
+        return self._description
+
+    @description.setter
+    def description(self, description: str) -> None:
+        """set filter key"""
+        self._filter.description = description
+        self._description = description
 
     @property
     def operator(self) -> str | None:
@@ -58,7 +74,7 @@ class AbstractAtomicFilter(ABC):
 
     @abstractmethod
     def filter(self, obj: Any) -> bool:
-        """abstract filter method"""
+        """abstract filter method to be implemented by subclass"""
 
 
 class NumericalFilter(AbstractAtomicFilter):
@@ -66,7 +82,7 @@ class NumericalFilter(AbstractAtomicFilter):
 
     def __init__(self, obj_filter: NumericalFilterModel):
         """constructor"""
-        super().__init__()
+        super().__init__(obj_filter)
         self._filter: NumericalFilterModel = obj_filter
         self._filter_type = None
         if obj_filter.value_max is not None:
@@ -126,7 +142,7 @@ class RegexFilter(AbstractAtomicFilter):
 
     def __init__(self, obj_filter: RegexFilterModel):
         """constructor"""
-        super().__init__()
+        super().__init__(obj_filter)
         self._filter: RegexFilterModel = obj_filter
         self._regex_s: str = obj_filter.regex
         self._regex: Pattern = re.compile(self._regex_s)
@@ -161,7 +177,7 @@ class StringFilter(AbstractAtomicFilter):
 
     def __init__(self, obj_filter: StringFilterModel):
         """constructor"""
-        super().__init__()
+        super().__init__(obj_filter)
         self._filter: StringFilterModel = obj_filter
 
     def filter(self, obj) -> bool:
@@ -218,7 +234,7 @@ class CalendarFilterWrapper(AbstractAtomicFilter):
 
     def __init__(self, obj_filter: CalendarFilterModel):
         """constructor"""
-        super().__init__()
+        super().__init__(obj_filter)
         self._filter: CalendarFilterModel = obj_filter
         self._filter_str: str = obj_filter.filter_str
         self._date_list_in = obj_filter.date_list
