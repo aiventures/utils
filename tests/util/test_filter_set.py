@@ -3,7 +3,7 @@
 import logging
 import os
 from util import constants as C
-
+from model.model_filter import FilterSetModel
 from util.filter_set import FilterSet
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,9 @@ def test_filter_set_setup(
         fixture_string_filter,
         fixture_calendar_filter,
     ]
-    _filter_set = FilterSet(_filter_list)
+
+    _filterset_model = FilterSetModel(filter_list=_filter_list)
+    _filter_set = FilterSet(obj_filter=_filterset_model)
     _group_list = _filter_set.group_list
     assert isinstance(_group_list, list)
     # passing 2 groups
@@ -40,7 +42,9 @@ def test_filter_set_setup(
 def test_filter_set(fixture_filter_set):
     """testing filter operation"""
     test_object = 13
-    _filter_result_verbose = fixture_filter_set.filter(test_object, short=False)
+    _filter_result_verbose = fixture_filter_set.filter(test_object)
+
+    # _filter_result_verbose = fixture_filter_set.filter(test_object, short=False)
     assert isinstance(_filter_result_verbose, dict)
     assert isinstance(_filter_result_verbose.get("group1"), dict)
     _filter_result_short = fixture_filter_set.filter(test_object, short=True)

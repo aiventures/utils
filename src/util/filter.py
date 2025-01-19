@@ -10,7 +10,14 @@ from typing import Any, List, Optional
 
 from pydantic import ConfigDict
 
-from model.model_filter import FilterModel, NumericalFilterModel, RegexFilterModel, StringFilterModel
+from model.model_filter import (
+    FilterModel,
+    NumericalFilterModel,
+    RegexFilterModel,
+    StringFilterModel,
+    IncludeType,
+    AnyOrAllType,
+)
 from util import constants as C
 from util.calendar_filter import CalendarFilter as CalendarFilterObject
 
@@ -34,17 +41,42 @@ class AbstractAtomicFilter(ABC):
         if _description is None:
             _description = f"{self.key} [No Description]"
         self.description = _description
+        self._attributes = self.attributes
+
+    @property
+    def filtered_attributes(self) -> list:
+        """returning the attrivutes list that is being filtered for object/dict objects"""
+        return self._filter.attributes
+
+    def add_filtered_attributes(self, attributes: list | str):
+        """add list of attributes to filtered attributes"""
+        if isinstance(attributes, str):
+            attributes = [attributes]
+        _attributes = self.filtered_attributes
+        _attributes.extend(attributes)
+        self._filter.attributes = list(set(_attributes))
+
+    def set_filtered_attributes(self, attributes: list | str):
+        """setting filtered attributes"""
+        if isinstance(attributes, str):
+            attributes = [attributes]
+        self._filter.attributes = []
+        self.add_filtered_attributes(attributes)
+
+    @property
+    def obj_filter(self) -> FilterModel:
+        """return the filter"""
+        return self._filter
 
     @property
     def key(self) -> Any:
         """return filter key"""
         return self._key
 
-    @key.setter
-    def key(self, key: object) -> None:
-        """set filter key"""
-        self._filter.key = key
-        self._key = key
+    @property
+    def description(self) -> str | None:
+        """return filter key"""
+        return self._description
 
     @property
     def groups(self) -> List[Any]:
@@ -52,9 +84,25 @@ class AbstractAtomicFilter(ABC):
         return self._filter.groups
 
     @property
-    def description(self) -> str | None:
-        """return filter key"""
-        return self._description
+    def operator(self) -> AnyOrAllType | None:
+        """return all or any operator"""
+        return self._filter.operator
+
+    @property
+    def include(self) -> IncludeType | None:
+        """return include operator"""
+        return self._filter.include
+
+    @property
+    def attributes(self) -> list | None:
+        """return attributes"""
+        return self._filter.attributes
+
+    @key.setter
+    def key(self, key: object) -> None:
+        """set filter key"""
+        self._filter.key = key
+        self._key = key
 
     @description.setter
     def description(self, description: str) -> None:
@@ -62,18 +110,11 @@ class AbstractAtomicFilter(ABC):
         self._filter.description = description
         self._description = description
 
-    @property
-    def operator(self) -> str | None:
-        """return all or any operator"""
-        return self._filter.operator
-
-    @property
-    def obj_filter(self) -> FilterModel:
-        """return the filter"""
-        return self._filter
+    # TODO PRIO 3Add a method that will check whether filtering needs to be done
+    # in case groups are supplied
 
     @abstractmethod
-    def filter(self, obj: Any) -> bool:
+    def filter(self, obj: Any, groups: list = None) -> bool | None:
         """abstract filter method to be implemented by subclass"""
 
 
@@ -90,7 +131,7 @@ class NumericalFilter(AbstractAtomicFilter):
         if self._filter_type is None:
             self._filter_type = type(obj_filter.value_min)
 
-    def filter(self, obj) -> bool:
+    def filter(self, obj: Any, groups: list = None) -> bool | None:
         """filter passed object"""
         if not isinstance(obj, (int, float, DateTime)):
             raise ValueError(
@@ -149,7 +190,7 @@ class RegexFilter(AbstractAtomicFilter):
         self._last_match: list = None
         self._last_str: str = None
 
-    def filter(self, obj) -> bool:
+    def filter(self, obj: Any, groups: list = None) -> bool | None:
         """filter passed object"""
         if not isinstance(obj, str):
             raise ValueError(f"[RegexFilter] Passed {obj} of type [{type(obj).__name__}], expected str")
@@ -180,7 +221,7 @@ class StringFilter(AbstractAtomicFilter):
         super().__init__(obj_filter)
         self._filter: StringFilterModel = obj_filter
 
-    def filter(self, obj) -> bool:
+    def filter(self, obj: Any, groups: list = None) -> bool | None:
         """filter passed object"""
 
         if not isinstance(obj, str):
@@ -220,7 +261,7 @@ class StringFilter(AbstractAtomicFilter):
 
 
 class CalendarFilterModel(FilterModel):
-    """Filtering DateTime in a Calenfdar Object"""
+    """Filtering DateTime in a Calendar Object"""
 
     # allow to use non pydantic model and skip any validation
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -247,7 +288,7 @@ class CalendarFilterWrapper(AbstractAtomicFilter):
             self._calendar_filter_obj = CalendarFilterObject(self._filter_str, self._date_list_in)
         self._datelist = self._calendar_filter_obj.datelist
 
-    def filter(self, obj: DateTime) -> bool:
+    def filter(self, obj: Any, groups: list = None) -> bool | None:
         """filtering the calendar object"""
         if not isinstance(obj, DateTime):
             raise ValueError(

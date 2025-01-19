@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from demo.demo_config import create_demo_config
-from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel
+from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel, FilterSetModel
 from model.model_persistence import ParamsFind
 from util import constants as C
 from util.abstract_enum import AbstractEnum
@@ -491,7 +491,8 @@ def fixture_filter_set(
         StringFilter(fixture_string_filter),
         CalendarFilterWrapper(fixture_calendar_filter),
     ]
-    _filter_set = FilterSet(_filter_list)
+    _filterset_model = FilterSetModel(filter_list=_filter_list)
+    _filter_set = FilterSet(obj_filter=_filterset_model)
     return _filter_set
 
 
@@ -572,10 +573,12 @@ def fixture_regex_filter_match_z_begin() -> RegexFilter:
 @pytest.fixture(scope="module")
 def fixture_filter_set_match_va_x_begin(fixture_str_filter_match_va_x, fixture_regex_filter_match_v_begin) -> FilterSet:
     """fixture filter set"""
-    return FilterSet([fixture_str_filter_match_va_x, fixture_regex_filter_match_v_begin])
+    _filter_list = [fixture_str_filter_match_va_x, fixture_regex_filter_match_v_begin]
+    return FilterSet(FilterSetModel(filter_list=_filter_list))
 
 
 @pytest.fixture(scope="module")
 def fixture_filter_set_match_va_z_begin(fixture_str_filter_match_va_x, fixture_regex_filter_match_z_begin) -> FilterSet:
     """fixture filter set"""
-    return FilterSet([fixture_str_filter_match_va_x, fixture_regex_filter_match_z_begin])
+    _filter_list = [fixture_str_filter_match_va_x, fixture_regex_filter_match_z_begin]
+    return FilterSet(FilterSetModel(filter_list=_filter_list))

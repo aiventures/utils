@@ -6,6 +6,7 @@ from datetime import datetime as DateTime
 from typing import Dict, List
 
 
+from model.model_filter import FilterSetModel, AtomicFilterResult
 from util import constants as C
 from util.filter import AbstractAtomicFilter
 from util.utils import Utils
@@ -14,90 +15,65 @@ logger = logging.getLogger(__name__)
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
+PLAIN_OBJECT = "[plain_object]"
 
-class FilterSet:
-    """Combining sets of (atomic) filters"""
 
-    def __init__(self, filter_list: List[AbstractAtomicFilter]):
+class FilterSet(AbstractAtomicFilter):
+    """Combining sets of (atomic) filters / can also be used to filter
+    structured objects like dicts and objects"""
+
+    def __init__(self, obj_filter: FilterSetModel):
         """constructor"""
-        self._filter_list: List[AbstractAtomicFilter] = filter_list
-        self._filter_group_dict: Dict[str, List[AbstractAtomicFilter]] = {}
+        super().__init__(obj_filter)
+        self._filter_list: List[AbstractAtomicFilter] = obj_filter.filter_list
+        self._filter_group_dict: Dict[str, list] = {}
+        self._filter_attribute_dict: Dict[str, list] = {}
         self._filter_key_dict: Dict[str, AbstractAtomicFilter] = {}
-        self._parse_list()
+
+        # get items
+        self._parse_filter_list()
         pass
 
-    def _parse_list(self):
-        """parse the filter list"""
+    def _get_atomic_filter(self, key: object) -> AbstractAtomicFilter | None:
+        """gets the filter by its key"""
+        return self._filter_key_dict.get(key)
+
+    def _parse_filter_list(self):
+        """parse the filter list
+        - get a dict of filters by key
+        - get lists sorted into filter groups, attributes
+
+        """
         for _atomic_filter in self._filter_list:
+            # there is always a key / either custom or generated
             _filter_key = _atomic_filter.key
-            # add hash when there is no key
-            if _filter_key is None:
-                _seed = str(DateTime.now())
-                _filter_key = Utils.get_hash(_seed)
-                _atomic_filter.key = _filter_key
+            _filter_description = _atomic_filter.description
+            if self._filter_key_dict.get(_filter_key) is not None:
+                logger.warning(f"[FilterSet] Filter Key {_filter_key} is duplicate")
+                continue
+            self._filter_key_dict[_filter_key] = _atomic_filter
+
             _filter_groups = _atomic_filter.groups
             if isinstance(_filter_groups, str):
                 _filter_groups = [_filter_groups]
 
-            if self._filter_key_dict.get(_filter_key) is not None:
-                logger.warning(f"[FilterSet] Filter Key {_filter_key} is duplicate")
-            self._filter_key_dict[_filter_key] = _atomic_filter
+            # add filter to filter dict
+            # update filter groups
+            for _group in _filter_groups:
+                # get the group
+                _filters_in_group = self._filter_group_dict.get(_group, [])
+                _filters_in_group.append(_filter_key)
+                self._filter_group_dict[_group] = _filters_in_group
 
-            if isinstance(_filter_groups, list):
-                for _filter_group in _filter_groups:
-                    _filters_in_group = self._filter_group_dict.get(_filter_group, [])
-                    _filters_in_group.append(_atomic_filter)
-                    self._filter_group_dict[_filter_group] = _filters_in_group
-
-    def filter(
-        self, obj: object, groups: List[str] | str = None, short: bool = False, check_any: bool = False
-    ) -> dict | bool:
-        """filter all sets returns a single boolean or detailed result dict"""
-        out = {}
-        if isinstance(groups, str):
-            groups = [groups]
-        _groups = self.group_list
-        # restrict filter groups to any of the existing ones
-        if isinstance(groups, list):
-            _groups = [_g for _g in groups if _g in _groups]
-        _passed_list = {}
-        for _group, _filters in self._filter_group_dict.items():
-            if not _group in _groups:
-                continue
-            _filter_results = {"all": {}, "any": {}, "passes_all": None, "passes_any": None, "passes": None}
-            for _filter in _filters:
-                try:
-                    _passed = _filter.filter(obj)
-                except ValueError:
-                    continue
-                _key = _filter.key
-                _operator = _filter.operator
-                _filter_results[_operator][_key] = _passed
-            # evaluate result: only if items are passing within one group
-            _passes_all = None
-            _passes_any = None
-            if len(_filter_results["any"]) > 0:
-                _passes_any = any(_filter_results["any"].values())
-                _filter_results["passes_any"] = _passes_any
-            if len(_filter_results["all"]) > 0:
-                _passes_all = all(_filter_results["all"].values())
-                _filter_results["passes_all"] = _passes_all
-            # all filter takes precedence over any filters
-            if _passes_all is not None:
-                # also check for any passes_any
-                if _passes_all is True and check_any is True and _passes_any is not True:
-                    _passes_all = False
-                _filter_results["passes"] = _passes_all
-            else:
-                _filter_results["passes"] = _passes_any
-            _passed_list[_group] = _filter_results
-        out = _passed_list
-        if short is True:
-            # if there is only one group, return the boolean only
-            out = {_group: _result["passes"] for _group, _result in out.items()}
-            if len(out) == 1:
-                out = list(out.values())[0]
-        return out
+            # update filter by attributes
+            _filtered_attributes = _atomic_filter.attributes
+            if isinstance(_filtered_attributes, str):
+                _filtered_attributes = [_filtered_attributes]
+            for _attribute in _filtered_attributes:
+                _filters_by_attribute = self._filter_attribute_dict.get(_attribute, [])
+                _filters_by_attribute.append(_attribute)
+                self._filter_attribute_dict[_attribute] = _filters_by_attribute
+        pass
 
     @property
     def group_list(self):
@@ -105,6 +81,121 @@ class FilterSet:
         return list(self._filter_group_dict.keys())
 
     @property
+    def attribute_list(self):
+        """gets the attributes that can be filtered"""
+        return list(self._filter_attribute_dict.keys())
+
+    @property
     def filter_keys(self):
         """get the filter keys"""
         return list(self._filter_key_dict.keys())
+
+    def _get_value(self, obj: object, attribute: str) -> object | None:
+        """tries to get value from a structure like object or a d dict"""
+        out = None
+        if isinstance(obj, dict):
+            out = obj.get(attribute)
+        elif hasattr(obj, attribute):
+            out = getattr(obj, attribute)
+        return out
+
+    def _passes_atomic_filter(
+        self, obj: object, filter_key: object, attribute: str, atomic_filter: AbstractAtomicFilter
+    ) -> AtomicFilterResult:
+        """does the filtering using the atomic filter"""
+        out = []
+        _operator = atomic_filter.operator
+        _include = atomic_filter.include
+        # _attributes = atomic_filter.attributes
+        _groups = atomic_filter.groups
+        _passed = atomic_filter.filter(obj)
+        logger.debug(
+            f"[FilterSet] Object [{obj}], Set [{self.key}] filter [{filter_key}], attribute [{attribute}], passes [{_passed}]"
+        )
+
+        if _passed is None:
+            logger.info(
+                f"[FilterSet] Filter is NONE, Object [{obj}], Set [{self.key}] filter [{filter_key}], attribute [{attribute}]"
+            )
+            return None
+
+        return AtomicFilterResult(
+            filter_key=filter_key,
+            obj=obj,
+            operator=_operator,
+            include=_include,
+            attribute=attribute,
+            groups=_groups,
+            passed=_passed,
+        )
+
+    def filter(
+        self, obj: object, groups: list = None, verbose: bool = False
+    ) -> bool | None | Dict[str, AtomicFilterResult]:
+        """filtering the Filter Set"""
+        _passed_list = []
+        out = None
+        _result = []
+        if verbose:
+            out = {}
+
+        for _filter_key, _atomic_filter in self._filter_key_dict.items():
+            _atomic_filter_groups = _atomic_filter.groups
+            # only continue if filter is assigned to the filter group
+            # or all filters applied
+            # or there are groups anyway
+            if groups is not None and _atomic_filter_groups is not None:
+                _filtered = [filtered_group for filtered_group in groups if filtered_group in _atomic_filter_groups]
+                if len(_filtered) == 0:
+                    continue
+
+            _values = {}
+
+            # get the values to be checked
+            if isinstance(_atomic_filter.attributes, list):
+                # try to get value from objects
+                for _attribute in _atomic_filter.attributes:
+                    _value = self._get_value(obj, _attribute)
+                    if _value is None and self._filter.ignore_missing_attributes:
+                        continue
+                    _values[_attribute] = _value
+
+            # no attributes given, treat values as direct filter value
+            else:
+                _values = {PLAIN_OBJECT: obj}
+
+            for _value_key, _value in _values.items():
+                _result = self._passes_atomic_filter(
+                    obj=_value, filter_key=_filter_key, attribute=_value_key, atomic_filter=_atomic_filter
+                )
+
+                if _result is None:
+                    continue
+
+                _passed_list.append(_result.passed)
+                if verbose:
+                    out[_filter_key] = _result
+
+        # calculate filter result
+        _filter = self._filter
+        _result = None
+        if len(_passed_list) > 0:
+            if _filter.operator == "all":
+                _result = all(_passed_list)
+            else:
+                _result = any(_passed_list)
+        if isinstance(_result, bool) and _filter.include == "exclude":
+            _result = not _result
+        if verbose:
+            out[_filter.key] = AtomicFilterResult(
+                filter_key=_filter.key,
+                obj=obj,
+                operator=_filter.operator,
+                include=_filter.include,
+                groups=_filter.groups,
+                passed=_result,
+            )
+        else:
+            out = _result
+
+        return out
