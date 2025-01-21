@@ -268,6 +268,7 @@ class CalendarFilterModel(FilterModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     filter_str: Optional[str] = None  # Filter String to be used for Calendar
     date_list: Optional[List[List[DateTime] | DateTime]] = None
+    # instead of passing the filter string you may directly transfer the calendar
     calendar_filter: Optional[CalendarFilterObject] = None
 
 
@@ -291,6 +292,8 @@ class CalendarFilterWrapper(AbstractAtomicFilter):
 
     def filter(self, obj: Any, groups: list = None) -> bool | None:
         """filtering the calendar object"""
+        # TODO PRIO2  filter by groups
+
         if not isinstance(obj, DateTime):
             raise ValueError(
                 f"[CalendarFilter] Passed {obj} of type [{type(obj).__name__}], expected datetime.datetime"

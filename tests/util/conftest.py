@@ -4,7 +4,6 @@ import os
 from copy import deepcopy
 from datetime import datetime as DateTime
 from pathlib import Path
-
 import pytest
 
 from demo.demo_config import create_demo_config

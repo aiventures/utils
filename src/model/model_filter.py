@@ -1,6 +1,6 @@
 """Generic Filter Model"""
 
-from typing import List, Optional, Literal, Any, Annotated
+from typing import List, Optional, Literal, Any, Annotated, Dict
 from datetime import datetime as DateTime
 
 from pydantic import BaseModel, field_validator
@@ -41,10 +41,10 @@ class NumericalFilterModel(FilterModel):
     """Filter for a numeric value"""
 
     value_min: Optional[float | int | DateTime] = None
-    operator_min: Optional[OperatorMin] = None
+    operator_min: Optional[OperatorMin] = "ge"
 
     value_max: Optional[float | int | DateTime] = None
-    operator_max: Optional[OperatorMax] = None
+    operator_max: Optional[OperatorMax] = "le"
 
     # lower / lower equal operators
 
@@ -97,4 +97,17 @@ class AtomicFilterResult(BaseModel):
     include: Optional[IncludeType] = None
     attribute: Optional[str] = None
     groups: Optional[list] = None
+    passed: Optional[bool] = None
+
+
+class FilterSetResult(BaseModel):
+    """Return Structure of the filter result"""
+
+    # results of each atomic filter
+    filters_result: Optional[List[AtomicFilterResult]] = []
+    # filter set result
+    filter_set_result: Optional[AtomicFilterResult] = None
+    # for the case error: dict of filter keys and error messages
+    messages: Optional[Dict[str, list]] = {}
+    # overall result
     passed: Optional[bool] = None

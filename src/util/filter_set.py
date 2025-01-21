@@ -6,7 +6,7 @@ from datetime import datetime as DateTime
 from typing import Dict, List
 
 
-from model.model_filter import FilterSetModel, AtomicFilterResult
+from model.model_filter import FilterSetModel, AtomicFilterResult, FilterSetResult
 from util import constants as C
 from util.filter import AbstractAtomicFilter
 from util.utils import Utils
@@ -29,7 +29,7 @@ class FilterSet(AbstractAtomicFilter):
         self._filter_group_dict: Dict[str, list] = {}
         self._filter_attribute_dict: Dict[str, list] = {}
         self._filter_key_dict: Dict[str, AbstractAtomicFilter] = {}
-
+        self._verbose = None
         # get items
         self._parse_filter_list()
         pass
@@ -69,10 +69,12 @@ class FilterSet(AbstractAtomicFilter):
             _filtered_attributes = _atomic_filter.attributes
             if isinstance(_filtered_attributes, str):
                 _filtered_attributes = [_filtered_attributes]
-            for _attribute in _filtered_attributes:
-                _filters_by_attribute = self._filter_attribute_dict.get(_attribute, [])
-                _filters_by_attribute.append(_attribute)
-                self._filter_attribute_dict[_attribute] = _filters_by_attribute
+            if isinstance(_filtered_attributes, list):
+                for _attribute in _filtered_attributes:
+                    _filters_by_attribute = self._filter_attribute_dict.get(_attribute, [])
+                    _filters_by_attribute.append(_attribute)
+                    self._filter_attribute_dict[_attribute] = _filters_by_attribute
+                    
         pass
 
     @property
@@ -129,10 +131,22 @@ class FilterSet(AbstractAtomicFilter):
             passed=_passed,
         )
 
+    def _add_message_to_result(self, message: str, key: str, filter_set_result: FilterSetResult) -> None:
+        """adding a message to the result set"""
+        if not self._verbose:
+            return
+        _messages = filter_set_result.messages.get(key, [])
+        _messages.append(message)
+        filter_set_result.messages[key] = _messages
+
     def filter(
         self, obj: object, groups: list = None, verbose: bool = False
     ) -> bool | None | Dict[str, AtomicFilterResult]:
         """filtering the Filter Set"""
+        self._verbose = verbose
+
+        _filter_set_result = FilterSetResult()
+
         if isinstance(groups, str):
             groups = [groups]
         _passed_list = []
@@ -149,6 +163,9 @@ class FilterSet(AbstractAtomicFilter):
             if groups is not None and _atomic_filter_groups is not None:
                 _filtered = [filtered_group for filtered_group in groups if filtered_group in _atomic_filter_groups]
                 if len(_filtered) == 0:
+                    _s = f"[FilterSet] Filter [{_filter_key}] is not in passed groups {groups}"
+                    logger.debug(_s)
+                    self._add_message_to_result(_s, _filter_key, _filter_set_result)
                     continue
 
             _values = {}
@@ -159,9 +176,11 @@ class FilterSet(AbstractAtomicFilter):
                 for _attribute in _atomic_filter.attributes:
                     _value = self._get_value(obj, _attribute)
                     if _value is None and self._filter.ignore_missing_attributes:
+                        _s = f"[FilterSet] Filter [{_filter_key}], no value found for attribute [{_attribute}], result will be ignored"
+                        logger.debug(_s)
+                        self._add_message_to_result(_s, _filter_key, _filter_set_result)
                         continue
                     _values[_attribute] = _value
-
             # no attributes given, treat values as direct filter value
             else:
                 _values = {PLAIN_OBJECT: obj}
@@ -173,11 +192,16 @@ class FilterSet(AbstractAtomicFilter):
                         obj=_value, filter_key=_filter_key, attribute=_value_key, atomic_filter=_atomic_filter
                     )
                 except ValueError as e:
-                    logger.info(
-                        f"[FilterSet] ERROR, Object [{obj}], Set [{self.key}] value key [{_value_key}],  Filter Type [{_atomic_filter._filter_type}], {e} "
-                    )
+                    _s = f"[FilterSet] Wrong Type for filter, Object [{obj}], FilterSet [{self.key}] value key [{_value_key}],  Filter Type [{_atomic_filter._filter_type}], {e} "
+                    self._add_message_to_result(_s, _filter_key, _filter_set_result)
+                    logger.debug(_s)
+                    _result = None
+                    continue
 
-                if _result is None:
+                if _result is None and self._filter.ignore_missing_attributes:
+                    _s = f"[FilterSet] Filter returns None, Object [{obj}], FilterSet [{self.key}] value key [{_value_key}],  Filter Type [{_atomic_filter._filter_type}]"
+                    self._add_message_to_result(_s, _filter_key, _filter_set_result)
+                    logger.debug(_s)
                     continue
 
                 _passed_list.append(_result.passed)
@@ -194,8 +218,9 @@ class FilterSet(AbstractAtomicFilter):
                 _result = any(_passed_list)
         if isinstance(_result, bool) and _filter.include == "exclude":
             _result = not _result
+
         if verbose:
-            out[_filter.key] = AtomicFilterResult(
+            _filter_set_result.filter_set_result = AtomicFilterResult(
                 filter_key=_filter.key,
                 obj=obj,
                 operator=_filter.operator,
@@ -203,6 +228,8 @@ class FilterSet(AbstractAtomicFilter):
                 groups=_filter.groups,
                 passed=_result,
             )
+            _filter_set_result.passed = _result
+            out = _filter_set_result
         else:
             out = _result
 
