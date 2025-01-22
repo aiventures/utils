@@ -585,3 +585,14 @@ def fixture_filter_set_match_va_z_begin(fixture_str_filter_match_va_x, fixture_r
     """fixture filter set"""
     _filter_list = [fixture_str_filter_match_va_x, fixture_regex_filter_match_z_begin]
     return FilterSet(FilterSetModel(filter_list=_filter_list))
+
+
+# https://stackoverflow.com/questions/53148623/is-there-a-way-to-nest-fixture-parametization-in-pytest
+# @pytest.fixture(params=generated_list())
+# def fn1(request):
+#     return request.param
+# @pytest.fixture(params=generates_list_2(fn1))
+# def fn2(request, fn1):
+#     return request.param
+# def test_fn(fn2):
+#     assert fn2 == 0

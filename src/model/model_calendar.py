@@ -160,8 +160,8 @@ class CalendarRegex(StrEnum):
     # note that the definition of order here is important
     # as the regex parsing requires a certain order
 
-    # capture characters before and after separator (:)
-    REGEX_FROM_TO: Optional[str] = r"(.+)?:(.+)"
+    # capture characters before and after separator (-)
+    REGEX_FROM_TO: Optional[str] = r"(.+)?-(.+)"
 
     # #1 NOW or now as marker for today so you can construct things like now-1d
     REGEX_NOW: Optional[str] = r"(now|NOW)"

@@ -335,4 +335,3 @@ class CalendarFilter:
             self._add_date_ranges(_parse_infos, _filter)
             # adding intermediate parsing results to this attribute for inspection purposes
             self._parsed_infos[_filter] = _parse_infos
-
