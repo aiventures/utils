@@ -1,3 +1,5 @@
+"""analyzing packages"""
+
 # from pathlib import Path
 import os
 import logging
@@ -9,6 +11,7 @@ logger = logging.getLogger(__name__)
 # get log level from environment if given
 DEFAULT_LOGLEVEL = int(os.environ.get("CLI_LOG_LEVEL", logging.INFO))
 logger.setLevel(DEFAULT_LOGLEVEL)
+
 
 def main():
     """do something"""

@@ -358,6 +358,9 @@ def _filter_set_single_atomic_filter(atomic_filter, groups, test_object) -> Filt
     return _result
 
 
+# TODO PRIO4 refactor these tests as nested fixtures
+
+
 # there is a better way to paramtrize it via fixtures but we'll leave it for now
 @pytest.mark.parametrize(
     "rule_matches,atomic_filter,groups,test_object", atomic_filter_test_sets("TEST_OBJECT_GROUP_STR")

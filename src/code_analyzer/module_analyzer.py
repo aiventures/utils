@@ -1,14 +1,24 @@
+"""analyzing modules"""
+
 # from pathlib import Path
 import os
 import logging
 import sys
-# import typer
+import ast
 
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
 DEFAULT_LOGLEVEL = int(os.environ.get("CLI_LOG_LEVEL", logging.INFO))
 logger.setLevel(DEFAULT_LOGLEVEL)
+
+
+class ModuleAnalyzer:
+    """Module to analyse python code"""
+
+    def __init__(self):
+        pass
+
 
 def main():
     """do something"""
