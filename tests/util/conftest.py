@@ -373,6 +373,8 @@ def fixture_tree() -> Tree:
           +---[6]
                +---[7]
                +---[8]
+                    +---[10]
+                    +---[11]
                +---[9]
     """
 
@@ -386,6 +388,8 @@ def fixture_tree() -> Tree:
         7: {"parent": 6, "value": "value 7"},
         8: {"parent": 6, "value": "value 8"},
         9: {"parent": 6, "value": "value 9"},
+        10: {"parent": 8, "value": "value 10"},
+        11: {"parent": 8, "value": "value 11"},
     }
 
     _tree = Tree()

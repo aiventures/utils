@@ -307,7 +307,7 @@ class Tree:
         logger.info("[Tree] Get nested Tree")
         _node_hierarchy = self._hierarchy_nodes_dict
         # current_nodes = [self.root_id]
-        nested_tree = {self.root_id: {}}
+        nested_tree = {self.root_id: {}}    
 
         def _get_next_nodes_recursive(_nodes: dict):
             if _nodes:
@@ -344,7 +344,7 @@ class Tree:
         _get_next_nodes_recursive(reverse_tree)
         return reverse_tree
 
-    def get_element(self, node_id):
+    def get_element(self, node_id)->dict:
         """returns the element for given node id"""
         element = self._nodes_dict.get(node_id)
         if not element:
