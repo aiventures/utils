@@ -472,7 +472,7 @@ def fixture_calendar_filter() -> CalendarFilterModel:
         "operator": "all",
         "groups": "group1",
         "include": "include",
-        "filter_str": "20241210:20241220",
+        "filter_str": "20241210-20241220",
         "date_list": None,
         "calendar_filter": None,
     }

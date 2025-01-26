@@ -6,31 +6,12 @@ import logging
 
 # from datetime import datetime as DateTime
 import sys
-from typing import Annotated, List, Literal, Union, Dict
+from typing import List, Union, Dict
 from functools import wraps
 
 # using the tree util to create a tree
-from model.model_tree import (
-    CHILDREN,
-    DICT_PATH,
-    ID,
-    IS_LEAF,
-    KEY,
-    LEVEL,
-    LIST_IDX,
-    OBJ_TYPE,
-    OBJECT,
-    PARENT_ID,
-    PREDECESSORS,
-    ROOT,
-)
-
+from model.model_tree import KEY, PARENT_ID, ROOT, DictTreeInfoModel, DictTreeNodeModel, NodeType
 from util.tree import Tree
-
-from model.model_tree import DictTreeInfoModel, NodeType, DictTreeNodeModel
-
-EMPTY_NODE = DictTreeInfoModel().model_dump()
-
 
 logger = logging.getLogger(__name__)
 

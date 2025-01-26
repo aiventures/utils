@@ -76,7 +76,6 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20250126` Create markdown to plantuml converter
 * `20250126` Create a filter class for Tree
 * `20250126` Create Tree Visualization using GraphViz
-* `20250126` Refactor DictTree to Pydantic Model
 * `20250114` Rewrite [recurse_dict.py](./src/util/recurse_dict.py)
 * `20250113` Parse Yaml + JSON Into AST Tree
 * `20250112` Adding Metrics derived from AST Trees
@@ -85,16 +84,12 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20250105` Create Multi Year Calendar
 * `20250104` Output of Calendar list as filter list but filtered
 * `20250104` Create a Tree Model of Paths
-* `20250104` Add a generic Filter Model to parse data
-* `20241216` ~~create a function to count lfs stub sizes~~ 20250104
 * `20241216` make worklog_txt and todo_txt work together
 * `20241216` Create the styles via command line (By simply Calling the constructor)
 * `20241216` Create a Pydantic CSV Model for several files (which ones?)
 * `20241215` Use Rich Text to highlight text searches
-* `20241215` Create a Tree explorer view (including sizes)
-* `20241215` Create Pydantic Model to render the Calendar markdown list with different options such as
+* `20241215` Create Pydantic Model to render the Calendar markdown list with different options
 * `20241215` Create Icon List with search capabilities based on keywords
-* `20241215` Add Duration separated by Office / Homeoffice to Stats
 * `20241003` Set Environment from Configuration / optionally save it as well as env file / create a bat file
 * `20240929` Parsing links, add numbers and allow to launch links from CLI
 * `20240929` Create the possibility to store/load the parsed data without processing
@@ -105,7 +100,11 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20240923` Add [todo.txt](https://github.com/todotxt/todo.txt) logic
 
 **DONE**
-
+* ~~`20250126` Refactor DictTree to Pydantic Model~~ 20250126
+* ~~`20250104` Add a generic Filter Model to parse data~~ 20250126
+* ~~`20241216` create a function to count lfs stub sizes~~ 20250104
+* ~~`20241215` Create a Tree explorer view (including sizes)~~ 20250115
+* ~~`20241215` Add Duration separated by Office / Homeoffice to Stats~~ 20250115
 * ~~`20250111` Adding AST Tree Visualizer (GraphViz)~~
 * ~~`20240927` Create an Utility to create Markdown with Date Lines~~ 20250105
 * ~~`20241216` Add a tag for setting total cumulated overtime from a start date~~ 20250105
