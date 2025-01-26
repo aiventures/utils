@@ -7,7 +7,7 @@ import sys
 
 # import yaml
 import util.constants as C
-from model.model_tree import CHILDREN, LEVEL, NAME, PARENT, TreeNode
+from model.model_tree import CHILDREN, LEVEL, NAME, PARENT_ID, TreeNodeModel
 from typing import Dict
 
 
@@ -26,7 +26,7 @@ class Tree:
         self._num_nodes: int = 0
         self._root: object = None
         self._name_field: str = NAME
-        self._parent_field: str = PARENT
+        self._parent_field: str = PARENT_ID
         self._max_level: int = -1
         self._tree_level_stats = {}
         self._calc_tree_levels: bool = True
@@ -34,7 +34,7 @@ class Tree:
         self._tree_selector: object = None
 
     @property
-    def hierarchy(self) -> Dict[object, TreeNode]:
+    def hierarchy(self) -> Dict[object, TreeNodeModel]:
         """tree hierarchy"""
         return self._hierarchy_nodes_dict
 
@@ -48,12 +48,13 @@ class Tree:
         """nodes"""
         return self._root
 
-    def _create_node(self, node_info: dict, key: object) -> TreeNode:
+    def _create_node(self, node_info: dict, key: object) -> TreeNodeModel:
         """creates a tree node from input dict"""
         if node_info is None:
             logger.warning(f"[Tree] Passed Input Dictionary has no key [{key}]")
             return
         _name = None
+        _type = str(type(node_info).__name__)
         _parent_id = None
         if isinstance(node_info, str) or isinstance(node_info, int):
             _name = str(node_info)
@@ -70,7 +71,7 @@ class Tree:
             if hasattr(node_info, self._name_field):
                 _name = getattr(node_info, self._name_field)
         self._num_nodes += 1
-        return TreeNode(id=key, parent_id=_parent_id, name=_name, obj=node_info)
+        return TreeNodeModel(id=key, parent_id=_parent_id, name=_name, obj=node_info, obj_type=_type)
 
     def create_tree(self, nodes_dict: dict, name_field: str = None, parent_field: str = None) -> None:
         """creates the tree hierarchy"""
@@ -136,7 +137,7 @@ class Tree:
             _current_node_ids = _next_node_ids
         self._max_level = _level - 1
 
-    def _get_hierarchy_info(self, node_id) -> TreeNode:
+    def _get_hierarchy_info(self, node_id) -> TreeNodeModel:
         """gets the hierarchy information"""
         hierarchy_info = self.hierarchy.get(node_id, {})
         if self.is_node(node_id) is False:
@@ -202,12 +203,22 @@ class Tree:
         parents = []
         # _current_node = self.get_node(node_id)
         _current_node_id = node_id
+        _node = None
 
         while _current_node_id is not None:
+            # store for later buffering
+
             _current_node = self.get_node(_current_node_id)
             if not _current_node:
                 _current_node_id = None
                 continue
+
+            # get prdecessors from buffer if already done
+            if _current_node_id == node_id:
+                _node = _current_node
+                if isinstance(_node.predecessors, list):
+                    return _node.predecessors
+
             _parent_id = _current_node.parent_id
             if _parent_id:
                 _current_node_id = _parent_id
@@ -215,9 +226,10 @@ class Tree:
             else:
                 _current_node_id = None
 
+        _node.predecessors = parents
         return parents
 
-    def get_node(self, node_id) -> TreeNode | None:
+    def get_node(self, node_id) -> TreeNodeModel | None:
         """returns the tree node for given node id
         can also be overridden in subclass
         """
@@ -231,14 +243,20 @@ class Tree:
 
     def is_leaf(self, node_id):
         """checks if node is leaf"""
+        out = None
         _node_info = self.get_node(node_id)
         if _node_info is None:
             return None
+        # use buffered leaf info or get info from other attributes
+        if _node_info.is_leaf is not None:
+            return _node_info.is_leaf
         _children = _node_info.children
         if isinstance(_children, list) and len(_children) == 0:
-            return True
+            out = True
         else:
-            return False
+            out = False
+        _node_info.is_leaf = out
+        return out
 
     def get_siblings(self, node_id, only_leaves=True) -> list:
         """gets the list of siblings and only leaves"""
@@ -326,7 +344,7 @@ class Tree:
             nonlocal _num_nodes
             if _nested_dict:
                 for _node_id, _node_dict_info in _nested_dict.items():
-                    _node: TreeNode = self.get_node(_node_id)
+                    _node: TreeNodeModel = self.get_node(_node_id)
                     if not _node:
                         continue
                     _num_nodes += 1

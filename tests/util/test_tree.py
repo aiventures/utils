@@ -4,7 +4,7 @@ import logging
 import os
 import util.constants as C
 from util.tree import Tree
-from model.model_tree import TreeNode
+from model.model_tree import TreeNodeModel
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -53,12 +53,12 @@ def test_tree(fixture_tree: Tree):
     _reverse_tree = fixture_tree.get_reverse_tree_elements()
     assert isinstance(_reverse_tree, dict)
     _node = fixture_tree.get_node(4)
-    assert isinstance(_node, TreeNode)
+    assert isinstance(_node, TreeNodeModel)
     # TODO PRIO2 FIX by adding name fileds ?
     #     _key_path = fixture_tree.get_key_path(7)
     #     assert isinstance(_key_path, list)
     _node = fixture_tree.get_node(3)
-    assert isinstance(_node, TreeNode)
+    assert isinstance(_node, TreeNodeModel)
     _json = fixture_tree.json()
     assert isinstance(_json, str)
     assert fixture_tree.is_leaf(10)

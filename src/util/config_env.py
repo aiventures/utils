@@ -34,7 +34,7 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 
 def config_key(func):
-    """decorator to check for existence of a key in configuration"""
+    """decorator annotation to check for existence of a key in configuration"""
 
     @wraps(func)
     def func_wrapper(self, key, *args, **kwargs):

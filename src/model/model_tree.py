@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 ID = "id"
-PARENT = "parent"
+PARENT_ID = "parent_id"
 CHILDREN = "children"
 IS_LEAF = "is_leaf"
 PREDECESSORS = "predecessors"
@@ -38,7 +38,7 @@ class FileTreeNodeRenderModel(BaseModel):
     is_empty: Optional[bool] = None
 
 
-class DictTreeInfo(BaseModel):
+class DictTreeInfoModel(BaseModel):
     """generic model for storing tree information"""
 
     id: Optional[int] = None
@@ -54,12 +54,25 @@ class DictTreeInfo(BaseModel):
     obj: Optional[object] = None
 
 
-class TreeNode(BaseModel):
+class TreeNodeModel(BaseModel):
     """generic Tree Node"""
 
     id: Optional[object] = None
     parent_id: Optional[object] = None
     children: Optional[List[object]] = []
+    is_leaf: Optional[bool] = None
     name: Optional[str] = None
     obj: Optional[object] = None
+    obj_type: Optional[str] = None
     level: Optional[int] = None
+    predecessors: Optional[list] = None
+
+
+class DictTreeNodeModel(TreeNodeModel):
+    """TreeDict Node"""
+
+    # keys for storing key name and list index
+    key: Optional[str] = None
+    list_dix: Optional[int] = None
+    # dictionary key path
+    dict_path: Optional[list] = None

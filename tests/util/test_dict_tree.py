@@ -5,8 +5,8 @@ import os
 import json
 import util.constants as C
 from util.tree import Tree
-from model.model_tree import TreeNode
-from util.dict_tree import DictTree
+from model.model_tree import TreeNodeModel
+from util.dict_tree import DictTreeNodeModel, DictTree
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -33,7 +33,7 @@ def test_dict_tree(fixture_test_dict: dict):
     _max_level = my_dict_tree.max_level
     assert isinstance(_max_level, int)
     _node_info = my_dict_tree.get_node(2)
-    assert isinstance(_node_info, dict)
+    assert isinstance(_node_info, DictTreeNodeModel)
     _is_node_type = my_dict_tree.is_node_type(2, "leaf")
     assert isinstance(_is_node_type, bool)
     _is_leaf = my_dict_tree.is_leaf(2)

@@ -73,6 +73,10 @@ Configuration should be OS independent, but only tested on Win Os.
 
 **OPEN**
 
+* `20250126` Create markdown to plantuml converter
+* `20250126` Create a filter class for Tree
+* `20250126` Create Tree Visualization using GraphViz
+* `20250126` Refactor DictTree to Pydantic Model
 * `20250114` Rewrite [recurse_dict.py](./src/util/recurse_dict.py)
 * `20250113` Parse Yaml + JSON Into AST Tree
 * `20250112` Adding Metrics derived from AST Trees

@@ -379,17 +379,17 @@ def fixture_tree() -> Tree:
     """
 
     _tree_dict = {
-        1: {"parent": None, "value": "value 1", "object": "OBJ1"},
-        2: {"parent": 1, "value": "value 2", "object": "OBJ2"},
-        4: {"parent": 2, "value": "value 4", "object": "OBJ4"},
-        5: {"parent": 2, "value": "value 5", "object": "OBJ5"},
-        3: {"parent": 1, "value": "value 3", "object": "OBJ3"},
-        6: {"parent": 3, "value": "value 6", "object": "OBJ6"},
-        7: {"parent": 6, "value": "value 7", "object": "OBJ7"},
-        8: {"parent": 6, "value": "value 8", "object": "OBJ8"},
-        9: {"parent": 6, "value": "value 9", "object": "OBJ9"},
-        10: {"parent": 8, "value": "value 10", "object": "OBJ10"},
-        11: {"parent": 8, "value": "value 11", "object": "OBJ11"},
+        1: {"parent_id": None, "value": "value 1", "object": "OBJ1"},
+        2: {"parent_id": 1, "value": "value 2", "object": "OBJ2"},
+        4: {"parent_id": 2, "value": "value 4", "object": "OBJ4"},
+        5: {"parent_id": 2, "value": "value 5", "object": "OBJ5"},
+        3: {"parent_id": 1, "value": "value 3", "object": "OBJ3"},
+        6: {"parent_id": 3, "value": "value 6", "object": "OBJ6"},
+        7: {"parent_id": 6, "value": "value 7", "object": "OBJ7"},
+        8: {"parent_id": 6, "value": "value 8", "object": "OBJ8"},
+        9: {"parent_id": 6, "value": "value 9", "object": "OBJ9"},
+        10: {"parent_id": 8, "value": "value 10", "object": "OBJ10"},
+        11: {"parent_id": 8, "value": "value 11", "object": "OBJ11"},
     }
 
     _tree = Tree()

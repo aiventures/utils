@@ -6,7 +6,8 @@ import logging
 
 # from datetime import datetime as DateTime
 import sys
-from typing import Annotated, List, Literal, Union
+from typing import Annotated, List, Literal, Union, Dict
+from functools import wraps
 
 # using the tree util to create a tree
 from model.model_tree import (
@@ -19,16 +20,16 @@ from model.model_tree import (
     LIST_IDX,
     OBJ_TYPE,
     OBJECT,
-    PARENT,
+    PARENT_ID,
     PREDECESSORS,
     ROOT,
 )
 
 from util.tree import Tree
 
-from model.model_tree import DictTreeInfo, NodeType
+from model.model_tree import DictTreeInfoModel, NodeType, DictTreeNodeModel
 
-EMPTY_NODE = DictTreeInfo().model_dump()
+EMPTY_NODE = DictTreeInfoModel().model_dump()
 
 
 logger = logging.getLogger(__name__)
@@ -37,50 +38,73 @@ logger = logging.getLogger(__name__)
 # logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 
+def valid_node_id(func):
+    """decorator / annotation to verify a valid node id was passed and returns None otherwise"""
+
+    @wraps(func)
+    def func_wrapper(self, node_id: int, *args, **kwargs):
+        # check if valid key was passed, if not, skip function execution
+        if not self._node_hierarchy.get(node_id):
+            logger.info(f"[DictTree] node_id decorator: node_id [{node_id}] invalid")
+            return None
+        # there is a key, execute function
+        return func(self, node_id)
+
+    return func_wrapper
+
+
 class DictTree:
     """parsing a dict into a tree structure"""
 
-    def __init__(self, input_dict: dict) -> None:
+    def __init__(self, input_dict: dict, copy_dict: bool = False) -> None:
         """constructor"""
         # number of elements (including counting list items)
         self._num_nodes = 0
         # level
         self._max_level = 0
-        # always add a root node
-        self._dict = {ROOT: copy.deepcopy(input_dict)}
+        # always add a root node to avoid non tree structure when lists are passed
+        _input_dict = copy.deepcopy(input_dict) if copy_dict else input_dict
+        self._dict = {ROOT: _input_dict}
         # root element has id of 0
-        self._hierarchy = {}
-        self._hierarchy[0] = EMPTY_NODE.copy()
-        self._hierarchy[0].update({ID: 0, PARENT: None, CHILDREN: []})
+        self._node_hierarchy: Dict[int, DictTreeNodeModel] = {}
+        self._node_hierarchy[0] = DictTreeNodeModel(id=0)
         # traverse the dict and create hierarchy
         self._traverse_dict(self._dict, None)
         # get the tree object
         self._tree = Tree()
-        self._tree.create_tree(self._hierarchy, name_field=KEY, parent_field=PARENT)
+        self._tree.create_tree(self._node_hierarchy, name_field=KEY, parent_field=PARENT_ID)
         self._index = {}
         # get the key map from the hierarchy
         self._get_key_maps()
         # create the key index
         self._create_index()
 
-    def _parse_object(self, obj: object, parent_id: int = None, key: object = None, list_idx: int = None) -> dict:
+    def _parse_object(
+        self, obj: object, parent_id: int = None, key: object = None, list_idx: int = None
+    ) -> DictTreeNodeModel:
         """parse the object and return the item"""
 
-        out = EMPTY_NODE.copy()
-        out[ID] = self._num_nodes
-        out[PARENT] = parent_id
-        out[CHILDREN] = []
-        out[IS_LEAF] = None
-        out[KEY] = key
+        _id = self._num_nodes
+        _parent_id = parent_id
+        _children = []
         if list_idx is not None:
-            out[OBJECT] = obj[list_idx]
+            _object = obj[list_idx]
         else:
-            out[OBJECT] = obj
-        _type = str(type(out[OBJECT]).__name__)
-        out[OBJ_TYPE] = _type
-        out[LIST_IDX] = list_idx
+            _object = obj
+        _obj_type = str(type(_object).__name__)
+        _key = key
+        _list_idx = list_idx
+        out = DictTreeNodeModel(
+            id=_id,
+            parent_id=_parent_id,
+            children=_children,
+            obj=_object,
+            obj_type=_obj_type,
+            key=_key,
+            list_dix=_list_idx,
+        )
         logger.debug(
-            f"[DictTree] OBJECT Parent->Node [{parent_id}->{self._num_nodes}], key [{key}], index [{list_idx}], type [{_type}]"
+            f"[DictTree] OBJECT Parent->Node [{parent_id}->{self._num_nodes}], key [{key}], index [{list_idx}], type [{_obj_type}]"
         )
 
         return out
@@ -115,7 +139,7 @@ class DictTree:
         if not isinstance(d, dict):
             self._num_nodes += 1
             # treat iterables / add the list item
-            self._hierarchy[self._num_nodes] = self._parse_object(obj=d, parent_id=parent_id, list_idx=_list_idx)
+            self._node_hierarchy[self._num_nodes] = self._parse_object(obj=d, parent_id=parent_id, list_idx=_list_idx)
             # now if there is an inner nested type in a list, parse it as well
             if _inner_iterable is not None:
                 logger.debug(f"[DictTree] INNER ITERABLE [{self._num_nodes}]")
@@ -130,7 +154,7 @@ class DictTree:
             if parent_id is not None:
                 self._num_nodes += 1
                 logger.debug(f"[DictTree] Parsing KEY [{k}], IDX [{self._num_nodes}]")
-                self._hierarchy[self._num_nodes] = self._parse_object(
+                self._node_hierarchy[self._num_nodes] = self._parse_object(
                     obj=v, parent_id=parent_id, key=k, list_idx=_list_idx
                 )
             else:
@@ -147,14 +171,16 @@ class DictTree:
     def _get_dict_path(self, node_id: int) -> list:
         """calculate the dict path from predecessors"""
         out = []
-        _hierarchy = self._hierarchy.get(node_id)
-        _predecessors = _hierarchy[PREDECESSORS]
+        _hierarchy = self._node_hierarchy.get(node_id)
+        # _predecessors = _hierarchy[PREDECESSORS]
+        _predecessors = _hierarchy.predecessors
+
         for _predecessor in _predecessors:
             if _predecessor == 0:
                 continue
-            _pred_hierarchy = self._hierarchy[_predecessor]
-            _key = _pred_hierarchy[KEY]
-            _index = _pred_hierarchy[LIST_IDX]
+            _pred_hierarchy = self._node_hierarchy[_predecessor]
+            _key = _pred_hierarchy.key
+            _index = _pred_hierarchy.list_dix
             # we either get a dict key or an index of a list
             if _key is not None:
                 out.append(_key)
@@ -166,32 +192,33 @@ class DictTree:
     def _get_key_maps(self):
         """creates map of keys"""
         # get the hierarchy
-        for _node_id, _node_info in self._hierarchy.items():
+        for _node_id, _node_info in self._node_hierarchy.items():
             _predecessors = self._tree.get_predecessors(_node_id)
             # add the root elementa and add the current element
             if not _node_id == 0:
                 _predecessors.append(0)
             _predecessors.reverse()
             _predecessors.append(_node_id)
-            _node_info[PREDECESSORS] = _predecessors
-            _node_info[DICT_PATH] = self._get_dict_path(_node_id)
-            _node_info[LEVEL] = len(_predecessors) - 1
-            if _node_info[LEVEL] > self._max_level:
-                self._max_level = _node_info[LEVEL]
+
+            _node_info.predecessors = _predecessors
+            _node_info.dict_path = self._get_dict_path(_node_id)
+            _node_info.level = len(_predecessors) - 1
+            if _node_info.level > self._max_level:
+                self._max_level = _node_info.level
             # add as child item
-            if _node_info[PARENT] is not None:
-                self._hierarchy[_node_info[PARENT]][CHILDREN].append(_node_id)
+            if _node_info.parent_id is not None:
+                self._node_hierarchy[_node_info.parent_id].children.append(_node_id)
         # set the info whether it is a leaf or a node
-        for _node_id, _node_info in self._hierarchy.items():
-            if len(_node_info[CHILDREN]) == 0:
-                _node_info[IS_LEAF] = True
+        for _node_id, _node_info in self._node_hierarchy.items():
+            if len(_node_info.children) == 0:
+                _node_info.is_leaf = True
             else:
-                _node_info[IS_LEAF] = False
+                _node_info.is_leaf = False
 
     def _create_index(self) -> None:
         """create index dict path to object id"""
         self._index = {}
-        self._index = {tuple(node_info[DICT_PATH]): node_id for node_id, node_info in self._hierarchy.items()}
+        self._index = {tuple(node_info.dict_path): node_id for node_id, node_info in self._node_hierarchy.items()}
         pass
 
     # TODO PRIO4 Create a method to move subtrees to another node
@@ -212,16 +239,14 @@ class DictTree:
         if node_type == "any":
             return True
         _type = "leaf"
-        if self._hierarchy[node_id][IS_LEAF] is False:
+        if self._node_hierarchy[node_id].is_leaf is False:
             _type = "node"
         return node_type == _type
 
-    def get_node(self, node_id: int) -> dict:
+    @valid_node_id
+    def get_node(self, node_id: int) -> DictTreeNodeModel:
         """returns the info for a tree node"""
-        if node_id <= self._num_nodes:
-            return self._hierarchy[node_id]
-        else:
-            return EMPTY_NODE
+        return self._node_hierarchy[node_id]
 
     def get_node_id_by_path(self, node_path: Union[dict | tuple]) -> int:
         """gets the node id from the index using a dict path"""
@@ -235,44 +260,49 @@ class DictTree:
             logger.info(f"[DictTree] There is no key {node_path}")
         return out
 
+    @valid_node_id
     def get_subtree_ids(self, node_id: int, node_type: NodeType = "any") -> list:
         """gets the subtree node elements"""
         _subtree_root = self.get_node(node_id)
         _all_children = []
-        _nodes = _subtree_root[CHILDREN]
+        _nodes = _subtree_root.children
         while len(_nodes) > 0:
             _children = []
             for _node in _nodes:
                 _all_children.append(_node)
-                _children.extend(self.get_node(_node)[CHILDREN])
+                _children.extend(self.get_node(_node).children)
             _nodes = _children
         _all_children = [_n for _n in _all_children if self.is_node_type(_n, node_type)]
         return _all_children
 
     def get_leaf_ids(self) -> list:
         """returns all leaves of the tree"""
-        return [_id for _id, _info in self._hierarchy.items() if _info[IS_LEAF]]
+        return [_id for _id, _info in self._node_hierarchy.items() if _info.is_leaf]
 
+    @valid_node_id
     def is_leaf(self, node_id: int) -> bool:
         """returns info whether a node is a leaf"""
-        return self.get_node(node_id)[IS_LEAF]
+        return self.get_node(node_id).is_leaf
 
+    @valid_node_id
     def key_path(self, node_id: int) -> list:
         """returns the key path for a given node"""
-        return self.get_node(node_id)[DICT_PATH]
+        return self.get_node(node_id).dict_path
 
+    @valid_node_id
     def value(self, node_id: int, node_type: NodeType = "any") -> object:
         """returns the value for a given node"""
         if not self.is_node_type(node_id):
             logger.info(f"[DictTree] Node [{node_id}] is not of type [{node_type}]")
             return
-        return self.get_node(node_id)[OBJECT]
+        return self.get_node(node_id).obj
 
+    @valid_node_id
     def siblings(self, node_id: int, node_type: NodeType = "any", include_self: bool = True) -> list:
         """returns all siblings for a given node"""
         _node_info = self.get_node(node_id)
-        _parent_id = _node_info[PARENT]
-        _children = self.get_node(_parent_id)[CHILDREN]
+        _parent_id = _node_info.parent_id
+        _children = self.get_node(_parent_id).children
         _siblings = [_c for _c in _children]
         if not include_self:
             _siblings = [_c for _c in _children if _c != node_id]
@@ -295,7 +325,7 @@ class DictTree:
         _nodes_in_level = [
             _id
             for _id in range(1, self._num_nodes + 1)
-            if self._hierarchy[_id][LEVEL] >= _level_min and self._hierarchy[_id][LEVEL] <= _level_max
+            if self._node_hierarchy[_id].level >= _level_min and self._node_hierarchy[_id].level <= _level_max
         ]
         _nodes_in_level = [_n for _n in _nodes_in_level if self.is_node_type(_n, node_type=node_type)]
         return _nodes_in_level
@@ -303,20 +333,21 @@ class DictTree:
     def hierarchy_dict(self, node_type: NodeType = "any", fields: List[str] = None) -> dict:
         """returns hierarchy dict of nodes"""
         out = {}
-        _all_fields = list(EMPTY_NODE.keys())
+
+        _all_fields = list(DictTreeNodeModel.model_fields.keys())
 
         _fields = fields
         if fields is None:
             _fields = _all_fields
 
-        for _node, _node_info in self._hierarchy.items():
+        for _node, _node_info in self._node_hierarchy.items():
             if not self.is_node_type(_node, node_type=node_type):
                 continue
             _info_dict = {}
             for _field in _fields:
                 if _field not in _all_fields:
                     continue
-                _info_dict[_field] = _node_info[_field]
+                _info_dict[_field] = getattr(_node_info, _field)
             out[_node] = _info_dict
 
         return out
