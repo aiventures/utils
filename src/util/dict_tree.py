@@ -26,12 +26,9 @@ from model.model_tree import (
 
 from util.tree import Tree
 
-from model.model_tree import DictTreeInfo
+from model.model_tree import DictTreeInfo, NodeType
 
 EMPTY_NODE = DictTreeInfo().model_dump()
-
-
-NodeType = Annotated[Literal["leaf", "node", "any"], "Node Type"]
 
 
 logger = logging.getLogger(__name__)
@@ -333,12 +330,15 @@ if __name__ == "__main__":
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    test_struc = (
-        '{"k1":"value1",'
-        '"test_key":500,'
-        '"k2":{"k2.1":5,"k2.2":"v2.2",'
-        '"k2.3":["l1","test value","l3",{"dict_inner":["a","b","c"]}]}}'
-    )
+    test_struc = """
+        { "k1":"value1",
+          "test_key":500,
+          "k2":{"k2.1":5,
+                "k2.2":"v2.2",
+                "k2.3":["l1","test value","l3",{"dict_inner":["a","b","c"]}]
+                }
+        }
+    """
     # test_struc = '{"k1":{"k1":"v1","k2":[1,2,3]},"k_nested_list_dict":["a",{"b":"c"}]}'
     # test_struc = '{"k1":"value1","k_nested_list_list":["a",["b","c"]]}'
     test_dict = json.loads(test_struc)
@@ -349,6 +349,7 @@ if __name__ == "__main__":
     _leaves = my_dict_tree.get_leaf_ids()
     _key_path = my_dict_tree.key_path(2)
     _value = my_dict_tree.value(2)
+    _tree = my_dict_tree.tree
     _siblings = my_dict_tree.siblings(2)
     _dict_info = my_dict_tree.hierarchy_dict(node_type="leaf")
     _subtree = my_dict_tree.get_subtree_ids(6, node_type="node")

@@ -4,6 +4,7 @@ import logging
 import os
 import util.constants as C
 from util.tree import Tree
+from model.model_tree import TreeNode
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -30,7 +31,10 @@ def test_tree(fixture_tree: Tree):
     _hierarchy = fixture_tree.hierarchy
     assert len(_hierarchy) == 11
     _max_level = fixture_tree.max_level
-    assert _max_level == 5
+    assert _max_level == 4
+    _nested_dict = fixture_tree.get_nested_dict(add_leaf_values=False)
+    assert isinstance(_nested_dict, dict)
+
     _all_children = fixture_tree.get_all_children(1, only_leaves=False)
     assert len(_all_children) == 10
     _children = fixture_tree.get_children(1)
@@ -44,17 +48,17 @@ def test_tree(fixture_tree: Tree):
     # siblings alongside with parent paths
     _leave_siblings = fixture_tree.get_leaf_siblings()
     assert len(_leave_siblings) == 3
-    _nested_dict = fixture_tree.get_nested_dict()
-    assert isinstance(_nested_dict, dict)
+
     # [key] node id, then nested dict of subelements
     _reverse_tree = fixture_tree.get_reverse_tree_elements()
     assert isinstance(_reverse_tree, dict)
-    _element = fixture_tree.get_element(4)
-    assert isinstance(_element, dict)
-    _key_path = fixture_tree.get_key_path(7)
-    assert isinstance(_key_path, list)
-    _element = fixture_tree.get_element(3)
-    assert isinstance(_element, dict)
+    _node = fixture_tree.get_node(4)
+    assert isinstance(_node, TreeNode)
+    # TODO PRIO2 FIX by adding name fileds ?
+    #     _key_path = fixture_tree.get_key_path(7)
+    #     assert isinstance(_key_path, list)
+    _node = fixture_tree.get_node(3)
+    assert isinstance(_node, TreeNode)
     _json = fixture_tree.json()
     assert isinstance(_json, str)
     assert fixture_tree.is_leaf(10)

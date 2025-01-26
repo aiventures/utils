@@ -1,6 +1,6 @@
 """ " model for file tree"""
 
-from typing import List, Optional
+from typing import List, Optional, Annotated, Literal
 from pydantic import BaseModel
 
 
@@ -19,6 +19,8 @@ OBJECT = "obj"
 NAME = "name"
 NODE = "node"
 VALUE = "value"
+
+NodeType = Annotated[Literal["leaf", "node", "any"], "Node Type"]
 
 
 class FileTreeNodeRenderModel(BaseModel):
@@ -50,3 +52,14 @@ class DictTreeInfo(BaseModel):
     level: Optional[int] = None
     obj_type: Optional[str] = None
     obj: Optional[object] = None
+
+
+class TreeNode(BaseModel):
+    """generic Tree Node"""
+
+    id: Optional[object] = None
+    parent_id: Optional[object] = None
+    children: Optional[List[object]] = []
+    name: Optional[str] = None
+    obj: Optional[object] = None
+    level: Optional[int] = None

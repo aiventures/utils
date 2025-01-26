@@ -379,23 +379,24 @@ def fixture_tree() -> Tree:
     """
 
     _tree_dict = {
-        1: {"parent": None, "value": "value 1"},
-        2: {"parent": 1, "value": "value 3"},
-        4: {"parent": 2, "value": "value 4"},
-        5: {"parent": 2, "value": "value 5"},
-        3: {"parent": 1, "value": "value 3"},
-        6: {"parent": 3, "value": "value 6"},
-        7: {"parent": 6, "value": "value 7"},
-        8: {"parent": 6, "value": "value 8"},
-        9: {"parent": 6, "value": "value 9"},
-        10: {"parent": 8, "value": "value 10"},
-        11: {"parent": 8, "value": "value 11"},
+        1: {"parent": None, "value": "value 1", "object": "OBJ1"},
+        2: {"parent": 1, "value": "value 2", "object": "OBJ2"},
+        4: {"parent": 2, "value": "value 4", "object": "OBJ4"},
+        5: {"parent": 2, "value": "value 5", "object": "OBJ5"},
+        3: {"parent": 1, "value": "value 3", "object": "OBJ3"},
+        6: {"parent": 3, "value": "value 6", "object": "OBJ6"},
+        7: {"parent": 6, "value": "value 7", "object": "OBJ7"},
+        8: {"parent": 6, "value": "value 8", "object": "OBJ8"},
+        9: {"parent": 6, "value": "value 9", "object": "OBJ9"},
+        10: {"parent": 8, "value": "value 10", "object": "OBJ10"},
+        11: {"parent": 8, "value": "value 11", "object": "OBJ11"},
     }
 
     _tree = Tree()
 
     # use name to get a different field
     # my_tree.create_tree(tree,name_field="value")
+    # _tree.create_tree(_tree_dict)
     _tree.create_tree(_tree_dict)
     return _tree
 
@@ -589,6 +590,21 @@ def fixture_filter_set_match_va_z_begin(fixture_str_filter_match_va_x, fixture_r
     """fixture filter set"""
     _filter_list = [fixture_str_filter_match_va_x, fixture_regex_filter_match_z_begin]
     return FilterSet(FilterSetModel(filter_list=_filter_list))
+
+
+@pytest.fixture(scope="module")
+def fixture_test_dict() -> dict:
+    """fixture filter set"""
+    test_struc = """
+        { "k1":"value1",
+          "test_key":500,
+          "k2":{"k2.1":5,
+                "k2.2":"v2.2",
+                "k2.3":["l1","test value","l3",{"dict_inner":["a","b","c"]}]
+                }
+        }
+    """
+    return test_struc
 
 
 # https://stackoverflow.com/questions/53148623/is-there-a-way-to-nest-fixture-parametization-in-pytest
