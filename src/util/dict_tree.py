@@ -3,11 +3,11 @@
 import copy
 import json
 import logging
+from functools import wraps
 
 # from datetime import datetime as DateTime
 import sys
 from typing import List, Union, Dict
-from functools import wraps
 
 # using the tree util to create a tree
 from model.model_tree import KEY, PARENT_ID, ROOT, DictTreeInfoModel, DictTreeNodeModel, NodeType
@@ -26,13 +26,12 @@ def valid_node_id(func):
     def func_wrapper(self, node_id: int, *args, **kwargs):
         # check if valid key was passed, if not, skip function execution
         if not self._node_hierarchy.get(node_id):
-            logger.info(f"[DictTree] node_id decorator: node_id [{node_id}] invalid")
+            logger.info(f"[DictTree] valid_node_id decorator: node_id [{node_id}] invalid")
             return None
         # there is a key, execute function
         return func(self, node_id)
 
     return func_wrapper
-
 
 class DictTree:
     """parsing a dict into a tree structure"""

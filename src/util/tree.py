@@ -4,16 +4,38 @@ import json
 import logging
 import os
 import sys
+from functools import wraps
+
 
 # import yaml
 import util.constants as C
 from model.model_tree import CHILDREN, LEVEL, NAME, PARENT_ID, TreeNodeModel
 from typing import Dict
 
+PY_YAML_INSTALLED = True
+try:
+    import yaml
+except ImportError:
+    PY_YAML_INSTALLED = False
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+
+
+def valid_node_id(func):
+    """decorator / annotation to verify a valid node id was passed and returns None otherwise"""
+
+    @wraps(func)
+    def func_wrapper(self, node_id: object, *args, **kwargs):
+        # check if valid key was passed, if not, skip function execution
+        if not self._hierarchy_nodes_dict.get(node_id):
+            logger.info(f"[Tree] valid_node_id decorator: node_id [{node_id}] not found")
+            return None
+        # there is a key, execute function
+        return func(self, node_id)
+
+    return func_wrapper
 
 
 class Tree:
@@ -22,7 +44,7 @@ class Tree:
     def __init__(self) -> None:
         logger.debug("[Tree] Tree Constructor")
         # self._nodes_dict: Dict[object, Dict] = None
-        self._hierarchy_nodes_dict: Dict[object, Dict] = None
+        self._hierarchy_nodes_dict: Dict[object, TreeNodeModel] = None
         self._num_nodes: int = 0
         self._root: object = None
         self._name_field: str = NAME
@@ -36,7 +58,8 @@ class Tree:
     @property
     def hierarchy(self) -> Dict[object, TreeNodeModel]:
         """tree hierarchy"""
-        return self._hierarchy_nodes_dict
+        # only return items that are not filtered
+        return {_node_id: _node for _node_id, _node in self._hierarchy_nodes_dict.items() if self.is_node(_node_id)}
 
     @property
     def max_level(self):
@@ -77,7 +100,7 @@ class Tree:
         """creates the tree hierarchy"""
         self._hierarchy_nodes_dict = {}
         logger.debug("[Tree] Create Tree")
-        _root_nodes = []
+        _root_node = None
 
         if name_field:
             self._name_field = name_field
@@ -96,8 +119,13 @@ class Tree:
             # get parent and add as child
             _parent_id = _node_obj.parent_id
             if _parent_id is None:
-                _root_nodes.append(_node_id)
-                continue
+                if _root_node is None:
+                    _root_node = _node_id
+                    continue
+                else:
+                    logger.warning("[Tree] Create Tree, there is more than 1 root node, skip processing")
+                    _root_node = None
+                    break
             _parent_node = self._hierarchy_nodes_dict.get(_parent_id)
             # create node if not already there
             if _parent_node is None:
@@ -108,11 +136,11 @@ class Tree:
                     continue
             _parent_node.children.append(_node_id)
 
-        # verify that exactly one root is present in structure
-        if len(_root_nodes) == 1:
-            self._root = _root_nodes[0]
+        if _root_node:
+            self._root = _root_node
         else:
-            logger.warning(f"[Tree] Create Tree, there are [{len(_root_nodes)}] root nodes {str(_root_nodes)[:30]}...")
+            self._hierarchy_nodes_dict = None
+            return
 
         if self._calc_tree_levels:
             self.set_tree_levels()
@@ -137,24 +165,22 @@ class Tree:
             _current_node_ids = _next_node_ids
         self._max_level = _level - 1
 
+    @valid_node_id
     def _get_hierarchy_info(self, node_id) -> TreeNodeModel:
         """gets the hierarchy information"""
-        hierarchy_info = self.hierarchy.get(node_id, {})
-        if self.is_node(node_id) is False:
-            hierarchy_info = None
-        return hierarchy_info
+        return self.hierarchy.get(node_id, {})
 
+    @valid_node_id
     def get_children(self, node_id, only_leaves=False) -> list:
         """returns ids of direct children"""
         children = None
         _node = self.get_node(node_id)
-        if not _node:
-            return children
         children = _node.children
         if only_leaves:
             children = [_c for _c in children if self.is_leaf(_c)]
         return children
 
+    @valid_node_id
     def get_all_children(self, node_id, only_leaves=False) -> list | bool:
         """gets all children nodes below node as list (option to select only leaves)
         also may check if children exist
@@ -162,10 +188,6 @@ class Tree:
         logger.debug("[Tree] Get Children Nodes")
         children_nodes = []
         _parent_node = self.get_node(node_id)
-
-        if not _parent_node:
-            logger.warning(f"[Tree] Parent node with node id {node_id} was not found")
-            return
 
         def _get_children_recursive(child_list):
             logger.debug(f"[Tree] get children recursive {child_list}")
@@ -190,14 +212,13 @@ class Tree:
 
         return children_nodes
 
+    @valid_node_id
     def has_children(self, node_id) -> bool:
         """checks if node has children"""
-        out = None
         _node = self.get_node(node_id)
-        if _node:
-            out = True if len(_node.children) > 0 else False
-        return out
+        return True if len(_node.children) > 0 else False
 
+    @valid_node_id
     def get_predecessors(self, node_id) -> list:
         """gets the parent nodes in a list"""
         parents = []
@@ -229,24 +250,25 @@ class Tree:
         _node.predecessors = parents
         return parents
 
+    @valid_node_id
     def get_node(self, node_id) -> TreeNodeModel | None:
         """returns the tree node for given node id
         can also be overridden in subclass
         """
         return self._hierarchy_nodes_dict.get(node_id)
 
+    @valid_node_id
     def is_node(self, node_id) -> bool:
         """returns whether an id represents a node
         can also be used to be overridden in a subclass
         """
         return False if self.get_node(node_id) is None else True
 
+    @valid_node_id
     def is_leaf(self, node_id):
         """checks if node is leaf"""
         out = None
         _node_info = self.get_node(node_id)
-        if _node_info is None:
-            return None
         # use buffered leaf info or get info from other attributes
         if _node_info.is_leaf is not None:
             return _node_info.is_leaf
@@ -258,14 +280,12 @@ class Tree:
         _node_info.is_leaf = out
         return out
 
+    @valid_node_id
     def get_siblings(self, node_id, only_leaves=True) -> list:
         """gets the list of siblings and only leaves"""
 
         siblings = []
         _current_node = self.get_node(node_id)
-        if _current_node is None:
-            logger.info(f"[Tree] Node with ID {node_id} not found")
-            return None
 
         # filtering already adressed if there is current node there is also a parent
         _parent_id = _current_node.parent_id
@@ -393,11 +413,11 @@ class Tree:
         _nested_tree = self.get_nested_dict()
         return json.dumps(_nested_tree, indent=3)
 
-    # def yaml(self) -> str:
-    #     """returns yaml string"""
-    #     logger.debug("[Tree] yaml()")
-    #     nested_tree = self.get_nested_tree()
-    #     return yaml.dump(nested_tree)
+    def yaml(self, add_leaf_values: bool = True) -> str:
+        """returns yaml string"""
+        logger.debug("[Tree] yaml()")
+        nested_tree = self.get_nested_dict(add_leaf_values)
+        return yaml.dump(nested_tree)
 
     def __str__(self) -> str:
         return self.json()

@@ -32,7 +32,7 @@ from datetime import datetime as DateTime
 # Design Decision: You need to manually install GRAPHVIZ into your environment
 PY_GRAPHVIZ_INSTALLED = True
 try:
-    from graphviz import Digraph
+    from graphviz import Digraph, Graph
 except ImportError:
     PY_GRAPHVIZ_INSTALLED = False
 
@@ -265,10 +265,19 @@ class AstVisualizer:
         if self._tree is None:
             logger.warning("[AstVisualizer] Nothing to parse")
             return
-        self._dot = Digraph()
+        self._dot = Digraph(engine="dot")
+        # Graph Digraph dot neat
         # render as boxes
-
+        # assign global rendering
+        # rankdir only applicable for dot engine
+        # stagger: Stagger the minimum length of leaf edges between 1 and the specified value.
+        # fanout: Enable staggering for nodes with indegree and outdegree of 1.
+        # chain: Form disconnected nodes into chains of up to the specified length
+        # https://graphviz.org/pdf/unflatten.1.pdf
+        self._dot.unflatten(stagger=3, fanout=True, chain=20)
+        # self._dot.attr(rankdir="LR")
         self._dot.attr("node", shape="box", fontname="Monospace")
+        self._dot.attr("edge", color="black", style="bold", splines="curved", penwidth="2.0")
 
         self._dot.format = self._file_format
         # process the parsed code tree
