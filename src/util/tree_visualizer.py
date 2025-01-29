@@ -28,6 +28,7 @@ from util.constants import DATEFORMAT_JJJJMMDDHHMMSS, DEFAULT_COLORS
 from model.model_tree import TreeNodeModel
 from model.model_rendering import DotFormat
 from util.tree import Tree
+from util.utils import Utils
 
 # Design Decision: You need to manually install GRAPHVIZ into your environment
 PY_GRAPHVIZ_INSTALLED = True
@@ -99,6 +100,7 @@ class TreeVisualizer:
         # TODO PRIO3 python rich progress bar for recursive functions
         self._num_nodes_processed = 0
         self._num_nodes = len(self._tree_node_dict)
+        self._create_dot()
         self._add_node(self._root_node_id)
         pass
 
@@ -137,7 +139,7 @@ class TreeVisualizer:
     def _load_yaml(self, f: str) -> dict:
         """loads the yaml"""
         if PY_YAML_INSTALLED is False:
-            logger.error("[AstVisualizer] pyYAML is not installed, will return empty dict")
+            logger.error("[TreeVisualizer] pyYAML is not installed, will return empty dict")
             return {"ERROR": "NO_PYYAML_INSTALLED"}
         with open(f, "r", encoding="UTF-8") as _f:
             _dict = yaml.safe_load(_f)
@@ -167,23 +169,37 @@ class TreeVisualizer:
         # global attributes for edges
         self._dot.attr("edge", color="black", style="bold", splines="curved", penwidth="2.0")
 
-    def render(self) -> None:
-        """render the output tree"""
-        self._dot.render(Path(self._save_path), view=self._view)
-        logger.info(f"[AstVisualizer] Saved GraphViz File, path [{self._save_path}]")
+    @staticmethod
+    def graphviz_id(node: TreeNodeModel, to_node: TreeNodeModel = None) -> str:
+        """calculates hash from id so that you could
+        get the node from the graphviz tree. Update is being done
+        by creating it again
+        if is edge is true it will calculate the hash from parent id as well
+        """
+        if to_node:
+            _s = str(node.id) + str(to_node.id)
+        else:
+            _s = str(node.id)
 
-    def _render_node(self, tree_node: TreeNodeModel) -> dict:
+        return Utils.get_hash(_s)
+
+    def _render_node(self, tree_node: TreeNodeModel) -> DotFormat:
         """adds a node to the Digraph"""
+        _id = TreeVisualizer.graphviz_id(tree_node)
+        _label = tree_node.name
+        return DotFormat(name=_id, label=_label)
 
-        # model = MyModel(field1="value", field2=None, field3="another value")
-        # cleaned_dict = model.dict(exclude_none=True)
-        # print(cleaned_dict)
-
-        return {}
-
-    def _render_edge(self, from_node: TreeNodeModel, to_node: TreeNodeModel) -> dict:
+    def _render_parent_edge(self, from_node: TreeNodeModel, to_node: TreeNodeModel) -> DotFormat:
         """adds an edge to the Digraph"""
-        return {}
+        # edges are specified by connecting nodes, but can have can id but not a name
+        # adapt the default DotFormat / None values will be deleted later on
+        _dot_format = DotFormat()
+        _dot_format.id = TreeVisualizer.graphviz_id(from_node, to_node)
+        _dot_format.shape = None
+        _dot_format.fillcolor = "black"
+        _dot_format.color = "black"
+        _dot_format.label = None
+        return _dot_format
 
     def _add_node(self, node_id: object, parent_id: object = None) -> None:
         """recursively add nodes"""
@@ -191,20 +207,30 @@ class TreeVisualizer:
         if parent_id:
             _parent_node = self._tree_node_dict.get(parent_id)
         _node = self._tree_node_dict.get(node_id)
+        _node_graphviz_id = TreeVisualizer.graphviz_id(_node)
         _node_id = _node.id
         _node_rendering = self._render_node(_node)
+        _node_dict = _node_rendering.model_dump(exclude_none=True)
         # add the node
-        self._dot.node(**_node_rendering)
+        self._dot.node(**_node_dict)
         # add the edge to the parent
         if _parent_node:
-            _edge_rendering = self._render_edge(from_node=_parent_node, to_node=_node)
+            _parent_graphviz_id = TreeVisualizer.graphviz_id(_parent_node)
+
+            _edge_rendering = self._render_parent_edge(from_node=_parent_node, to_node=_node)
+            _edge_dict = _edge_rendering.model_dump(exclude_none=True)
             # add the edge
-            self._dot.edge(**_edge_rendering)
+            # self._dot.edge(tail_name=_parent_graphviz_id, head_name=_node_graphviz_id)
+            self._dot.edge(tail_name=_parent_graphviz_id, head_name=_node_graphviz_id, **_edge_dict)
+            # self._dot.edge(_parent_node.id,**_edge_dict)
 
         for _child_node in _node.children:
             self._add_node(node_id=_child_node, parent_id=_node_id)
 
-    # label='Edge Label')
+    def render(self) -> None:
+        """renders the graph"""
+        self._dot.render(Path(self._save_path), view=self._view)
+        logger.info(f"[TreeVisualizer] Saved GraphViz File, path [{self._save_path}]")
 
     @property
     def is_executable(self):
@@ -232,6 +258,7 @@ def main(tree: Tree):
     root_id = tree.root_id
     hierarchy = tree.hierarchy
     visualizer = TreeVisualizer(root_node_id=root_id, tree_node_dict=hierarchy)
+    visualizer.render()
 
     # visualize(code=code_s, max_chars=None)
     pass

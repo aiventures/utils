@@ -24,19 +24,20 @@ GraphVizLineStylesType = Annotated[GraphVizLineStyles, "linestyles"]
 GraphVizDotRankdir = Literal["TB", "LR", "BT", "RL"]
 GraphVizDotRankdirType = Annotated[GraphVizDotRankdir, "rankdir"]
 
+
 class DotFormat(BaseModel):
     """Attributes for Graphviz Rendering"""
 
     # https://graphviz.org/docs/attrs/id/
-    # object identifier
-    id: Optional[str]
     # internal name
     name: Optional[str] = None
+    # object identifier
+    id: Optional[str] = None
     # text to be displayed on Node in Graphviz
     label: Optional[str] = "Node"
     style: Optional[str] = "filled"
-    color: Optional[str] = "white"
+    color: Optional[str] = "black"
     fillcolor: Optional[str] = "white"
     fontcolor: Optional[str] = "black"
-    shape: Optional[str] = "box"
+    shape: Optional[GraphVizShapeType] = "box"
     url: Optional[str] = None
