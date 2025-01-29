@@ -158,7 +158,7 @@ class TreeVisualizer:
         self._dot.format = self._file_format
         # global graph settings
         # rankdir only applicable to dot engine
-        self._dot.attr(rankdir="LR")
+        self._dot.attr(rankdir="TB")
         # stagger: Stagger the minimum length of leaf edges between 1 and the specified value.
         # fanout: Enable staggering for nodes with indegree and outdegree of 1.
         # chain: Form disconnected nodes into chains of up to the specified length
@@ -238,21 +238,6 @@ class TreeVisualizer:
         return self._is_executable
 
 
-# def visualize(
-#     code: str | AstNode | dict,
-#     show_code: bool = True,
-#     add_date: bool = False,
-#     filename: str = None,
-#     path: str = None,
-#     view: bool = True,
-#     max_chars: int = None,
-# ):
-#     """convenience method to render a python code snippet"""
-#     _visualizer = AstVisualizer(show_code, add_date, filename, path, view, max_chars)
-#     _visualizer.code = code
-#     _visualizer.render()
-
-
 def main(tree: Tree):
     """do something"""
     root_id = tree.root_id
@@ -260,7 +245,6 @@ def main(tree: Tree):
     visualizer = TreeVisualizer(root_node_id=root_id, tree_node_dict=hierarchy)
     visualizer.render()
 
-    # visualize(code=code_s, max_chars=None)
     pass
 
 
