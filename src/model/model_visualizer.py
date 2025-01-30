@@ -29,11 +29,21 @@ GraphVizDotRankdirType = Annotated[GraphVizDotRankdir, "rankdir"]
 class DotFormat(BaseModel):
     """Attributes for Graphviz Rendering"""
 
+    # create a default for node and edge
+
+    # attributes valid for both edges and nodes
     # https://graphviz.org/docs/attrs/id/
     # internal name
     name: Optional[str] = None
     # object identifier, usually name is copied
     id: Optional[str] = None
+    # local files also are working using
+    # "file://C:\\Program Files (x86)"
+    URL: Optional[str] = None
+    # should be "_top"
+    target: Optional[str] = None
+    # tooltip
+    tooltip: Optional[str] = None
     # text to be displayed on Node in Graphviz
     label: Optional[str] = "Node"
     style: Optional[str] = "filled"
@@ -42,13 +52,5 @@ class DotFormat(BaseModel):
     fillcolor: Optional[str] = "white"
     fontcolor: Optional[str] = "black"
     fontsize: Optional[str] = "14"
-    # fontcolor for edges
-    labelfontcolor: Optional[str] = None
     shape: Optional[GraphVizShapeType] = "box"
-    # local files also are working using
-    # "file://C:\\Program Files (x86)"
-    URL: Optional[str] = None
-    # should be "_top"
-    target: Optional[str] = None
-    # tooltip
-    tooltip: Optional[str] = None
+    penwidth: Optional[str] = None
