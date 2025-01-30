@@ -151,23 +151,43 @@ class TreeVisualizer:
             _dict = json.load(f)
         return _dict
 
+    def _format_label(self, dot_format: DotFormat, bold: bool = False, underline: bool = False) -> None:
+        """formats the label"""
+        _label = dot_format.label
+        _format = any([bold, underline])
+        if bold:
+            _label = f"<b>{_label}</b>"
+        if underline:
+            _label = f"<u>{_label}</u>"
+        if _format:
+            _label = f"<{_label}>"
+        dot_format.label = _label
+
     def _create_dot(self):
         """creates the Digraph model"""
         # Digraph is a directed graph
-        self._dot = Digraph(engine="dot")
+        self._dot = Digraph(engine="dot", comment="Title")
         self._dot.format = self._file_format
+        # TODO clean up and put into a structure
         # global graph settings
         # rankdir only applicable to dot engine
-        self._dot.attr(rankdir="TB")
+        self._dot.attr(rankdir="TB", bgcolor="skyblue", fontname="mono")
+        # Title
+        self._dot.attr(
+            labelloc="b", labeljust="l", label="HUGO TITLE", fontsize="12", URL="file://C:\\Program Files (x86)"
+        )
+
+        # Set background color for the
         # stagger: Stagger the minimum length of leaf edges between 1 and the specified value.
         # fanout: Enable staggering for nodes with indegree and outdegree of 1.
         # chain: Form disconnected nodes into chains of up to the specified length
         # https://graphviz.org/pdf/unflatten.1.pdf
         self._dot.unflatten(stagger=3, fanout=True, chain=20)
         # global attributes for nodes
-        self._dot.attr("node", shape="box", fontname="Monospace")
+        # font mono Cascadia Code
+        self._dot.attr("node", shape="box", fontname="mono")
         # global attributes for edges
-        self._dot.attr("edge", color="black", style="bold", splines="curved", penwidth="2.0")
+        self._dot.attr("edge", color="black", style="bold", splines="curved", penwidth="2.0", fontname="mono")
 
     @staticmethod
     def graphviz_id(node: TreeNodeModel, to_node: TreeNodeModel = None) -> str:
@@ -187,7 +207,12 @@ class TreeVisualizer:
         """adds a node to the Digraph"""
         _id = TreeVisualizer.graphviz_id(tree_node)
         _label = tree_node.name
-        return DotFormat(name=_id, label=_label)
+        # adding bold and underline style to font
+        # todo put this into a default structure
+
+        _dot_format = DotFormat(name=_id, label=_label)
+        _dot_format.tooltip = f"{_label}\n[{_id}]"
+        return _dot_format
 
     def _render_parent_edge(self, from_node: TreeNodeModel, to_node: TreeNodeModel) -> DotFormat:
         """adds an edge to the Digraph"""
@@ -195,10 +220,16 @@ class TreeVisualizer:
         # adapt the default DotFormat / None values will be deleted later on
         _dot_format = DotFormat()
         _dot_format.id = TreeVisualizer.graphviz_id(from_node, to_node)
+        # todo PRIO2 put this into a default structure
         _dot_format.shape = None
         _dot_format.fillcolor = "black"
         _dot_format.color = "black"
         _dot_format.label = None
+        # TODO put this into a structure
+        _dot_format.fontsize = "9"
+        _tooltip = f"{from_node.name}->{to_node.name}"
+        _dot_format.tooltip = f"{_tooltip}\n[{_dot_format.id}]"
+
         return _dot_format
 
     def _add_node(self, node_id: object, parent_id: object = None) -> None:
@@ -220,9 +251,7 @@ class TreeVisualizer:
             _edge_rendering = self._render_parent_edge(from_node=_parent_node, to_node=_node)
             _edge_dict = _edge_rendering.model_dump(exclude_none=True)
             # add the edge
-            # self._dot.edge(tail_name=_parent_graphviz_id, head_name=_node_graphviz_id)
             self._dot.edge(tail_name=_parent_graphviz_id, head_name=_node_graphviz_id, **_edge_dict)
-            # self._dot.edge(_parent_node.id,**_edge_dict)
 
         for _child_node in _node.children:
             self._add_node(node_id=_child_node, parent_id=_node_id)
@@ -244,7 +273,6 @@ def main(tree: Tree):
     hierarchy = tree.hierarchy
     visualizer = TreeVisualizer(root_node_id=root_id, tree_node_dict=hierarchy)
     visualizer.render()
-
     pass
 
 

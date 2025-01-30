@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 
 # Color Codes https://graphviz.org/docs/attr-types/color/
+# pencolor bounding box color
 # x11 https://graphviz.org/doc/info/colors.html#x11
 
 # shapes Attribute
@@ -31,13 +32,23 @@ class DotFormat(BaseModel):
     # https://graphviz.org/docs/attrs/id/
     # internal name
     name: Optional[str] = None
-    # object identifier
+    # object identifier, usually name is copied
     id: Optional[str] = None
     # text to be displayed on Node in Graphviz
     label: Optional[str] = "Node"
     style: Optional[str] = "filled"
+    # color of shape / frame
     color: Optional[str] = "black"
     fillcolor: Optional[str] = "white"
     fontcolor: Optional[str] = "black"
+    fontsize: Optional[str] = "14"
+    # fontcolor for edges
+    labelfontcolor: Optional[str] = None
     shape: Optional[GraphVizShapeType] = "box"
-    url: Optional[str] = None
+    # local files also are working using
+    # "file://C:\\Program Files (x86)"
+    URL: Optional[str] = None
+    # should be "_top"
+    target: Optional[str] = None
+    # tooltip
+    tooltip: Optional[str] = None

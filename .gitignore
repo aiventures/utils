@@ -12,6 +12,7 @@ test.md
 config_env_sample.json
 playground/
 *.old
+curved_digraph*
 # ignore test bat files
 **/test_data/bat/*.bat
 **/test_output/*.json
