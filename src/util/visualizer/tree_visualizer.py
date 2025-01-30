@@ -26,7 +26,7 @@ import sys
 from datetime import datetime as DateTime
 from util.constants import DATEFORMAT_JJJJMMDDHHMMSS, DEFAULT_COLORS
 from model.model_tree import TreeNodeModel
-from model.model_rendering import DotFormat
+from model.model_visualizer import DotFormat
 from util.tree import Tree
 from util.utils import Utils
 
