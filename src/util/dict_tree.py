@@ -10,7 +10,7 @@ import sys
 from typing import List, Union, Dict
 
 # using the tree util to create a tree
-from model.model_tree import KEY, PARENT_ID, ROOT, DictTreeInfoModel, DictTreeNodeModel, NodeType
+from model.model_tree import KEY, NAME, PARENT_ID, ROOT, DictTreeInfoModel, DictTreeNodeModel, NodeType, OUTPUT
 from util.tree import Tree
 
 logger = logging.getLogger(__name__)
@@ -33,31 +33,53 @@ def valid_node_id(func):
 
     return func_wrapper
 
+
 class DictTree:
     """parsing a dict into a tree structure"""
 
-    def __init__(self, input_dict: dict, copy_dict: bool = False) -> None:
+    def __init__(self, input_dict: dict, copy_dict: bool = False, max_output_length: int = 20) -> None:
         """constructor"""
         # number of elements (including counting list items)
         self._num_nodes = 0
         # level
         self._max_level = 0
+        # max output length for display
+        self._max_output_length = max_output_length
         # always add a root node to avoid non tree structure when lists are passed
         _input_dict = copy.deepcopy(input_dict) if copy_dict else input_dict
         self._dict = {ROOT: _input_dict}
         # root element has id of 0
         self._node_hierarchy: Dict[int, DictTreeNodeModel] = {}
-        self._node_hierarchy[0] = DictTreeNodeModel(id=0)
+        self._node_hierarchy[0] = DictTreeNodeModel(id=0, obj="ROOT", obj_type="str")
         # traverse the dict and create hierarchy
         self._traverse_dict(self._dict, None)
+        # special case: root output is not populated
+        self._node_hierarchy[0].output = "ROOT"
         # get the tree object
         self._tree = Tree()
-        self._tree.create_tree(self._node_hierarchy, name_field=KEY, parent_field=PARENT_ID)
+        self._tree.create_tree(self._node_hierarchy, name_field=OUTPUT, parent_field=PARENT_ID)
         self._index = {}
         # get the key map from the hierarchy
         self._get_key_maps()
         # create the key index
         self._create_index()
+
+    def _render_output(self, dict_tree_node: DictTreeNodeModel) -> None:
+        """renders the output field for later display (eg in Tree Viewer)"""
+        s_out = f"[{dict_tree_node.obj_type}] "
+        _key = ""
+        _idx = ""
+        if dict_tree_node.key is not None:
+            _key = str(dict_tree_node.key)
+        if dict_tree_node.list_idx is not None:
+            _idx = f"({str(dict_tree_node.list_idx)})"
+        # TODO PRIO3 render differently for complex object or only atomic type
+        # TODO optionally offer wrapping of object
+        _obj = str(dict_tree_node.obj)
+        if len(_obj) > self._max_output_length:
+            _obj = f"{_obj[:self._max_output_length]}..]\n({len(_obj)}) more "
+        s_out = f"{_key}{_idx} {s_out}\n{_obj}"
+        dict_tree_node.output = s_out
 
     def _parse_object(
         self, obj: object, parent_id: int = None, key: object = None, list_idx: int = None
@@ -81,8 +103,9 @@ class DictTree:
             obj=_object,
             obj_type=_obj_type,
             key=_key,
-            list_dix=_list_idx,
+            list_idx=_list_idx,
         )
+        self._render_output(out)
         logger.debug(
             f"[DictTree] OBJECT Parent->Node [{parent_id}->{self._num_nodes}], key [{key}], index [{list_idx}], type [{_obj_type}]"
         )
@@ -145,7 +168,7 @@ class DictTree:
                 continue
             elif isinstance(v, dict):  # For DICT
                 self._traverse_dict(d=v, parent_id=self._num_nodes, list_idx=_list_idx)
-            else:  # Assume we habe an iterable
+            else:  # Assume we have an iterable
                 self._traverse_iterable(d=v, parent_id=self._num_nodes)
 
     def _get_dict_path(self, node_id: int) -> list:
@@ -160,7 +183,7 @@ class DictTree:
                 continue
             _pred_hierarchy = self._node_hierarchy[_predecessor]
             _key = _pred_hierarchy.key
-            _index = _pred_hierarchy.list_dix
+            _index = _pred_hierarchy.list_idx
             # we either get a dict key or an index of a list
             if _key is not None:
                 out.append(_key)

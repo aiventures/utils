@@ -19,6 +19,9 @@ OBJECT = "obj"
 NAME = "name"
 NODE = "node"
 VALUE = "value"
+OUTPUT = "output"
+DICT_TREE_NODE_MODEL = "DictTreeNodeModel"
+DICT_PATH = "dict_path"
 
 NodeType = Annotated[Literal["leaf", "node", "any"], "Node Type"]
 
@@ -73,6 +76,8 @@ class DictTreeNodeModel(TreeNodeModel):
 
     # keys for storing key name and list index
     key: Optional[str] = None
-    list_dix: Optional[int] = None
+    list_idx: Optional[int] = None
     # dictionary key path
     dict_path: Optional[list] = None
+    # output attribute to be filled with rendered node information
+    output: Optional[str] = None

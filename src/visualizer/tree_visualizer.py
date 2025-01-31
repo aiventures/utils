@@ -25,7 +25,7 @@ import logging
 import sys
 from datetime import datetime as DateTime
 from util.constants import DATEFORMAT_JJJJMMDDHHMMSS, DEFAULT_COLORS
-from model.model_tree import TreeNodeModel
+from model.model_tree import TreeNodeModel, DICT_TREE_NODE_MODEL, DICT_PATH
 from model.model_visualizer import DotFormat
 from util.tree import Tree
 from util.utils import Utils
@@ -206,12 +206,17 @@ class TreeVisualizer:
     def _render_node(self, tree_node: TreeNodeModel) -> DotFormat:
         """adds a node to the Digraph"""
         _id = TreeVisualizer.graphviz_id(tree_node)
-        _label = tree_node.name
+        _name = tree_node.name
         # adding bold and underline style to font
         # todo put this into a default structure
 
-        _dot_format = DotFormat(name=_id, label=_label)
-        _dot_format.tooltip = f"{_label}\n[{_id}]"
+        _dot_format = DotFormat(name=_id, label=_name)
+        # add a tooltip with navigation path
+        _obj_type = tree_node.obj_type
+        _path = ""
+        if _obj_type == DICT_TREE_NODE_MODEL:
+            _path = "PATH " + str(getattr(tree_node.obj, DICT_PATH)) + "\n"
+        _dot_format.tooltip = f"{_path}OBJECT {_name}\nTYPE [{_obj_type}]\n[{_id}]"
         return _dot_format
 
     def _render_parent_edge(self, from_node: TreeNodeModel, to_node: TreeNodeModel) -> DotFormat:
@@ -235,7 +240,7 @@ class TreeVisualizer:
     def _add_node(self, node_id: object, parent_id: object = None) -> None:
         """recursively add nodes"""
         _parent_node = None
-        if parent_id:
+        if parent_id is not None:
             _parent_node = self._tree_node_dict.get(parent_id)
         _node = self._tree_node_dict.get(node_id)
         _node_graphviz_id = TreeVisualizer.graphviz_id(_node)

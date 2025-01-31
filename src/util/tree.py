@@ -105,7 +105,7 @@ class Tree:
         if name_field:
             self._name_field = name_field
 
-        if parent_field:
+        if parent_field is not None:
             self._parent_field = parent_field
 
         for _node_id, _node_info in nodes_dict.items():
@@ -136,7 +136,7 @@ class Tree:
                     continue
             _parent_node.children.append(_node_id)
 
-        if _root_node:
+        if _root_node is not None:
             self._root = _root_node
         else:
             self._hierarchy_nodes_dict = None

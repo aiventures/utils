@@ -249,7 +249,7 @@ class AstVisualizer:
         self._dot.node(**_node_info)
 
         _parent_info = None
-        if parent:
+        if parent is not None:
             _parent_info = self._get_node_dict(parent)
         # draw relation to parent
         if _parent_info:
