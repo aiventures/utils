@@ -719,7 +719,7 @@ class ThemeConsole(ColorMapper):
 
     def _set_rich_themes_path(self):
         """ " setting the rich themes folder as a subfolder of the resources folder"""
-        if isinstance(self._p_resources,str) and os.path.isdir(self._p_resources):
+        if isinstance(self._p_resources, str) and os.path.isdir(self._p_resources):
             _p_rich_themes = os.path.join(self._p_resources, P_RICH_THEMES)
             if not os.path.isdir(_p_rich_themes):
                 Path(self._p_rich_themes).mkdir(parents=True)

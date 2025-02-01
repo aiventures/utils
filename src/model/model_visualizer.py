@@ -4,6 +4,8 @@ from typing import Optional, Dict, List, Literal, Annotated
 from pydantic import BaseModel
 
 
+# GraphViz Gallery
+# https://graphviz.org/gallery/
 # Graphviz Engines
 # https://graphviz.org/docs/layouts/
 GraphVizEngine = Literal["dot", "neato", "fdp", "sfdp", "circo", "twopi", "nop", "nop2", "osage", "patchwork"]
@@ -16,6 +18,10 @@ GraphVizEngineType = Annotated[GraphVizEngine, "engine"]
 
 
 # TODO PRIO2 Use Color Schemes to render Trees according to depth level
+# Graphviz Color Schemes correspond to Brewer Colors
+# https://colorbrewer2.org/colorbrewer_schemes.js
+# Graphviz source location of brewer colors
+# https://gitlab.com/graphviz/graphviz/-/blob/main/lib/common/brewer_colors
 # Prompts
 # graphviz python color scheme
 # graphviz set font color according to brewer color scheme automatically
@@ -28,6 +34,7 @@ GraphVizEngineType = Annotated[GraphVizEngine, "engine"]
 # /util/cli/cli_colorbrewer.py contains the color codes
 BrewerColorSet = Literal["divergent", "qualitative", "sequential"]
 BrewerColorSetType = Annotated[BrewerColorSet, "brewer_color_set"]
+# available color schemes
 
 # Brewer color sets are also used in seaborn
 # https://seaborn.pydata.org/tutorial/color_palettes.html
@@ -43,6 +50,7 @@ GraphVizColorScheme = Literal[
     "rdbu",
     "rdgy",
     "rdylbu",
+    "rdylgn",
     "spectral",
     # qualitative
     "accent",
@@ -67,7 +75,6 @@ GraphVizColorScheme = Literal[
     "purd",
     "purples",
     "rdpu",
-    "rdylgn",
     "reds",
     "ylgn",
     "ylgnbu",

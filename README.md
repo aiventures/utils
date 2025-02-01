@@ -73,10 +73,12 @@ Configuration should be OS independent, but only tested on Win Os.
 
 **OPEN**
 
+* `20250202` Create patchwork model especially for file (display according to num of files file size, ...)
+* `20250202` Create patchwork model for graphviz
+* `20250202` Render Brewer Colors
 * `20250126` Create markdown to plantuml converter
 * `20250126` Create a filter class for Tree
 * `20250126` Create Tree Visualization using GraphViz
-* `20250114` Rewrite [recurse_dict.py](./src/util/recurse_dict.py)
 * `20250113` Parse Yaml + JSON Into AST Tree
 * `20250112` Adding Metrics derived from AST Trees
 * `20250112` Adding Classes to transform AST Trees into PlantUML Models
@@ -100,6 +102,7 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20240923` Add [todo.txt](https://github.com/todotxt/todo.txt) logic
 
 **DONE**
+* ~~`20250114` Rewrite [recurse_dict.py](./src/util/recurse_dict.py)~~ 20250202
 * ~~`20250126` Refactor DictTree to Pydantic Model~~ 20250126
 * ~~`20250104` Add a generic Filter Model to parse data~~ 20250126
 * ~~`20241216` create a function to count lfs stub sizes~~ 20250104

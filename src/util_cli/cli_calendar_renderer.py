@@ -424,7 +424,7 @@ class CalendarTableRenderer(CalendarRenderer):
             _m_range.sort(reverse=True)
 
         _stats = self.calendar.stats
-
+        _month = None
         for _month in _m_range:
             _has_info = len(_stats[_month]["days_with_info"]) > 0
             # only add month if there are infos in case only_info is selected
@@ -620,7 +620,7 @@ if __name__ == "__main__":
         # icon_render is "all","first","info","no_info"
         _table_renderer = CalendarTableRenderer(calendar=_calendar, num_months_in_table=12, icon_render="all")
         # set date filter for rendering last 3 months
-        _table_renderer.set_calendar_filter("20241015:20241231")
+        _table_renderer.set_calendar_filter("20241015-20241231")
         # render the calendar as table
         if False:
             _table_renderer.render_calendar()
