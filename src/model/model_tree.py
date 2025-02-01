@@ -69,7 +69,8 @@ class TreeNodeModel(BaseModel):
     obj_type: Optional[str] = None
     level: Optional[int] = None
     predecessors: Optional[list] = None
-
+    # output attribute to be filled with rendered node information
+    output: Optional[str] = None
 
 class DictTreeNodeModel(TreeNodeModel):
     """TreeDict Node"""
@@ -79,5 +80,3 @@ class DictTreeNodeModel(TreeNodeModel):
     list_idx: Optional[int] = None
     # dictionary key path
     dict_path: Optional[list] = None
-    # output attribute to be filled with rendered node information
-    output: Optional[str] = None

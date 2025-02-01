@@ -62,6 +62,7 @@ class TreeVisualizer:
         filename: str = None,
         path: str = None,
         view: bool = True,
+        num_levels: int = None,
         max_chars: int = None,
     ):
         """constructor"""
@@ -96,6 +97,11 @@ class TreeVisualizer:
         self._in_filetype: str = None
         # max num of chars to display
         self._max_chars: int = max_chars
+        # number of levels in the tree influences the rendering
+        # if nothing is given 8 levels of rendering
+        self._num_levels = 8
+        if num_levels is not None:
+            self._num_levels = min(num_levels, 11)
         # now traverse the items
         # TODO PRIO3 python rich progress bar for recursive functions
         self._num_nodes_processed = 0

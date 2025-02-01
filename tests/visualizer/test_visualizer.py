@@ -31,7 +31,8 @@ def test_create_tree_visualizer(fixture_tree_for_viz: Tree):
     """create the TreeVisualizer"""
     root_id = fixture_tree_for_viz.root_id
     hierarchy = fixture_tree_for_viz.hierarchy
-    visualizer = TreeVisualizer(root_node_id=root_id, tree_node_dict=hierarchy)
+    max_level = fixture_tree_for_viz.max_level
+    visualizer = TreeVisualizer(root_node_id=root_id, tree_node_dict=hierarchy, num_levels=max_level)
     visualizer.render()
     pass
 
@@ -57,8 +58,9 @@ def test_create_dicttree_visualizer(fixture_test_dicttree: DictTree):
     # get the dict tree and render the tree from there
     _tree = fixture_test_dicttree.tree
     root_id = _tree.root_id
+    max_level = _tree.max_level
     hierarchy = _tree.hierarchy
-    visualizer = TreeVisualizer(root_node_id=root_id, tree_node_dict=hierarchy)
+    visualizer = TreeVisualizer(root_node_id=root_id, tree_node_dict=hierarchy, num_levels=max_level)
     visualizer.render()
 
     pass
