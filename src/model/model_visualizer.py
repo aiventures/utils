@@ -24,8 +24,11 @@ GraphVizEngineType = Annotated[GraphVizEngine, "engine"]
 # g.attr(colorscheme='set38')  # Use the 'set38' color scheme
 # g.node('A', color='1', fontcolor='1')
 # g.edge('A', 'B', color='3')
-
 # For examples check https://colorbrewer2.org
+# /util/cli/cli_colorbrewer.py contains the color codes
+BrewerColorSet = Literal["divergent", "qualitative", "sequential"]
+BrewerColorSetType = Annotated[BrewerColorSet, "brewer_color_set"]
+
 # Brewer color sets are also used in seaborn
 # https://seaborn.pydata.org/tutorial/color_palettes.html
 # Color Codes as JSON https://github.com/uncommoncode/color_palettes_json/tree/master
@@ -72,7 +75,6 @@ GraphVizColorScheme = Literal[
     "ylorrd",
 ]
 GraphVizColorSchemeType = Annotated[GraphVizColorScheme, "color_scheme"]
-
 
 # shapes Attribute
 # https://graphviz.org/doc/info/shapes.html
