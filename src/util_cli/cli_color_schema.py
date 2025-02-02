@@ -1,42 +1,56 @@
-"""ColorBrewer
-these color palettes were developed by cynthia brewer (http://colorbrewer2.org/)
-source: https://github.com/uncommoncode/color_palettes_json/blob/master/colorbrewer.json.
-sources https://colorbrewer2.org/colorbrewer_schemes.js
-license bsd 2-clause simplified
+"""Color Schema for Rendering
+-------------
+Original Source of RGB maps:
+https://github.com/uncommoncode/color_palettes_json/blob/master/colorbrewer.json.
+license type bsd 2-clause simplified
+-----------
+Color palettes were developed by cynthia brewer (http://colorbrewer2.org/)
+Other sources https://colorbrewer2.org/colorbrewer_schemes.js
 
-uncommoncode/color_palettes_json is licensed under the
-BSD 2-Clause "Simplified" License
-A permissive license that comes in two variants, the BSD 2-Clause and BSD 3-Clause. Both have very minute differences to the MIT license.
-------------------------
-Copyright (c) 2016, uncommoncode
-All rights reserved.
+ColorBrewer License
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+Apache-Style Software License for ColorBrewer software and ColorBrewer Color Schemes, Version 1.1
+Copyright (c) 2002 Cynthia Brewer, Mark Harrower, and The Pennsylvania State University. All rights reserved.
+Redistribution and use in source and binary forms, with or without modification, are permitted provided
+that the following conditions are met:
+Redistributions as source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
+The end-user documentation included with the redistribution, if any, must include the following acknowledgment:
+This product includes color specifications and designs developed by Cynthia Brewer (http://colorbrewer.org/).
+Alternately, this acknowledgment may appear in the software itself, if and wherever such third-party
+acknowledgments normally appear.
 
-* Redistributions of source code must retain the above copyright notice, this
-list of conditions and the following disclaimer.
+The name "ColorBrewer" must not be used to endorse or promote products derived from this software without prior
+written permission. For written permission, please contact Cynthia Brewer at cbrewer@psu.edu.
+Products derived from this software may not be called "ColorBrewer", nor may "ColorBrewer" appear in their name,
+without prior written permission of Cynthia Brewer.
 
-* Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
+NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL CYNTHIA BREWER, MARK HARROWER, OR THE PENNSYLVANIA
+STATE UNIVERSITY BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-COLOR_BREWER = {
+COLOR_SCHEMAS = {
     "comment": "source: https://github.com/uncommoncode/color_palettes_json/blob/master/colorbrewer.json. license bsd 2-clause simplified () .these color palettes were developed by cynthia brewer (http://colorbrewer2.org/)",
     "brbg": {
         "description": "brbg 11 divergent brown bluegreen 2color",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {},
+            "6": {"6"},
+            "7": {"7"},
+            "8": {"8"},
+            "9": {"9"},
+            "10": {"1", "9", "10"},
+            "11": {"1", "10", "11"},
+            "12": {},
+        },
         "type": "divergent",
         "3": [[216, 179, 101], [245, 245, 245], [90, 180, 172]],
         "4": [[166, 97, 26], [223, 194, 125], [128, 205, 193], [1, 133, 113]],
@@ -100,6 +114,18 @@ COLOR_BREWER = {
     },
     "prgn": {
         "description": "prgn - 11 divergent purple green 2color",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {},
+            "6": {"6"},
+            "7": {"7"},
+            "8": {"8"},
+            "9": {"9"},
+            "10": {"1", "9", "10"},
+            "11": {"1", "10", "11"},
+            "12": {},
+        },
         "type": "divergent",
         "3": [[175, 141, 195], [247, 247, 247], [127, 191, 123]],
         "4": [[123, 50, 148], [194, 165, 207], [166, 219, 160], [0, 136, 55]],
@@ -163,6 +189,18 @@ COLOR_BREWER = {
     },
     "piyg": {
         "description": "piyg - 11 divergent pink yellowgreen 2color",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {},
+            "6": {},
+            "7": {},
+            "8": {},
+            "9": {},
+            "10": {"10"},
+            "11": {"11"},
+            "12": {},
+        },
         "type": "divergent",
         "3": [[233, 163, 201], [247, 247, 247], [161, 215, 106]],
         "4": [[208, 28, 139], [241, 182, 218], [184, 225, 134], [77, 172, 38]],
@@ -226,6 +264,18 @@ COLOR_BREWER = {
     },
     "puor": {
         "description": "puor - 11 divergent purple orange 2color",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"5"},
+            "6": {"6"},
+            "7": {"7"},
+            "8": {"8"},
+            "9": {"9"},
+            "10": {"9", "10"},
+            "11": {"10", "11"},
+            "12": {},
+        },
         "type": "divergent",
         "3": [[241, 163, 64], [247, 247, 247], [153, 142, 195]],
         "4": [[230, 97, 1], [253, 184, 99], [178, 171, 210], [94, 60, 153]],
@@ -289,6 +339,18 @@ COLOR_BREWER = {
     },
     "rdbu": {
         "description": "rdbu - 11 divergent red blue 2color",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"5"},
+            "6": {"6"},
+            "7": {"7"},
+            "8": {"8"},
+            "9": {"9"},
+            "10": {"9", "10"},
+            "11": {"10", "11"},
+            "12": {},
+        },
         "type": "divergent",
         "3": [[239, 138, 98], [247, 247, 247], [103, 169, 207]],
         "4": [[202, 0, 32], [244, 165, 130], [146, 197, 222], [5, 113, 176]],
@@ -352,6 +414,18 @@ COLOR_BREWER = {
     },
     "rdgy": {
         "description": "rdgy - 11 divergent red grey 2color",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"5"},
+            "6": {"6"},
+            "7": {"7"},
+            "8": {"8"},
+            "9": {"9"},
+            "10": {"1", "9", "10"},
+            "11": {"1", "10", "11"},
+            "12": {},
+        },
         "type": "divergent",
         "3": [[239, 138, 98], [255, 255, 255], [153, 153, 153]],
         "4": [[202, 0, 32], [244, 165, 130], [186, 186, 186], [64, 64, 64]],
@@ -415,6 +489,18 @@ COLOR_BREWER = {
     },
     "rdylbu": {
         "description": "rdylbu - 11 divergent red yellow blue 3color",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"5"},
+            "6": {"6"},
+            "7": {"7"},
+            "8": {"8"},
+            "9": {"9"},
+            "10": {"1", "9", "10"},
+            "11": {"1", "10", "11"},
+            "12": {},
+        },
         "type": "divergent",
         "3": [[252, 141, 89], [255, 255, 191], [145, 191, 219]],
         "4": [[215, 25, 28], [253, 174, 97], [171, 217, 233], [44, 123, 182]],
@@ -478,6 +564,18 @@ COLOR_BREWER = {
     },
     "rdylgn": {
         "description": "rdylgn - 11 divergent red yellow green 3color",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"5"},
+            "6": {"6"},
+            "7": {"7"},
+            "8": {"8"},
+            "9": {"9"},
+            "10": {"1", "9", "10"},
+            "11": {"1", "10", "11"},
+            "12": {},
+        },
         "type": "divergent",
         "3": [[252, 141, 89], [255, 255, 191], [145, 207, 96]],
         "4": [[215, 25, 28], [253, 174, 97], [166, 217, 106], [26, 150, 65]],
@@ -541,6 +639,18 @@ COLOR_BREWER = {
     },
     "spectral": {
         "description": "spectral - 11 divergent multicolor",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"5"},
+            "6": {"6"},
+            "7": {"7"},
+            "8": {"8"},
+            "9": {"9"},
+            "10": {"1", "9", "10"},
+            "11": {"1", "10", "11"},
+            "12": {},
+        },
         "type": "divergent",
         "3": [[252, 141, 89], [255, 255, 191], [153, 213, 148]],
         "4": [[215, 25, 28], [253, 174, 97], [171, 221, 164], [43, 131, 186]],
@@ -604,6 +714,18 @@ COLOR_BREWER = {
     },
     "accent": {
         "description": "accent - 8 qualitative multicolor",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {"5"},
+            "6": {"5", "6"},
+            "7": {"5", "6", "7"},
+            "8": {"5", "6", "7", "8"},
+            "9": {},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "qualitative",
         "3": [[127, 201, 127], [190, 174, 212], [253, 192, 134]],
         "4": [[127, 201, 127], [190, 174, 212], [253, 192, 134], [255, 255, 153]],
@@ -631,6 +753,18 @@ COLOR_BREWER = {
     },
     "dark2": {
         "description": "dark2 - 8 qualitative multicolor",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {},
+            "6": {},
+            "7": {},
+            "8": {"8"},
+            "9": {},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "qualitative",
         "3": [[27, 158, 119], [217, 95, 2], [117, 112, 179]],
         "4": [[27, 158, 119], [217, 95, 2], [117, 112, 179], [231, 41, 138]],
@@ -658,6 +792,18 @@ COLOR_BREWER = {
     },
     "paired": {
         "description": "paired - 12 qualitative multicolor",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {},
+            "6": {},
+            "7": {},
+            "8": {},
+            "9": {},
+            "10": {"10"},
+            "11": {"10"},
+            "12": {"10", "12"},
+        },
         "type": "qualitative",
         "3": [[166, 206, 227], [31, 120, 180], [178, 223, 138]],
         "4": [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44]],
@@ -735,6 +881,18 @@ COLOR_BREWER = {
     },
     "pastel1": {
         "description": "pastel1 - 9 qualitative multicolor",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {},
+            "6": {},
+            "7": {},
+            "8": {},
+            "9": {},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "qualitative",
         "3": [[251, 180, 174], [179, 205, 227], [204, 235, 197]],
         "4": [[251, 180, 174], [179, 205, 227], [204, 235, 197], [222, 203, 228]],
@@ -773,6 +931,18 @@ COLOR_BREWER = {
     },
     "pastel2": {
         "description": "pastel2 - 8 qualitative multicolor",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {},
+            "6": {},
+            "7": {},
+            "8": {},
+            "9": {},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "qualitative",
         "3": [[179, 226, 205], [253, 205, 172], [203, 213, 232]],
         "4": [[179, 226, 205], [253, 205, 172], [203, 213, 232], [244, 202, 228]],
@@ -800,6 +970,18 @@ COLOR_BREWER = {
     },
     "set1": {
         "description": "set1 - 9 qualitative multicolor",
+        "invert_font": {
+            "3": {"1", "2", "3"},
+            "4": {"1", "2", "3", "4"},
+            "5": {"1", "2", "3", "4"},
+            "6": {"1", "2", "3", "4"},
+            "7": {"1", "2", "3", "4", "7"},
+            "8": {"1", "2", "3", "4", "7", "8"},
+            "9": {"1", "2", "3", "4", "7", "9"},
+            "10": {"1", "2", "3", "4", "7", "9", "10"},
+            "11": {"1", "2", "3", "4", "7", "9", "10", "11"},
+            "12": {"1", "2", "3", "4", "7", "9", "10", "11", "12"},
+        },
         "type": "qualitative",
         "3": [[228, 26, 28], [55, 126, 184], [77, 175, 74]],
         "4": [[228, 26, 28], [55, 126, 184], [77, 175, 74], [152, 78, 163]],
@@ -838,6 +1020,18 @@ COLOR_BREWER = {
     },
     "set2": {
         "description": "set1 - 8 qualitative multicolor",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {},
+            "6": {},
+            "7": {},
+            "8": {},
+            "9": {},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "qualitative",
         "3": [[102, 194, 165], [252, 141, 98], [141, 160, 203]],
         "4": [[102, 194, 165], [252, 141, 98], [141, 160, 203], [231, 138, 195]],
@@ -865,6 +1059,18 @@ COLOR_BREWER = {
     },
     "set3": {
         "description": "set3 - 12 qualitative multicolor",
+        "invert_font": {
+            "3": {},
+            "4": {},
+            "5": {},
+            "6": {},
+            "7": {},
+            "8": {},
+            "9": {},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "qualitative",
         "3": [[141, 211, 199], [255, 255, 179], [190, 186, 218]],
         "4": [[141, 211, 199], [255, 255, 179], [190, 186, 218], [251, 128, 114]],
@@ -942,6 +1148,18 @@ COLOR_BREWER = {
     },
     "blues": {
         "description": "blues - 9 sequential blue 1color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"5"},
+            "6": {"5", "6"},
+            "7": {"6", "7"},
+            "8": {"7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[222, 235, 247], [158, 202, 225], [49, 130, 189]],
         "4": [[239, 243, 255], [189, 215, 231], [107, 174, 214], [33, 113, 181]],
@@ -980,6 +1198,18 @@ COLOR_BREWER = {
     },
     "bugn": {
         "description": "bugn - 9 sequential blue green 2color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"6", "7"},
+            "8": {"7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[229, 245, 249], [153, 216, 201], [44, 162, 95]],
         "4": [[237, 248, 251], [178, 226, 226], [102, 194, 164], [35, 139, 69]],
@@ -1018,6 +1248,18 @@ COLOR_BREWER = {
     },
     "bupu": {
         "description": "bupu - 9 sequential blue purple 2color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"5", "6", "7"},
+            "8": {"6", "7", "8"},
+            "9": {"6", "7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[224, 236, 244], [158, 188, 218], [136, 86, 167]],
         "4": [[237, 248, 251], [179, 205, 227], [140, 150, 198], [136, 65, 157]],
@@ -1056,6 +1298,18 @@ COLOR_BREWER = {
     },
     "gnbu": {
         "description": "gnbu - 9 sequential green blue 2color",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"6", "7"},
+            "8": {"7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[224, 243, 219], [168, 221, 181], [67, 162, 202]],
         "4": [[240, 249, 232], [186, 228, 188], [123, 204, 196], [43, 140, 190]],
@@ -1094,6 +1348,18 @@ COLOR_BREWER = {
     },
     "greens": {
         "description": "greens - 9 sequential green 1color",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"6", "7"},
+            "8": {"7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[229, 245, 224], [161, 217, 155], [49, 163, 84]],
         "4": [[237, 248, 233], [186, 228, 179], [116, 196, 118], [35, 139, 69]],
@@ -1132,6 +1398,18 @@ COLOR_BREWER = {
     },
     "greys": {
         "description": "greys - 9 sequential grey 1color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"3", "4"},
+            "5": {"3", "4", "5"},
+            "6": {"4", "5", "6"},
+            "7": {"4", "5", "6", "7"},
+            "8": {"5", "6", "7", "8"},
+            "9": {"5", "6", "7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[240, 240, 240], [189, 189, 189], [99, 99, 99]],
         "4": [[247, 247, 247], [204, 204, 204], [150, 150, 150], [82, 82, 82]],
@@ -1170,6 +1448,18 @@ COLOR_BREWER = {
     },
     "orrd": {
         "description": "orrd - 9 sequential orange red 2color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"6", "7"},
+            "8": {"7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[254, 232, 200], [253, 187, 132], [227, 74, 51]],
         "4": [[254, 240, 217], [253, 204, 138], [252, 141, 89], [215, 48, 31]],
@@ -1208,6 +1498,18 @@ COLOR_BREWER = {
     },
     "oranges": {
         "description": "oranges - 9 sequential orange 1color",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"5", "6", "7"},
+            "8": {"6", "7", "8"},
+            "9": {"6", "7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[254, 230, 206], [253, 174, 107], [230, 85, 13]],
         "4": [[254, 237, 222], [253, 190, 133], [253, 141, 60], [217, 71, 1]],
@@ -1246,6 +1548,18 @@ COLOR_BREWER = {
     },
     "pubu": {
         "description": "pubu - 9 sequential purple blue 2color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"5", "6", "7"},
+            "8": {"6", "7", "8"},
+            "9": {"6", "7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[236, 231, 242], [166, 189, 219], [43, 140, 190]],
         "4": [[241, 238, 246], [189, 201, 225], [116, 169, 207], [5, 112, 176]],
@@ -1284,6 +1598,18 @@ COLOR_BREWER = {
     },
     "pubugn": {
         "description": "pubugn - 9 sequential purple blue green 3color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"5", "6", "7"},
+            "8": {"6", "7", "8"},
+            "9": {"6", "7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[236, 226, 240], [166, 189, 219], [28, 144, 153]],
         "4": [[246, 239, 247], [189, 201, 225], [103, 169, 207], [2, 129, 138]],
@@ -1322,6 +1648,18 @@ COLOR_BREWER = {
     },
     "purd": {
         "description": "purd - 9 sequential purple red 2color",
+        "invert_font": {
+            "3": {},
+            "4": {"4"},
+            "5": {"5"},
+            "6": {"6"},
+            "7": {"6", "7"},
+            "8": {"6", "7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[231, 225, 239], [201, 148, 199], [221, 28, 119]],
         "4": [[241, 238, 246], [215, 181, 216], [223, 101, 176], [206, 18, 86]],
@@ -1360,6 +1698,18 @@ COLOR_BREWER = {
     },
     "purples": {
         "description": "purples - 9 sequential purple 1color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"5", "6", "7"},
+            "8": {"6", "7", "8"},
+            "9": {"6", "7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[239, 237, 245], [188, 189, 220], [117, 107, 177]],
         "4": [[242, 240, 247], [203, 201, 226], [158, 154, 200], [106, 81, 163]],
@@ -1398,6 +1748,18 @@ COLOR_BREWER = {
     },
     "rdpu": {
         "description": "rdpu - 9 sequential red purple 2color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"6", "7"},
+            "8": {"7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[253, 224, 221], [250, 159, 181], [197, 27, 138]],
         "4": [[254, 235, 226], [251, 180, 185], [247, 104, 161], [174, 1, 126]],
@@ -1436,6 +1798,18 @@ COLOR_BREWER = {
     },
     "reds": {
         "description": "reds - 9 sequential red 1color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"6", "7"},
+            "8": {"7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[254, 224, 210], [252, 146, 114], [222, 45, 38]],
         "4": [[254, 229, 217], [252, 174, 145], [251, 106, 74], [203, 24, 29]],
@@ -1474,6 +1848,18 @@ COLOR_BREWER = {
     },
     "ylgn": {
         "description": "ylgn - 9 sequential yellow green 2color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"6", "7"},
+            "8": {"7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[247, 252, 185], [173, 221, 142], [49, 163, 84]],
         "4": [[255, 255, 204], [194, 230, 153], [120, 198, 121], [35, 132, 67]],
@@ -1512,6 +1898,18 @@ COLOR_BREWER = {
     },
     "ylgnbu": {
         "description": "ylgnbu - 9 sequential yellow green blue 3color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"5", "6", "7"},
+            "8": {"6", "7", "8"},
+            "9": {"6", "7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[237, 248, 177], [127, 205, 187], [44, 127, 184]],
         "4": [[255, 255, 204], [161, 218, 180], [65, 182, 196], [34, 94, 168]],
@@ -1550,6 +1948,18 @@ COLOR_BREWER = {
     },
     "ylorbr": {
         "description": "ylorbr - 9 sequential yellow orange brown 3color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"5", "6", "7"},
+            "8": {"7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[255, 247, 188], [254, 196, 79], [217, 95, 14]],
         "4": [[255, 255, 212], [254, 217, 142], [254, 153, 41], [204, 76, 2]],
@@ -1588,6 +1998,18 @@ COLOR_BREWER = {
     },
     "ylorrd": {
         "description": "ylorrd - 9 sequential yellow orange red 3color",
+        "invert_font": {
+            "3": {"3"},
+            "4": {"4"},
+            "5": {"4", "5"},
+            "6": {"5", "6"},
+            "7": {"5", "6", "7"},
+            "8": {"6", "7", "8"},
+            "9": {"7", "8", "9"},
+            "10": {},
+            "11": {},
+            "12": {},
+        },
         "type": "sequential",
         "3": [[255, 237, 160], [254, 178, 76], [240, 59, 32]],
         "4": [[255, 255, 178], [254, 204, 92], [253, 141, 60], [227, 26, 28]],
@@ -1618,7 +2040,7 @@ COLOR_BREWER = {
 if __name__ == "__main__":
     # print all keys
     out = "["
-    for _key, info in COLOR_BREWER.items():
+    for _key, info in COLOR_SCHEMAS.items():
         out += f'"{_key}",'
     out += "]"
     print(out)

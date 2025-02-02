@@ -32,8 +32,8 @@ GraphVizEngineType = Annotated[GraphVizEngine, "engine"]
 # g.edge('A', 'B', color='3')
 # For examples check https://colorbrewer2.org
 # /util/cli/cli_colorbrewer.py contains the color codes
-BrewerColorSet = Literal["divergent", "qualitative", "sequential"]
-BrewerColorSetType = Annotated[BrewerColorSet, "brewer_color_set"]
+ColorSchemaSet = Literal["divergent", "qualitative", "sequential"]
+ColorSetType = Annotated[ColorSchemaSet, "color_set"]
 # available color schemes
 
 # Brewer color sets are also used in seaborn
@@ -81,7 +81,7 @@ GraphVizColorScheme = Literal[
     "ylorbr",
     "ylorrd",
 ]
-GraphVizColorSchemeType = Annotated[GraphVizColorScheme, "color_scheme"]
+GraphVizColorSchemaType = Annotated[GraphVizColorScheme, "color_schema"]
 
 # shapes Attribute
 # https://graphviz.org/doc/info/shapes.html
@@ -110,7 +110,6 @@ class DotFormat(BaseModel):
     """Attributes for Graphviz Rendering"""
 
     # create a default for node and edge
-
     # attributes valid for both edges and nodes
     # https://graphviz.org/docs/attrs/id/
     # internal name
