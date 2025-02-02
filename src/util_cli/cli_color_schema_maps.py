@@ -36,9 +36,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 COLOR_SCHEMAS = {
-    "comment": "source: https://github.com/uncommoncode/color_palettes_json/blob/master/colorbrewer.json. license bsd 2-clause simplified () .these color palettes were developed by cynthia brewer (http://colorbrewer2.org/)",
     "brbg": {
-        "description": "brbg 11 divergent brown bluegreen 2color",
+        "description": "brbg - 11 divergent (brown bluegreen) 2color",
         "invert_font": {
             "3": {},
             "4": {},
@@ -113,7 +112,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "prgn": {
-        "description": "prgn - 11 divergent purple green 2color",
+        "description": "prgn - 11 divergent (purple green) 2color",
         "invert_font": {
             "3": {},
             "4": {},
@@ -188,7 +187,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "piyg": {
-        "description": "piyg - 11 divergent pink yellowgreen 2color",
+        "description": "piyg - 11 divergent (pink yellowgreen) 2color",
         "invert_font": {
             "3": {},
             "4": {},
@@ -263,7 +262,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "puor": {
-        "description": "puor - 11 divergent purple orange 2color",
+        "description": "puor - 11 divergent (purple orange) 2color",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -338,7 +337,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "rdbu": {
-        "description": "rdbu - 11 divergent red blue 2color",
+        "description": "rdbu - 11 divergent (red blue) 2color",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -413,7 +412,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "rdgy": {
-        "description": "rdgy - 11 divergent red grey 2color",
+        "description": "rdgy - 11 divergent (red grey) 2color",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -488,7 +487,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "rdylbu": {
-        "description": "rdylbu - 11 divergent red yellow blue 3color",
+        "description": "rdylbu - 11 divergent (red yellow blue) 3color",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -563,7 +562,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "rdylgn": {
-        "description": "rdylgn - 11 divergent red yellow green 3color",
+        "description": "rdylgn - 11 divergent (red yellow green) 3color",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -638,7 +637,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "spectral": {
-        "description": "spectral - 11 divergent multicolor",
+        "description": "spectral - 11 divergent (multicolor)",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -713,7 +712,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "accent": {
-        "description": "accent - 8 qualitative multicolor",
+        "description": "accent - 8 qualitative (multicolor)",
         "invert_font": {
             "3": {},
             "4": {},
@@ -752,7 +751,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "dark2": {
-        "description": "dark2 - 8 qualitative multicolor",
+        "description": "dark2 - 8 qualitative (multicolor)",
         "invert_font": {
             "3": {},
             "4": {},
@@ -791,7 +790,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "paired": {
-        "description": "paired - 12 qualitative multicolor",
+        "description": "paired - 12 qualitative (multicolor)",
         "invert_font": {
             "3": {},
             "4": {},
@@ -880,7 +879,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "pastel1": {
-        "description": "pastel1 - 9 qualitative multicolor",
+        "description": "pastel1 - 9 qualitative (multicolor)",
         "invert_font": {
             "3": {},
             "4": {},
@@ -930,7 +929,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "pastel2": {
-        "description": "pastel2 - 8 qualitative multicolor",
+        "description": "pastel2 - 8 qualitative (multicolor)",
         "invert_font": {
             "3": {},
             "4": {},
@@ -969,7 +968,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "set1": {
-        "description": "set1 - 9 qualitative multicolor",
+        "description": "set1 - 9 qualitative (multicolor)",
         "invert_font": {
             "3": {"1", "2", "3"},
             "4": {"1", "2", "3", "4"},
@@ -1019,7 +1018,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "set2": {
-        "description": "set1 - 8 qualitative multicolor",
+        "description": "set1 - 8 qualitative (multicolor)",
         "invert_font": {
             "3": {},
             "4": {},
@@ -1058,7 +1057,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "set3": {
-        "description": "set3 - 12 qualitative multicolor",
+        "description": "set3 - 12 qualitative (multicolor)",
         "invert_font": {
             "3": {},
             "4": {},
@@ -1147,7 +1146,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "blues": {
-        "description": "blues - 9 sequential blue 1color",
+        "description": "blues - 9 sequential (blue) 1color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1197,7 +1196,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "bugn": {
-        "description": "bugn - 9 sequential blue green 2color",
+        "description": "bugn - 9 sequential (blue green) 2color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1247,7 +1246,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "bupu": {
-        "description": "bupu - 9 sequential blue purple 2color",
+        "description": "bupu - 9 sequential (blue purple) 2color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1297,7 +1296,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "gnbu": {
-        "description": "gnbu - 9 sequential green blue 2color",
+        "description": "gnbu - 9 sequential (green blue) 2color",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -1347,7 +1346,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "greens": {
-        "description": "greens - 9 sequential green 1color",
+        "description": "greens - 9 sequential (green) 1color",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -1397,7 +1396,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "greys": {
-        "description": "greys - 9 sequential grey 1color",
+        "description": "greys - 9 sequential (grey) 1color",
         "invert_font": {
             "3": {"3"},
             "4": {"3", "4"},
@@ -1447,7 +1446,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "orrd": {
-        "description": "orrd - 9 sequential orange red 2color",
+        "description": "orrd - 9 sequential (orange red) 2color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1497,7 +1496,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "oranges": {
-        "description": "oranges - 9 sequential orange 1color",
+        "description": "oranges - 9 sequential (orange) 1color",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -1547,7 +1546,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "pubu": {
-        "description": "pubu - 9 sequential purple blue 2color",
+        "description": "pubu - 9 sequential (purple blue) 2color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1597,7 +1596,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "pubugn": {
-        "description": "pubugn - 9 sequential purple blue green 3color",
+        "description": "pubugn - 9 sequential (purple blue green) 3color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1647,7 +1646,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "purd": {
-        "description": "purd - 9 sequential purple red 2color",
+        "description": "purd - 9 sequential (purple red) 2color",
         "invert_font": {
             "3": {},
             "4": {"4"},
@@ -1697,7 +1696,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "purples": {
-        "description": "purples - 9 sequential purple 1color",
+        "description": "purples - 9 sequential (purple) 1color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1747,7 +1746,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "rdpu": {
-        "description": "rdpu - 9 sequential red purple 2color",
+        "description": "rdpu - 9 sequential (red purple) 2color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1797,7 +1796,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "reds": {
-        "description": "reds - 9 sequential red 1color",
+        "description": "reds - 9 sequential (red) 1color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1847,7 +1846,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "ylgn": {
-        "description": "ylgn - 9 sequential yellow green 2color",
+        "description": "ylgn - 9 sequential (yellow green) 2color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1897,7 +1896,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "ylgnbu": {
-        "description": "ylgnbu - 9 sequential yellow green blue 3color",
+        "description": "ylgnbu - 9 sequential (yellow green blue) 3color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1947,7 +1946,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "ylorbr": {
-        "description": "ylorbr - 9 sequential yellow orange brown 3color",
+        "description": "ylorbr - 9 sequential (yellow orange brown) 3color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},
@@ -1997,7 +1996,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "ylorrd": {
-        "description": "ylorrd - 9 sequential yellow orange red 3color",
+        "description": "ylorrd - 9 sequential (yellow orange red) 3color",
         "invert_font": {
             "3": {"3"},
             "4": {"4"},

@@ -28,7 +28,7 @@ from util.utils import Utils
 from util_cli.cli_color_maps import ANSI_VALUES, COLOR_NAMES, HEX_COLORS, RGB_COLORS
 
 HEX = "hex"
-ANSI = "ansi"  # ansi ciodes not implemented yet
+ANSI = "ansi"  # ansi codes not implemented yet
 CODE = "code"  # code 0-255
 NAME = "name"  # as in ANSI COLOR NAMES
 RGB = "rgb"
@@ -758,7 +758,7 @@ if __name__ == "__main__":
     )
 
     # # show color themes
-    if False:
+    if True:
         ColorMapper().show_themes()
     # show color maps
     if False:

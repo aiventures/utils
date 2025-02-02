@@ -4,6 +4,14 @@ from typing import Optional, Dict, List, Literal, Annotated
 from pydantic import BaseModel
 
 
+# Color Encoding
+# TODO PRIO4 adapt cli_color_mapper
+# - code ANSI Code Number
+# - rgb  RGB tuple
+# - hex  HEX code string
+ColorEncoding = Literal["code", "rgb", "hex"]
+ColorEncodingType = Annotated[ColorEncoding, "color_encoding"]
+
 # GraphViz Gallery
 # https://graphviz.org/gallery/
 # Graphviz Engines
@@ -15,7 +23,6 @@ GraphVizEngineType = Annotated[GraphVizEngine, "engine"]
 # Color Codes https://graphviz.org/docs/attr-types/color/
 # pencolor bounding box color
 # x11 https://graphviz.org/doc/info/colors.html#x11
-
 
 # TODO PRIO2 Use Color Schemes to render Trees according to depth level
 # Graphviz Color Schemes correspond to Brewer Colors
@@ -33,7 +40,7 @@ GraphVizEngineType = Annotated[GraphVizEngine, "engine"]
 # For examples check https://colorbrewer2.org
 # /util/cli/cli_colorbrewer.py contains the color codes
 ColorSchemaSet = Literal["divergent", "qualitative", "sequential"]
-ColorSetType = Annotated[ColorSchemaSet, "color_set"]
+ColorSchemaSetType = Annotated[ColorSchemaSet, "color_set"]
 # available color schemes
 
 # Brewer color sets are also used in seaborn
@@ -41,7 +48,7 @@ ColorSetType = Annotated[ColorSchemaSet, "color_set"]
 # Color Codes as JSON https://github.com/uncommoncode/color_palettes_json/tree/master
 # You'll find the RGB codes in /resources/colorbrewer.json
 # TODO PRIO3 OUTPUT COLORS
-GraphVizColorScheme = Literal[
+ColorSchema = Literal[
     # divergent
     "brbg",
     "piyg",
@@ -81,7 +88,25 @@ GraphVizColorScheme = Literal[
     "ylorbr",
     "ylorrd",
 ]
-GraphVizColorSchemaType = Annotated[GraphVizColorScheme, "color_schema"]
+ColorSchemaType = Annotated[ColorSchema, "color_schema"]
+
+MULTICOLOR_SCHEMA = 99
+
+
+class ColorSchemaMetaData(BaseModel):
+    """Metadata of Color Schema"""
+
+    name: Optional[ColorSchemaType] = None
+    schema_set: Optional[ColorSchemaSetType] = None
+    # max number of colors in a schema
+    num_max_colors: Optional[int] = None
+    # number of colors in a schema 1,2,3
+    num_colorset: Optional[int] = None
+    # colors in colorset
+    color_list: Optional[list] = None
+    # description
+    description: Optional[str] = None
+
 
 # shapes Attribute
 # https://graphviz.org/doc/info/shapes.html
