@@ -1,7 +1,7 @@
 """Models Used for Color Rendering"""
 
-from typing import Optional, Dict, List, Literal, Annotated
-from pydantic import BaseModel
+from typing import Optional, Dict, Literal, Annotated, Iterable
+from pydantic import BaseModel, RootModel
 
 
 # Color Encoding
@@ -39,7 +39,7 @@ GraphVizEngineType = Annotated[GraphVizEngine, "engine"]
 # g.edge('A', 'B', color='3')
 # For examples check https://colorbrewer2.org
 # /util/cli/cli_colorbrewer.py contains the color codes
-ColorSchemaSet = Literal["divergent", "qualitative", "sequential"]
+ColorSchemaSet = Literal["divergent", "qualitative", "sequential", "all"]
 ColorSchemaSetType = Annotated[ColorSchemaSet, "color_set"]
 # available color schemes
 
@@ -48,7 +48,7 @@ ColorSchemaSetType = Annotated[ColorSchemaSet, "color_set"]
 # Color Codes as JSON https://github.com/uncommoncode/color_palettes_json/tree/master
 # You'll find the RGB codes in /resources/colorbrewer.json
 # TODO PRIO3 OUTPUT COLORS
-ColorSchema = Literal[
+ColorSchemaKey = Literal[
     # divergent
     "brbg",
     "piyg",
@@ -88,9 +88,26 @@ ColorSchema = Literal[
     "ylorbr",
     "ylorrd",
 ]
-ColorSchemaType = Annotated[ColorSchema, "color_schema"]
-
+ColorSchemaType = Annotated[ColorSchemaKey, "color_schema"]
 MULTICOLOR_SCHEMA = 99
+
+# Available Colors in Schema
+SchemaColor = Literal[
+    "all",
+    "blue",
+    "bluegreen",
+    "brown",
+    "green",
+    "grey",
+    "multicolor",
+    "orange",
+    "pink",
+    "purple",
+    "red",
+    "yellow",
+    "yellowgreen",
+]
+SchemaColorType = Annotated[SchemaColor, "schema_color"]
 
 
 class ColorSchemaMetaData(BaseModel):
@@ -100,12 +117,48 @@ class ColorSchemaMetaData(BaseModel):
     schema_set: Optional[ColorSchemaSetType] = None
     # max number of colors in a schema
     num_max_colors: Optional[int] = None
-    # number of colors in a schema 1,2,3
+    # number of colors in a schema 1,2,3,multicolor ...
     num_colorset: Optional[int] = None
     # colors in colorset
     color_list: Optional[list] = None
     # description
     description: Optional[str] = None
+
+
+# class ColorMapItem(BaseModel):
+#     """ Structure in Schema Data to host color list and font color info """
+
+
+class ColorSchemaData(ColorSchemaMetaData):
+    """Adding the Meta Data"""
+
+    encoding: Optional[ColorEncodingType] = None
+    # NUm of colors in map / Color and info whether font is inverted
+    # "3":[{#123456:True},{#aabbcc:False}..] (3 Elemets)
+    # "4":...
+    # ...
+    color_schema_map: Optional[Dict[str, Dict[object, bool]]] = None
+
+
+class ColorSchemaDataDict(RootModel):
+    """ColorSchemaData Dict as root model to be able to export as dict
+    directly address the root node of the pydantic class
+    """
+
+    root: Dict[ColorSchemaType, ColorSchemaData] = {}
+
+    def __getitem__(self, key: ColorSchemaType):
+        return self.root[key]
+
+    def __setitem__(self, key: ColorSchemaType, value: ColorSchemaData):
+        self.root[key] = value
+
+    def __iter__(self):
+        return iter(self.root.items())
+
+    def items(self) -> Iterable[tuple[ColorSchemaType, ColorSchemaData]]:
+        """directly get items so as if it was a real dict"""
+        return self.root.items()
 
 
 # shapes Attribute

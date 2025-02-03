@@ -262,7 +262,7 @@ COLOR_SCHEMAS = {
         ],
     },
     "puor": {
-        "description": "puor - 11 divergent (purple orange) 2color",
+        "description": "puor - 11 divergent (orange purple) 2color",
         "invert_font": {
             "3": {},
             "4": {"4"},

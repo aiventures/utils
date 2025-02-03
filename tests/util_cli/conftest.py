@@ -1,9 +1,11 @@
 """ColorMapper setup"""
 
 import pytest
-from util_cli.cli_color_mapper import ColorMapper
+
 from util.calendar import Calendar
 from util_cli.cli_calendar_renderer import CalendarTableRenderer
+from util_cli.cli_color_mapper import ColorMapper
+from util_cli.cli_color_schema import ColorSchema
 
 ### [1] Fixtures for Color Mapper
 
@@ -47,3 +49,9 @@ def fixture_calendar(fixture_daytype_list) -> Calendar:
 def fixture_table_renderer(fixture_calendar) -> CalendarTableRenderer:
     """Sample Calendar"""
     return CalendarTableRenderer(calendar=fixture_calendar, icon_render="all")
+
+
+@pytest.fixture(scope="module")
+def fixture_color_schema() -> ColorSchema:
+    """Sample Calendar"""
+    return ColorSchema()

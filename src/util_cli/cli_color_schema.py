@@ -3,19 +3,22 @@
 import logging
 import os
 import re
-from typing import Dict, Optional, List
+from typing import Dict, List, get_args
 from rich.logging import RichHandler
-from rich.table import Table
 from util import constants as C
-from cli.bootstrap_env import LOG_LEVEL
 from util_cli.cli_color_schema_maps import COLOR_SCHEMAS
 from util_cli.cli_color_mapper import ColorMapper
+from model.model_filter import AnyOrAllType
 from model.model_visualizer import (
     ColorSchemaSetType,
+    ColorSchemaKey,
     ColorSchemaType,
     ColorSchemaMetaData,
+    SchemaColorType,
     MULTICOLOR_SCHEMA,
     ColorEncodingType,
+    ColorSchemaData,
+    ColorSchemaDataDict,
 )
 
 # extract the colors from the bracket
@@ -25,6 +28,7 @@ DESCRIPTION = "description"
 INVERT_FONT = "invert_font"
 TYPE = "type"
 MAX_NUM_COLORS = "max_num_colors"
+ALL_COLORS = 999
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -195,7 +199,6 @@ class ColorSchema:
     def color(self, index: int, num_colors: int = None, schema: ColorSchemaType = None) -> List:
         """returns the color code and the information on whether to invert the font color"""
         _num_colors = self.adjust_num_colors(num_colors)
-        out = []
         _schema_info = self._get_schema(_num_colors, schema)
         if _schema_info is None:
             return
@@ -203,6 +206,100 @@ class ColorSchema:
         _invert_font_info = _schema_info[INVERT_FONT][str(_num_colors)]
         _invert_font = True if str(index) in _invert_font_info else False
         return [_color_code, _invert_font]
+
+    def filter_schemas(
+        self,
+        color_filters: List[SchemaColorType] = None,
+        num_colors: List[int] = None,
+        color_schema_sets: List[ColorSchemaSetType] = None,
+        filter_type: AnyOrAllType = "any",
+    ) -> list:
+        """filter metadata, return possible schemes"""
+        _color_filters: List[SchemaColorType] = color_filters  # colors
+        _num_colors: List[int] = num_colors  # number of colors in color set
+        _color_schema_sets: List[ColorSchemaSetType] = color_schema_sets  # color schema
+        if color_filters is None:
+            _color_filters = ["all"]
+        if _num_colors is None:
+            _num_colors = [ALL_COLORS]
+        if _color_schema_sets is None:
+            _color_schema_sets = ["all"]
+        out = []
+
+        # Dict[ColorSchemaType, ColorSchemaMetaData] = None
+        for _schema, _meta in self.metadata.items():
+            _passed_colors = []
+            _passed_schema = []
+            _passed_num_colors = []
+            _color_list = _meta.color_list
+            # filter colors
+            if "all" in _color_filters:
+                _passed_colors.append(True)
+            else:
+                for _color in _color_filters:
+                    if _color in _color_list:
+                        _passed_colors.append(True)
+                    else:
+                        _passed_colors.append(False)
+            if filter_type == "all":
+                _passed_colors = all(_passed_colors)
+            else:
+                _passed_colors = any(_passed_colors)
+            if not _passed_colors:
+                logger.debug(
+                    f"[ColorSchema] Schema [{_schema}], Colors {_color_list} not PASSED, filter colors {_color_filters}"
+                )
+                continue
+            # filter schemas
+            _passed_schema = False
+            if _meta.schema_set in _color_schema_sets or "all" in _color_schema_sets:
+                _passed_schema = True
+            if not _passed_schema:
+                logger.debug(
+                    f"[ColorSchema] Schema [{_schema}], Schema Set [{_meta.schema_set}] not PASSED, filter schemas {_color_schema_sets}"
+                )
+                continue
+            # filter numbers
+            _passed_num_colors = False
+            if _meta.num_colorset in _num_colors or ALL_COLORS in _num_colors:
+                _passed_num_colors = True
+            if not _passed_num_colors:
+                logger.debug(
+                    f"[ColorSchema] Schema [{_schema}], Num Colors [{_meta.num_colorset}] not PASSED, filter num colors {_num_colors}"
+                )
+                continue
+
+            logger.debug(
+                f"[ColorSchema] Schema [{_schema}], PASSED, colors {_color_filters}, schema {_color_schema_sets}, num colors {_num_colors}"
+            )
+            out.append(_schema)
+
+        return out
+
+    def get_color_schema(self, schema: ColorSchemaType) -> ColorSchemaData:
+        """gets the color schema as Pydantic Model"""
+        _metadata = self._metadata[schema]
+        schema_data = ColorSchemaData(**_metadata.model_dump())
+        schema_data.encoding = self._color_encoding
+        _schema_info = self.get_schema_info(schema)
+        _color_schema_map = {}
+        for _idx in range(3, schema_data.num_max_colors + 1):
+            _color_list = _schema_info[str(_idx)]
+            _invert_font_info = _schema_info[INVERT_FONT][str(_idx)]
+            _invert_fonts = [True if str(_idx) in _invert_font_info else False for _idx in range(1, _idx + 1)]
+            _color_schema_map[str(_idx)] = dict(zip(_color_list, _invert_fonts))
+        schema_data.color_schema_map = _color_schema_map
+        return schema_data
+
+    def get_color_schema_map(self, color_schemas: List[ColorSchemaType] = None) -> ColorSchemaDataDict:
+        """returns an all in one schema model, that can easily be dumped as dict"""
+        out = ColorSchemaDataDict()
+        _color_schemas = color_schemas
+        if _color_schemas is None:
+            _color_schemas = get_args(ColorSchemaKey)
+        for _schema in _color_schemas:
+            out[_schema] = self.get_color_schema(_schema)
+        return out
 
 
 def main():
@@ -212,6 +309,19 @@ def main():
     _schema = _color_schema.get_schema_info(schema="accent")
     _colors, _invert_fonts = _color_schema.colors(num_colors=5)
     _color, _invert_font = _color_schema.color(5)
+    # assembling a filter
+    _colors: List[SchemaColorType] = ["green"]
+    _num_colors: List[int] = [1]
+    color_schema_sets: List[ColorSchemaSetType] = ["all"]
+    _schemas = _color_schema.filter_schemas(
+        color_filters=_colors, num_colors=_num_colors, color_schema_sets=color_schema_sets
+    )
+    # get a complete Color Schema in a pydantic model
+    _color_schema_data: ColorSchemaData = _color_schema.get_color_schema(schema="blues")
+    # get all schemas in a root model / color_schemas is validated ...
+    _all_color_schemas = _color_schema.get_color_schema_map(color_schemas=["blues"])
+    # get it as dict
+    # _all_color_schemas_dict = _all_color_schemas.model_dump()
 
     pass
 
@@ -219,7 +329,7 @@ def main():
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
-        level=LOG_LEVEL,
+        level=logging.DEBUG,
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[RichHandler(rich_tracebacks=True)],
     )
