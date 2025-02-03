@@ -44,13 +44,15 @@ class ColorSchemaRenderer:
             if _font_invert:
                 _fontcol = "white"
             if self._show_hex:
-                _text = f" {str(_idx + 1).zfill(2)} ({_color}) "
+                _text = f" {str(_idx + 1).zfill(2)}({_color}) "
             else:
                 _text = f" {str(_idx + 1).zfill(2)} "
             out += f"[{_fontcol} on {_color}]{_text}[/]"
         return out
 
-    def render(self, num_colors: int = 8, sort_by_num_colors: bool = False, sort_by_schema_set: bool = False):
+    def _render_table(
+        self, num_colors: int = 8, sort_by_num_colors: bool = False, sort_by_schema_set: bool = False
+    ) -> Table:
         """render the colors in a table"""
         _table = Table(title=f"Color Schemas (Num Colors: {num_colors})", show_lines=True)
         # add column titles
@@ -88,14 +90,27 @@ class ColorSchemaRenderer:
             _description = f"{_description} [{_encoding}]"
             _colorbar = self._render_color_bar(_color_dict)
             _table.add_row(_description, _colorbar)
+        return _table
+
+    def render(
+        self,
+        num_colors: int = 8,
+        sort_by_num_colors: bool = False,
+        sort_by_schema_set: bool = False,
+        show_hex: bool = None,
+    ) -> None:
+        """render the output table"""
+        if isinstance(show_hex, bool):
+            self._show_hex = show_hex
+        _table = self._render_table(num_colors, sort_by_num_colors, sort_by_schema_set)
         self._console.print(_table)
 
 
 def main() -> None:
     """sample output when running directly"""
     _schemas: List[ColorSchemaType] = ["blues", "orrd"]
-    _schema_renderer = ColorSchemaRenderer(schemas=None)
-    _schema_renderer.render(num_colors=15, sort_by_num_colors=False, sort_by_schema_set=True)
+    _schema_renderer = ColorSchemaRenderer(schemas=None, show_hex=True)
+    _schema_renderer.render(num_colors=15, sort_by_num_colors=False, sort_by_schema_set=True, show_hex=False)
     pass
 
 
