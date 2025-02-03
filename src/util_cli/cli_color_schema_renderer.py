@@ -28,12 +28,12 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 class ColorSchemaRenderer:
     """Rendering The Color Schemas in the Shell"""
 
-    def __init__(self, schemas: List[ColorSchemaType], show_hex: bool = False):
+    def __init__(self, schemas: List[ColorSchemaType], show_hex: bool = False, reverse_schema: bool = False):
         """Constructor"""
         self._console: Console = console_maker.get_console()
         _schemas = get_args(ColorSchemaKey) if schemas is None else schemas
         self._schemas: List[ColorSchemaData] = _schemas
-        self._color_schema = ColorSchema()
+        self._color_schema = ColorSchema(reverse_schema=reverse_schema)
         self._show_hex = show_hex
 
     def _render_color_bar(self, colors_dict) -> str:
@@ -112,7 +112,7 @@ class ColorSchemaRenderer:
 def main() -> None:
     """sample output when running directly"""
     _schemas: List[ColorSchemaType] = ["blues", "orrd"]
-    _schema_renderer = ColorSchemaRenderer(schemas=None, show_hex=True)
+    _schema_renderer = ColorSchemaRenderer(schemas=None, show_hex=True, reverse_schema=True)
     _schema_renderer.render(num_colors=15, sort_by_num_colors=False, sort_by_schema_set=True, show_hex=False)
     pass
 

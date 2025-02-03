@@ -38,7 +38,20 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 class ColorSchema:
     """Class for mapping Color Schemas"""
 
-    def __init__(self, schema: ColorSchemaType = "spectral", color_encoding: ColorEncodingType = "hex"):
+    def __init__(
+        self,
+        schema: ColorSchemaType = "spectral",
+        color_encoding: ColorEncodingType = "hex",
+        min_value: int | float = None,
+        max_value: int | float = None,
+        reverse_schema: bool = False,
+    ):
+        # upper and lower bounds
+        self._min_value = min_value
+        self._max_value = max_value
+        # reverse the color schema
+        self._reverse_schema = reverse_schema
+
         self._schemas = COLOR_SCHEMAS
         self._metadata: Dict[ColorSchemaType, ColorSchemaMetaData] = None
         # color encoding type to be used, should be rgb in most cases
@@ -62,6 +75,15 @@ class ColorSchema:
             return self._metadata[self._buffered_schema]
         else:
             return None
+
+    def set_minmax_values(self, min_value: float | int = None, max_value: float | int = None):
+        """set boundary numerical values for directly calculating  index number"""
+        self._min_value = min_value if min_value is not None else 1
+        self._max_value = max_value if max_value is not None else self._buffered_num_colors
+
+    def get_minmax_values(self) -> list:
+        """return limit values"""
+        return [self._min_value, self._max_value]
 
     def _parse_schema_description(self, schema_description: str) -> ColorSchemaMetaData:
         """parses schema description"""
@@ -138,7 +160,17 @@ class ColorSchema:
         return self._metadata
 
     @property
-    def num_colors(self):
+    def reverse_schema(self) -> bool:
+        """reversed schema, only applies to colors and color methods"""
+        return self._reverse_schema
+
+    @reverse_schema.setter
+    def reverse_schema(self, reverse_schema: bool) -> None:
+        """set reverse schema, only applies to colors and color methods"""
+        self._reverse_schema = reverse_schema
+
+    @property
+    def num_colors(self) -> int:
         """buffered num colors"""
         if self._buffered_num_colors is not None:
             return self._buffered_num_colors
@@ -152,7 +184,7 @@ class ColorSchema:
             self._buffered_num_colors = num_colors
 
     def adjust_num_colors(self, num_colors: int) -> int:
-        """wrapping reaf/write access to buffer"""
+        """wrapping read/write access to buffer"""
         if num_colors is None:
             # read / set the buffer (8 color as standard)
             if self.num_colors is None:
@@ -190,22 +222,51 @@ class ColorSchema:
         if _schema_info is None:
             return
         # append the color table
-        out.append(_schema_info[str(_num_colors)])
+        _color_list = _schema_info[str(_num_colors)]
+        if self._reverse_schema:
+            _color_list = list(reversed(_color_list))
+        out.append(_color_list)
         _invert_font_info = _schema_info[INVERT_FONT][str(_num_colors)]
         _invert_fonts = [True if str(_idx) in _invert_font_info else False for _idx in range(1, _num_colors + 1)]
+        if self._reverse_schema:
+            _invert_fonts = list(reversed(_invert_fonts))
         out.append(_invert_fonts)
         return out
 
-    def color(self, index: int, num_colors: int = None, schema: ColorSchemaType = None) -> List:
+    def color(self, index: int, num_colors: int = None, schema: ColorSchemaType = None) -> list:
         """returns the color code and the information on whether to invert the font color"""
         _num_colors = self.adjust_num_colors(num_colors)
         _schema_info = self._get_schema(_num_colors, schema)
         if _schema_info is None:
             return
-        _color_code = _schema_info[str(_num_colors)][index - 1]
+        _index = index - 1
+        _index_invert_font = index
+        if self._reverse_schema:
+            _index = _num_colors - index
+        _color_code = _schema_info[str(_num_colors)][_index]
         _invert_font_info = _schema_info[INVERT_FONT][str(_num_colors)]
-        _invert_font = True if str(index) in _invert_font_info else False
+        _invert_font = True if str(_index + 1) in _invert_font_info else False
         return [_color_code, _invert_font]
+
+    def color_by_value(
+        self,
+        value: int | float,
+        min_value: float | int = None,
+        max_value: float | int = None,
+        num_colors: int = None,
+        schema: ColorSchemaType = None,
+    ) -> list:
+        """calculates colors based on value and"""
+        # set min max values
+        if min_value is not None and max_value is not None:
+            self.set_minmax_values(min_value, max_value)
+        _num_colors = num_colors if num_colors is not None else self._buffered_num_colors
+        if _num_colors is None:
+            logger.warning(f"[ColorSchema] was not able to set number of colors, ensure instanciation")
+            return
+        _percentage = (value - self._min_value) / (self._max_value - self._min_value)
+        _index = int(1 + round(_percentage * (_num_colors - 1), 0))
+        return self.color(_index, num_colors, schema)
 
     def filter_schemas(
         self,
@@ -309,6 +370,12 @@ def main():
     _schema = _color_schema.get_schema_info(schema="accent")
     _colors, _invert_fonts = _color_schema.colors(num_colors=5)
     _color, _invert_font = _color_schema.color(5)
+    # calculate rgb value based on percentage of min max
+    _test_scale, _ = _color_schema.color_by_value(value=30, min_value=0, max_value=100)
+
+    _color_schema.reverse_schema = True
+    _colors_rev, _invert_fonts_rev = _color_schema.colors(num_colors=5)
+    _color_rev, _invert_font_rev = _color_schema.color(5)
     # assembling a filter
     _colors: List[SchemaColorType] = ["green"]
     _num_colors: List[int] = [1]
