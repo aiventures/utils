@@ -264,6 +264,10 @@ class ColorSchema:
         if _num_colors is None:
             logger.warning(f"[ColorSchema] was not able to set number of colors, ensure instanciation")
             return
+        if value > self._max_value:
+            value = self._max_value
+        elif value < self._min_value:
+            value = self._min_value
         _percentage = (value - self._min_value) / (self._max_value - self._min_value)
         _index = int(1 + round(_percentage * (_num_colors - 1), 0))
         return self.color(_index, num_colors, schema)

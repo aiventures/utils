@@ -28,13 +28,30 @@ logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 class ColorSchemaRenderer:
     """Rendering The Color Schemas in the Shell"""
 
-    def __init__(self, schemas: List[ColorSchemaType], show_hex: bool = False, reverse_schema: bool = False):
+    def __init__(
+        self,
+        schemas: List[ColorSchemaType],
+        schema: ColorSchemaType = "spectral",
+        show_hex: bool = False,
+        min_value: int | float = None,
+        max_value: int | float = None,
+        reverse_schema: bool = False,
+    ):
         """Constructor"""
         self._console: Console = console_maker.get_console()
         _schemas = get_args(ColorSchemaKey) if schemas is None else schemas
         self._schemas: List[ColorSchemaData] = _schemas
-        self._color_schema = ColorSchema(reverse_schema=reverse_schema)
+        self._color_schema = ColorSchema(schema, "hex", min_value, max_value, reverse_schema)
         self._show_hex = show_hex
+
+    @property
+    def console(self) -> Console:
+        return self._console
+
+    @property
+    def color_schema(self) -> ColorSchema:
+        """returns the color schema instance"""
+        return self._color_schema
 
     def _render_color_bar(self, colors_dict) -> str:
         """render output string"""
@@ -112,8 +129,15 @@ class ColorSchemaRenderer:
 def main() -> None:
     """sample output when running directly"""
     _schemas: List[ColorSchemaType] = ["blues", "orrd"]
-    _schema_renderer = ColorSchemaRenderer(schemas=None, show_hex=True, reverse_schema=True)
+    _schema_renderer = ColorSchemaRenderer(schemas=None, show_hex=True, min_value=0, max_value=100, reverse_schema=True)
     _schema_renderer.render(num_colors=15, sort_by_num_colors=False, sort_by_schema_set=True, show_hex=False)
+    _color_schema = _schema_renderer.color_schema
+    _console = _schema_renderer.console
+    _schema = "spectral"
+    _console.print(f"SCHEMA {_schema}")
+    for _value in range(0, 101, 5):
+        _color, _invert = _color_schema.color_by_value(value=_value, num_colors=11, schema=_schema)
+        _console.print(f"[{_color}]VALUE ({_value}/100), hex value {_color}")
     pass
 
 
