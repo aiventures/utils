@@ -106,6 +106,9 @@ class ColorSchemaRenderer:
         self._console.print(_table)
 
 
+# TODO PRIO4 add filter to only render certain color schemas
+
+
 def main() -> None:
     """sample output when running directly"""
     _schemas: List[ColorSchemaType] = ["blues", "orrd"]
