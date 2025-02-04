@@ -26,20 +26,32 @@ from rich.console import Console
 from rich.emoji import Emoji
 from rich.table import Table
 
-from util import constants as C
+from util.constants import PATH_RESOURCE
 from util.matrix_list import MatrixList
 from util.persistence import Persistence
 
-EMOJI_NUMBERS = {0:"zero", 1:"one",10:"ten",2:"two",3:"three",4:"four",
-                 5:"five", 6:"six",7:"seven", 8:"eight", 9:"nine"}
+EMOJI_NUMBERS = {
+    0: "zero",
+    1: "one",
+    10: "ten",
+    2: "two",
+    3: "three",
+    4: "four",
+    5: "five",
+    6: "six",
+    7: "seven",
+    8: "eight",
+    9: "nine",
+}
+
 
 class EmojiUtil:
-    """ Emoji Helper """
+    """Emoji Helper"""
 
     @staticmethod
-    def int2emoji(number:int,num_digits:int=None)->str:
-        """ converting an int to an emoji """
-        out=""
+    def int2emoji(number: int, num_digits: int = None) -> str:
+        """converting an int to an emoji"""
+        out = ""
         s_int = str(number)
         if num_digits is not None:
             s_int = s_int.zfill(num_digits)
@@ -67,7 +79,7 @@ class EmojiUtil:
     @staticmethod
     def get_emoji_meta() -> dict:
         """gets the meta information from the json with emoji name as key"""
-        f_emoji = C.PATH_ROOT.joinpath("resources", "emoji.json")
+        f_emoji = PATH_RESOURCE.joinpath("emoji.json")
         _emojis = Persistence.read_json(f_emoji)
         out = {}
         for _emoji_meta in _emojis.values():
@@ -163,6 +175,63 @@ class EmojiUtil:
         Console().print(_table)
 
     @staticmethod
+    def show_unicode_emojis(keys: list = None, any_or_all="any", only_categories: bool = False) -> dict:
+        """display unicode emojis"""
+        meta_data = {}
+        _emoji_meta = EmojiUtil.get_emoji_meta()
+        n = 0
+        for _emoji_key, _emoji_info in _emoji_meta.items():
+            _code = _emoji_info["code"]
+            if " " in _code:
+                continue
+            _num = _emoji_info["num"]
+            _class = _emoji_info["class"]
+            _subclass = _emoji_info["subclass"]
+            _info = _emoji_info["info"]
+            _char = _emoji_info["char"]
+            _description = f"({str(_num).zfill(4)}) [{_class}->{_subclass}->{_info}]"
+            skip = False
+            if keys is not None:
+                skip = True
+                for _key in keys:
+                    if _key in _description:
+                        skip = False
+                        break
+            if skip:
+                continue
+
+            _class_dict = meta_data.get(_class)
+            if _class_dict == None:
+                _class_dict = {}
+                meta_data[_class] = _class_dict
+            _emojis = _class_dict.get(_subclass)
+            if _emojis is None:
+                if only_categories:
+                    _emojis = 1
+                else:
+                    _emojis = []
+                _class_dict[_subclass] = _emojis
+            if only_categories:
+                _emojis += 1
+                _class_dict[_subclass] = _emojis
+            else:
+                _emojis.append(f"{_char} {_emoji_key}")
+
+            # _subclass_dict = _class_dict.get(_subclass)
+            # if _subclass_dict is None:
+            #    _subclass_dict = {}
+            # _subclass_dict[]
+
+            # if not "face" in _info:
+            #     continue
+
+            print(f"{_description} {_char}")
+            n += 1
+            pass
+        print(f"NUM EMOJIS [{n}]")
+        return meta_data
+
+    @staticmethod
     def download_unicode_emoji_sequences(p_emojis: str) -> str:
         """retrieves the unicode emoji sequence file"""
 
@@ -182,22 +251,17 @@ class EmojiUtil:
         else:
             print(f"Failed to download the file [{_url_file}], status [{_response.status_code}]")
 
-    # @staticmethod
-    # def parse_sequences(f_emojis:str,f_emojis_json:str)->dict:
-    #     """ parse the sequence file from the uniode page
-    #         use the download_unicode_emoji_sequences function to download it
-    #     """
-    #     # download the file if not present
-    #     if not os.path.isfile(f_emojis):
-    #         EmojiUtil.download_unicode_emoji_sequences(str(Path(f_emojis).parent))
-    #     _sequences = Persistence.read_txt_file(f_emojis)
-    #     for _sequence in _sequences:
-    #         pass
-
     @staticmethod
     def emoji(hex: str) -> str:
         """creates emoji from hex number (sequence)"""
-        _hex = "2705"
+        _hex: str = hex
+        # complex icons seems not to be worjing in shell
+        # U+1F470  => 0001F470
+        # U+2642   =>     2642
+        if _hex.startswith("U+1"):
+            _hex = f"000{_hex[2:]}"
+        elif len(_hex) == 6 and _hex.startswith("U+"):
+            _hex = f"0000{_hex[2:]}"
         code_point = chr(int(_hex, 16))
         return code_point
 
@@ -209,8 +273,11 @@ if __name__ == "__main__":
     # export LANG=en_US.UTF-8
     # "de_DE.UTF-8" für Deutsch mit Unicode-Zeichensatz
     # show_rich_emoji_codes()
-    # EmojiUtil.show_emoji_table(emoji_filter=["circ","sq"])
-    # EmojiUtil.emoji("sss")
-    # EmojiUtil.parse_sequences(r"...")
-    print(EmojiUtil.int2emoji(1234))
+    # EmojiUtil.show_emoji_table(emoji_filter=["circ", "sq"])
+    # print(EmojiUtil.emoji("U+1F233"))
+    # print(EmojiUtil.emoji("U+2640"))
+    # _emoji_dict = EmojiUtil.show_unicode_emojis()
+    # _console = Console()
+    # _console.print(_emoji_dict)
+
     pass
