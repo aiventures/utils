@@ -37,6 +37,17 @@ class FilterModel(BaseModel):
     ignore_none_filter_results: Optional[bool] = True
 
 
+class SimpleStrFilterModel(BaseModel):
+    """simple filtermodel for the Utils simple filter method"""
+
+    str_filter: list | str = None
+    any_or_all: Optional[AnyOrAllType] = "any"
+    match: Optional[StringMatch] = "contains"
+    include: Optional[IncludeType] = "include"
+    case_insensitive: Optional[bool] = True
+    sep: Optional[str] = ","
+
+
 class NumericalFilterModel(FilterModel):
     """Filter for a numeric value"""
 

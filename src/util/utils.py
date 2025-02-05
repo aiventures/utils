@@ -17,8 +17,8 @@ from configparser import Error as ConfigParserError
 from datetime import datetime as DateTime
 from math import floor, inf, log
 from pathlib import Path
-
 from util import constants as C
+from model.model_filter import AnyOrAllType, StringMatch, IncludeType, SimpleStrFilterModel
 
 # from util.cmd_runner import CmdRunner
 from util.persistence import Persistence
@@ -59,6 +59,38 @@ TOTAL_SIZE = "total_size"
 
 class Utils:
     """util collection"""
+
+    @staticmethod
+    def simple_str_filter(s: str, str_filter: SimpleStrFilterModel) -> bool:
+        """simple filter a string to filter against a list of strings"""
+        # turn filter into a list
+        if str_filter is None:
+            return None
+        _s = s
+        if str_filter.case_insensitive:
+            _s = s.lower()
+        _matches = []
+        match = None
+        _str_filters = str_filter.str_filter
+        if _str_filters is None:
+            logger.warning("[Utils] No Filter was passed, string [{s}]")
+            return None
+        if isinstance(_str_filters, str):
+            _str_filters = _str_filters.split(sep=str_filter.sep)
+        if str_filter.case_insensitive:
+            _str_filters = [_f.lower() for _f in _str_filters]
+        if str_filter.match == "contains":
+            _matches = [_f in s for _f in _str_filters]
+        else:
+            _matches = [_f == _s for _f in _str_filters]
+        if str_filter.any_or_all == "any":
+            match = any(_matches)
+        else:
+            match = all(_matches)
+        if str_filter.include == "exclude":
+            match = not match
+        logger.debug(f"[Utils] String [{s}], matches [{_str_filters}], [{match}]")
+        return match
 
     @staticmethod
     def get_short_win_path(path: str):

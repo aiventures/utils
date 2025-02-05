@@ -4,12 +4,44 @@ PyDantic Model for the emoji jsons from
 https://github.com/milesj/emojibase/blob/master/packages/data/en/data.raw.json
 # group and metadata definition
 https://github.com/milesj/emojibase/blob/master/packages/data/meta/groups.json
+# Unicode Emoji Definitions
+"https://unicode.org/Public/emoji/latest/"
+_file = "emoji-sequences.txt"
 """
 
-from typing import Optional, Dict, List
-from pydantic import BaseModel
+from typing import Optional, Dict, List, Annotated
+from pydantic import BaseModel, Field, TypeAdapter
 
-class EmojiMeta(BaseModel):
+
+class EmojiRawType(BaseModel):
+    """unicode emojis as refered by link above"""
+
+    num: Optional[int] = None
+    # class cant be used as name
+    class_: Optional[str] = Field(None, alias="class")
+    # export to dict using
+    # instance = MyModel(class_="example")
+    # print(instance.model_dump(by_alias=True))
+    subclass: Optional[str] = None
+    code: Optional[str] = None
+    char: Optional[str] = None
+    info: Optional[str] = None
+
+
+class EmojiMetaType(EmojiRawType):
+    """Emoji Metadata enriched with descriptions"""
+
+    short_txt: Optional[str] = None
+    description: Optional[str] = None
+
+
+# derived models
+EmojiMetaDictModel = Dict[str, EmojiMetaType]
+EmojiMetaDictAdapter = TypeAdapter(EmojiMetaDictModel)
+EmojiMetaDictType = Annotated[EmojiMetaDictModel, EmojiMetaDictAdapter]
+
+
+class EmojiBaseMeta(BaseModel):
     """Emoji MetaModel"""
 
     label: str = None
@@ -25,13 +57,13 @@ class EmojiMeta(BaseModel):
     tone: Optional[str] = None
 
 
-class EmojiMetaRaw(EmojiMeta):
+class EmojiBaseMetaRaw(EmojiBaseMeta):
     """Metamodel with skins,"""
 
-    skins: Optional[List[EmojiMeta]] = None
+    skins: Optional[List[EmojiBaseMeta]] = None
 
 
-class EmojiGroups(BaseModel):
+class EmojiBaseGroups(BaseModel):
     """Model for the groups file"""
 
     groups: Dict[str, str]

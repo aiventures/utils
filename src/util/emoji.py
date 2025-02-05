@@ -19,16 +19,27 @@ https://emojibase.dev/docs/datasets/
 # from rich.emoji import Emoji
 import os
 from pathlib import Path
+import logging
+from util import constants as C
 
+from typing import List
 import requests
 from rich._emoji_codes import EMOJI
 from rich.console import Console
 from rich.emoji import Emoji
 from rich.table import Table
+from model.model_emoji import EmojiMetaType, EmojiMetaDictType, EmojiMetaDictAdapter
+from model.model_filter import AnyOrAllType, StringMatch, IncludeType, SimpleStrFilterModel
 
 from util.constants import PATH_RESOURCE
 from util.matrix_list import MatrixList
 from util.persistence import Persistence
+from util.utils import Utils
+
+logger = logging.getLogger(__name__)
+
+# get log level from environment if given
+logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
 EMOJI_NUMBERS = {
     0: "zero",
@@ -77,7 +88,7 @@ class EmojiUtil:
         return main_classes
 
     @staticmethod
-    def get_emoji_meta() -> dict:
+    def read_emoji_meta() -> dict:
         """gets the meta information from the json with emoji name as key"""
         f_emoji = PATH_RESOURCE.joinpath("emoji.json")
         _emojis = Persistence.read_json(f_emoji)
@@ -98,7 +109,7 @@ class EmojiUtil:
             _emoji_filters = emoji_filter
         else:
             _emoji_filters = None
-        _emoji_meta = EmojiUtil.get_emoji_meta()
+        _emoji_meta = EmojiUtil.read_emoji_meta()
         _emoji_tree = EmojiUtil.get_emoji_tree(_emoji_meta)
         _console = Console()
         for emoji_class, emoji_subclass_info in _emoji_tree.items():
@@ -131,10 +142,10 @@ class EmojiUtil:
                 _console.print("\n".join(_out_list))
 
     @staticmethod
-    def show_emoji_table(
+    def show_rich_emoji_table(
         emoji_filter: str | list = None, only_meta: bool = True, num_cols: int = 7, ignore_combinations: bool = True
     ):
-        """shows all emojis in a table"""
+        """shows all emojis defined in rich in a table"""
 
         def _pass_filter(_emoji_name: str) -> bool:
             if ignore_combinations:  # ignore combined emojis
@@ -174,62 +185,62 @@ class EmojiUtil:
             _table.add_row(*_emoji_row)
         Console().print(_table)
 
-    @staticmethod
-    def show_unicode_emojis(keys: list = None, any_or_all="any", only_categories: bool = False) -> dict:
-        """display unicode emojis"""
-        meta_data = {}
-        _emoji_meta = EmojiUtil.get_emoji_meta()
-        n = 0
-        for _emoji_key, _emoji_info in _emoji_meta.items():
-            _code = _emoji_info["code"]
-            if " " in _code:
-                continue
-            _num = _emoji_info["num"]
-            _class = _emoji_info["class"]
-            _subclass = _emoji_info["subclass"]
-            _info = _emoji_info["info"]
-            _char = _emoji_info["char"]
-            _description = f"({str(_num).zfill(4)}) [{_class}->{_subclass}->{_info}]"
-            skip = False
-            if keys is not None:
-                skip = True
-                for _key in keys:
-                    if _key in _description:
-                        skip = False
-                        break
-            if skip:
-                continue
+    # @staticmethod
+    # def show_unicode_emojis_old(keys: list = None, any_or_all="any", only_categories: bool = False) -> dict:
+    #     """display unicode emojis"""
+    #     meta_data = {}
+    #     _emoji_meta = EmojiUtil.read_emoji_meta()
+    #     n = 0
+    #     for _emoji_key, _emoji_info in _emoji_meta.items():
+    #         _code = _emoji_info["code"]
+    #         if " " in _code:
+    #             continue
+    #         _num = _emoji_info["num"]
+    #         _class = _emoji_info["class"]
+    #         _subclass = _emoji_info["subclass"]
+    #         _info = _emoji_info["info"]
+    #         _char = _emoji_info["char"]
+    #         _description = f"({str(_num).zfill(4)}) [{_class}:{_subclass}:{_info}]"
+    #         skip = False
+    #         if keys is not None:
+    #             skip = True
+    #             for _key in keys:
+    #                 if _key in _description:
+    #                     skip = False
+    #                     break
+    #         if skip:
+    #             continue
 
-            _class_dict = meta_data.get(_class)
-            if _class_dict == None:
-                _class_dict = {}
-                meta_data[_class] = _class_dict
-            _emojis = _class_dict.get(_subclass)
-            if _emojis is None:
-                if only_categories:
-                    _emojis = 1
-                else:
-                    _emojis = []
-                _class_dict[_subclass] = _emojis
-            if only_categories:
-                _emojis += 1
-                _class_dict[_subclass] = _emojis
-            else:
-                _emojis.append(f"{_char} {_emoji_key}")
+    #         _class_dict = meta_data.get(_class)
+    #         if _class_dict is None:
+    #             _class_dict = {}
+    #             meta_data[_class] = _class_dict
+    #         _emojis = _class_dict.get(_subclass)
+    #         if _emojis is None:
+    #             if only_categories:
+    #                 _emojis = 1
+    #             else:
+    #                 _emojis = []
+    #             _class_dict[_subclass] = _emojis
+    #         if only_categories:
+    #             _emojis += 1
+    #             _class_dict[_subclass] = _emojis
+    #         else:
+    #             _emojis.append(f"{_char} {_emoji_key}")
 
-            # _subclass_dict = _class_dict.get(_subclass)
-            # if _subclass_dict is None:
-            #    _subclass_dict = {}
-            # _subclass_dict[]
+    #         # _subclass_dict = _class_dict.get(_subclass)
+    #         # if _subclass_dict is None:
+    #         #    _subclass_dict = {}
+    #         # _subclass_dict[]
 
-            # if not "face" in _info:
-            #     continue
+    #         # if not "face" in _info:
+    #         #     continue
 
-            print(f"{_description} {_char}")
-            n += 1
-            pass
-        print(f"NUM EMOJIS [{n}]")
-        return meta_data
+    #         print(f"{_description} {_char}")
+    #         n += 1
+    #         pass
+    #     print(f"NUM EMOJIS [{n}]")
+    #     return meta_data
 
     @staticmethod
     def download_unicode_emoji_sequences(p_emojis: str) -> str:
@@ -265,6 +276,59 @@ class EmojiUtil:
         code_point = chr(int(_hex, 16))
         return code_point
 
+    @staticmethod
+    def get_emoji_metadata(skip_multi_char: bool = False) -> EmojiMetaDictType:
+        """returns the emoji metadata
+        parameter allows to skip multi character emojis that
+        do not seem to work in shells
+        """
+        out = {}
+        _meta_data_dict = EmojiUtil.read_emoji_meta()
+        for _key, _info in _meta_data_dict.items():
+            _meta = EmojiMetaType(**_info)
+            _code = str(_meta.code)
+            if skip_multi_char and " " in _code:
+                continue
+            _num = str(_meta.num).zfill(4)
+            _info = f"[{_meta.class_}:{_meta.subclass}:{_meta.info}]"
+            # enrich with descriptions
+            _meta.description = f"({_num}) {_info}"
+            _meta.short_txt = f"{_meta.char} {_meta.info}"
+            out[_key] = _meta
+        return out
+
+    @staticmethod
+    def filter_emoji_metadata(
+        emoji_meta_data: EmojiMetaDictType,
+        class_filter: SimpleStrFilterModel | None = None,
+        subclass_filter: SimpleStrFilterModel | None = None,
+        key_filter: SimpleStrFilterModel | None = None,
+        description_filter: SimpleStrFilterModel | None = None,
+    ) -> List[str]:
+        """Filter Emoji Metadata, returns the filtered keys"""
+        _filter = {
+            "class_": class_filter,
+            "subclass": subclass_filter,
+            "info": key_filter,
+            "description": description_filter,
+        }
+        out = []
+        for _key, _meta in emoji_meta_data.items():
+            _match = True
+            _attributes = list(_filter.keys())
+            # check against each of these attributes
+            for _attribute in _attributes:
+                _value = getattr(_meta, _attribute)
+                _match = Utils.simple_str_filter(_value, _filter[_attribute])
+                if _match is None:
+                    continue
+                if _match is False:
+                    break
+            if not _match:
+                continue
+            out.append(_key)
+        return out
+
 
 if __name__ == "__main__":
     # python -m rich.emoji
@@ -280,4 +344,14 @@ if __name__ == "__main__":
     # _console = Console()
     # _console.print(_emoji_dict)
 
+    # parse emoji metadata as model and back to json
+    metadata: EmojiMetaDictType = EmojiUtil.get_emoji_metadata(skip_multi_char=True)
+    # converting it into bytes and into string
+    _json = EmojiMetaDictAdapter.dump_json(metadata).decode(encoding="UTF-8")
+    _dict = EmojiMetaDictAdapter.dump_python(metadata)
+    pass
+    # EmojiUtil.show_rich_emoji_table()
+    class_filter = SimpleStrFilterModel(str_filter="hugo")
+    description_filter = SimpleStrFilterModel(str_filter="face")
+    metadata_list_filtered = EmojiUtil.filter_emoji_metadata(metadata, description_filter=description_filter)
     pass
