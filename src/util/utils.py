@@ -80,7 +80,7 @@ class Utils:
         if str_filter.case_insensitive:
             _str_filters = [_f.lower() for _f in _str_filters]
         if str_filter.match == "contains":
-            _matches = [_f in s for _f in _str_filters]
+            _matches = [_f in _s for _f in _str_filters]
         else:
             _matches = [_f == _s for _f in _str_filters]
         if str_filter.any_or_all == "any":

@@ -55,6 +55,15 @@ EMOJI_NUMBERS = {
     9: "nine",
 }
 
+# Emojis as Unicode Letters
+NUMBER_EMOJIS = ["0️⃣ ", "1️⃣ ", "2️⃣ ", "3️⃣ ", "4️⃣ ", "5️⃣ ", "6️⃣ ", "7️⃣ ", "8️⃣ ", "9️⃣ ", "🔟 "]
+SQUARES = "squares"
+CIRCLES = "circles"
+INDICATOR_EMOJIS = {
+    SQUARES: {"2": "🟥🟩", "3": "🟥🟨🟩", "4": "🟥🟨🟩🟦", "5": "🟥🟨🟩🟦🟪", "6": "🟥🟧🟨🟩🟦🟪"},
+    CIRCLES: {"2": "🔴🟢", "3": "🔴🟡🟢", "4": "🔴🟡🟢🔵", "5": "🔴🟡🟢🔵🟣", "6": "🔴🟠🟡🟢🔵🟣"},
+}
+
 
 class EmojiUtil:
     """Emoji Helper"""
@@ -304,7 +313,7 @@ class EmojiUtil:
         subclass_filter: SimpleStrFilterModel | None = None,
         key_filter: SimpleStrFilterModel | None = None,
         description_filter: SimpleStrFilterModel | None = None,
-    ) -> List[str]:
+    ) -> EmojiMetaDictType:
         """Filter Emoji Metadata, returns the filtered keys"""
         _filter = {
             "class_": class_filter,
@@ -312,22 +321,107 @@ class EmojiUtil:
             "info": key_filter,
             "description": description_filter,
         }
-        out = []
+        out = {}
         for _key, _meta in emoji_meta_data.items():
-            _match = True
             _attributes = list(_filter.keys())
+            _match = True
             # check against each of these attributes
             for _attribute in _attributes:
                 _value = getattr(_meta, _attribute)
-                _match = Utils.simple_str_filter(_value, _filter[_attribute])
+                _simple_filter = _filter[_attribute]
+                if not _simple_filter:
+                    continue
+                _match = Utils.simple_str_filter(_value, _simple_filter)
+                # ignore items with None
                 if _match is None:
                     continue
-                if _match is False:
-                    break
             if not _match:
                 continue
-            out.append(_key)
+            out[_key] = _meta
         return out
+
+    @staticmethod
+    def emoji_hierarchy(emoji_meta_data: EmojiMetaDictType, simple: bool = False, description: bool = False) -> dict:
+        """create a hierarchy dict with either object, simple or long description, or object as leaf"""
+        out = {}
+        for _key, _meta in emoji_meta_data.items():
+            _class = _meta.class_
+            _subclass = _meta.subclass
+            _class_dict = out.get(_class)
+            if _class_dict is None:
+                _class_dict = {}
+                out[_class] = _class_dict
+            _subclass_dict = _class_dict.get(_subclass)
+            if _subclass_dict is None:
+                _subclass_dict = {}
+                _class_dict[_subclass] = _subclass_dict
+            if simple:
+                _subclass_dict[_key] = _meta.short_txt
+            elif description:
+                _subclass_dict[_key] = _meta.description
+            else:
+                _subclass_dict[_key] = _meta
+        return out
+
+
+class EmojiIndicator:
+    """calculating an EMOJI indicator based on valuesy"""
+
+    def __init__(
+        self,
+        icons: List[str] = None,
+        min_value: int | float = None,
+        max_value: int | float = None,
+        reverse_icons: bool = False,
+    ):
+        # upper and lower bounds
+        self._min_value = min_value
+        self._max_value = max_value
+        # reverse the color schema#
+        self._icons = icons
+        if self._icons is None:
+            self._icons = INDICATOR_EMOJIS[SQUARES]["5"]
+        if reverse_icons:
+            self._icons = list(reversed(self._icons))
+        self._num_icons = len(self._icons)
+
+    def set_minmax_values(self, min_value: float | int = None, max_value: float | int = None):
+        """set boundary numerical values for directly calculating index number"""
+        self._min_value = min_value if min_value is not None else 0
+        self._max_value = max_value if max_value is not None else (self._num_icons - 1)
+
+    def get_minmax_values(self) -> list:
+        """return limit values"""
+        return [self._min_value, self._max_value]
+
+    @property
+    def num_icons(self):
+        """return num of icons"""
+        return self._num_icons
+
+    def render(
+        self,
+        value: int | float,
+        min_value: float | int = None,
+        max_value: float | int = None,
+        add_percentage: bool = False,
+    ) -> str | list:
+        """calculates emoji"""
+        # set min max values
+        if min_value is not None and max_value is not None:
+            self.set_minmax_values(min_value, max_value)
+        _num_icons = self._num_icons
+        if value > self._max_value:
+            value = self._max_value
+        elif value < self._min_value:
+            value = self._min_value
+        _percentage = (value - self._min_value) / (self._max_value - self._min_value)
+        _index = int(round(_percentage * (_num_icons - 1), 0))
+        _icon = self._icons[_index]
+        if add_percentage:
+            return [_icon, round(100 * _percentage, 0)]
+        else:
+            return _icon
 
 
 if __name__ == "__main__":
@@ -343,7 +437,6 @@ if __name__ == "__main__":
     # _emoji_dict = EmojiUtil.show_unicode_emojis()
     # _console = Console()
     # _console.print(_emoji_dict)
-
     # parse emoji metadata as model and back to json
     metadata: EmojiMetaDictType = EmojiUtil.get_emoji_metadata(skip_multi_char=True)
     # converting it into bytes and into string
@@ -351,7 +444,15 @@ if __name__ == "__main__":
     _dict = EmojiMetaDictAdapter.dump_python(metadata)
     pass
     # EmojiUtil.show_rich_emoji_table()
-    class_filter = SimpleStrFilterModel(str_filter="hugo")
-    description_filter = SimpleStrFilterModel(str_filter="face")
-    metadata_list_filtered = EmojiUtil.filter_emoji_metadata(metadata, description_filter=description_filter)
+    class_filter = SimpleStrFilterModel(str_filter="symb")
+    description_filter = SimpleStrFilterModel(str_filter="symb")
+    metadata_list_filtered = EmojiUtil.filter_emoji_metadata(metadata, class_filter=class_filter)
+    metadata_hierarchy = EmojiUtil.emoji_hierarchy(metadata_list_filtered, simple=True)
+    for _key, _info in metadata_list_filtered.items():
+        print(_info.short_txt)
+    # for _key, _icon in EMOJI_NUMBERS.items():
+    #     print(Emoji.replace(f":{_icon}:"))
     pass
+    emoji_indicator = EmojiIndicator(min_value=0, max_value=100)
+    for n in range(0, 101, 5):
+        print(f"VALUE {n} {emoji_indicator.render(n)}")

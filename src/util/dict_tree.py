@@ -10,7 +10,7 @@ import sys
 from typing import List, Union, Dict
 
 # using the tree util to create a tree
-from model.model_tree import KEY, NAME, PARENT_ID, ROOT, DictTreeInfoModel, DictTreeNodeModel, NodeType, OUTPUT
+from model.model_tree import PARENT_ID, ROOT, DictTreeNodeModel, NodeType, OUTPUT
 from util.tree import Tree
 
 logger = logging.getLogger(__name__)
