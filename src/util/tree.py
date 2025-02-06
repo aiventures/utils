@@ -5,12 +5,12 @@ import logging
 import os
 import sys
 from functools import wraps
-
+from typing import Dict
+from pydantic import BaseModel
 
 # import yaml
 import util.constants as C
 from model.model_tree import CHILDREN, LEVEL, NAME, PARENT_ID, TreeNodeModel
-from typing import Dict
 
 PY_YAML_INSTALLED = True
 try:
@@ -52,6 +52,8 @@ class Tree:
         self._max_level: int = -1
         self._tree_level_stats = {}
         self._calc_tree_levels: bool = True
+        self._calc_min_max_fields: bool = False
+        self._min_max_values: dict = {}
         # selecting only parts of tree can be used in subclasses
         self._tree_selector: object = None
 
@@ -96,11 +98,15 @@ class Tree:
         self._num_nodes += 1
         return TreeNodeModel(id=key, parent_id=_parent_id, name=_name, obj=node_info, obj_type=_type)
 
-    def create_tree(self, nodes_dict: dict, name_field: str = None, parent_field: str = None) -> None:
-        """creates the tree hierarchy"""
+    def create_tree(
+        self, nodes_dict: dict, name_field: str = None, parent_field: str = None, calc_min_max_fields: bool = False
+    ) -> None:
+        """creates the tree hierarchy / also calculate min max values"""
         self._hierarchy_nodes_dict = {}
         logger.debug("[Tree] Create Tree")
         _root_node = None
+
+        self._calc_min_max_fields = calc_min_max_fields
 
         if name_field:
             self._name_field = name_field
@@ -147,6 +153,20 @@ class Tree:
 
         logger.debug(f"[Tree] Created [{self._num_nodes}] nodes in Tree")
 
+    def _calc_min_max(self, _node_id: object, _node_info: object) -> None:
+        """get min and max values from all objects"""
+        # TODO PRIO1 Implement / optimize
+        if isinstance(_node_info, (int, float)):
+            pass
+        elif isinstance(_node_info, dict):
+            pass
+        elif isinstance(_node_id, BaseModel):
+            pass
+        elif isinstance(_node_info, object):
+            pass
+
+        pass
+
     def set_tree_levels(self) -> None:
         """setting the tree levels. mus be a separate step since we do not assume the input dict as being in order"""
         _level = 0
@@ -156,6 +176,9 @@ class Tree:
             self._tree_level_stats[_level] = 0
             for _node_id in _current_node_ids:
                 _node = self.get_node(_node_id)
+                # TODO CALC MIN MAX VALUES
+                if self._calc_min_max_fields:
+                    self._calc_min_max(_node_id, _node.obj)
                 if _node is None:
                     continue
                 _node.level = _level
@@ -473,7 +496,7 @@ if __name__ == "__main__":
     my_tree = Tree()
     # use name to get a different field
     # defining fields where parent and values (for display) are stored
-    my_tree.create_tree(tree, name_field="value", parent_field="parent")
+    my_tree.create_tree(tree, name_field="value", parent_field="parent", calc_min_max_fields=True)
     my_root = my_tree.root_id
     my_hierarchy = my_tree.hierarchy
     my_levels = my_tree.max_level

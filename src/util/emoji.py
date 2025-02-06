@@ -17,20 +17,20 @@ https://emojibase.dev/docs/datasets/
 """
 
 # from rich.emoji import Emoji
+import logging
 import os
 from pathlib import Path
-import logging
-from util import constants as C
-
 from typing import List
+
 import requests
 from rich._emoji_codes import EMOJI
 from rich.console import Console
 from rich.emoji import Emoji
 from rich.table import Table
-from model.model_emoji import EmojiMetaType, EmojiMetaDictType, EmojiMetaDictAdapter
-from model.model_filter import AnyOrAllType, StringMatch, IncludeType, SimpleStrFilterModel
 
+from model.model_emoji import EmojiMetaDictAdapter, EmojiMetaDictType, EmojiMetaType
+from model.model_filter import SimpleStrFilterModel
+from util import constants as C
 from util.constants import PATH_RESOURCE
 from util.matrix_list import MatrixList
 from util.persistence import Persistence
