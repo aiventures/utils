@@ -20,7 +20,7 @@ https://emojibase.dev/docs/datasets/
 import logging
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Literal
 
 import requests
 from rich._emoji_codes import EMOJI
@@ -41,10 +41,10 @@ logger = logging.getLogger(__name__)
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
 
-EMOJI_NUMBERS = {
+# Rich Emoji codes
+NUMBERS = {
     0: "zero",
     1: "one",
-    10: "ten",
     2: "two",
     3: "three",
     4: "four",
@@ -53,15 +53,70 @@ EMOJI_NUMBERS = {
     7: "seven",
     8: "eight",
     9: "nine",
+    10: "ten",
 }
 
-# Emojis as Unicode Letters
-NUMBER_EMOJIS = ["0️⃣ ", "1️⃣ ", "2️⃣ ", "3️⃣ ", "4️⃣ ", "5️⃣ ", "6️⃣ ", "7️⃣ ", "8️⃣ ", "9️⃣ ", "🔟 "]
-SQUARES = "squares"
-CIRCLES = "circles"
-INDICATOR_EMOJIS = {
-    SQUARES: {"2": "🟥🟩", "3": "🟥🟨🟩", "4": "🟥🟨🟩🟦", "5": "🟥🟨🟩🟦🟪", "6": "🟥🟧🟨🟩🟦🟪"},
-    CIRCLES: {"2": "🔴🟢", "3": "🔴🟡🟢", "4": "🔴🟡🟢🔵", "5": "🔴🟡🟢🔵🟣", "6": "🔴🟠🟡🟢🔵🟣"},
+RCLOCK = {
+    "0000": "clock12",
+    "0030": "clock1230",
+    "0100": "clock1",
+    "0130": "clock130",
+    "0200": "clock2",
+    "0230": "clock230",
+    "0300": "clock3",
+    "0330": "clock330",
+    "0400": "clock4",
+    "0430": "clock430",
+    "0500": "clock5",
+    "0530": "clock530",
+    "0600": "clock6",
+    "0630": "clock630",
+    "0700": "clock7",
+    "0730": "clock730",
+    "0800": "clock8",
+    "0830": "clock830",
+    "0900": "clock9",
+    "0930": "clock930",
+    "1000": "clock10",
+    "1030": "clock1030",
+    "1100": "clock11",
+    "1130": "clock1130",
+    "1200": "clock12",
+}
+
+SQUARE = {
+    "blue": "blue_square",
+    "green": "green_square",
+    "orange": "orange_square",
+    "purple": "purple_square",
+    "red": "red_square",
+    "yellow": "yellow_square",
+    "black": "black_large_square",
+    "white": "white_large_square",
+    "brown": "brown_square",
+}
+
+CIRCLE = {
+    "blue": "blue_circle",
+    "green": "green_circle",
+    "orange": "orange_circle",
+    "purple": "purple_circle",
+    "red": "red_circle",
+    "yellow": "yellow_circle",
+    "black": "black_circle",
+    "white": "white_circle",
+    "brown": "brown_circle",
+}
+
+# EMOJI_INDICATOR_
+
+SPECTRAL = {
+    1: ["black"],
+    2: ["red", "green"],
+    3: ["red", "yellow", "green"],
+    4: ["red", "yellow", "green", "blue"],
+    5: ["red", "yellow", "green", "blue", "purple"],
+    6: ["red", "orange", "yellow", "green", "blue", "purple"],
 }
 
 
@@ -71,13 +126,18 @@ class EmojiUtil:
     @staticmethod
     def int2emoji(number: int, num_digits: int = None) -> str:
         """converting an int to an emoji"""
-        out = ""
+        out = []
         s_int = str(number)
         if num_digits is not None:
             s_int = s_int.zfill(num_digits)
         for s in s_int:
-            out += Emoji.replace(f":{EMOJI_NUMBERS[int(s)]}:")
-        return out
+            out.append(Emoji.replace(f":{NUMBERS[int(s)]}:"))
+        return " ".join(out)
+
+    @staticmethod
+    def code2emoji(emoji_list: List[str]) -> List[str]:
+        """converts rich emoji codes into list of eojis"""
+        return [Emoji.replace(f":{_code}:") for _code in emoji_list]
 
     @staticmethod
     def get_emoji_tree(emoji_dict: dict) -> dict:
@@ -186,70 +246,13 @@ class EmojiUtil:
 
         _emoji_list = list(EMOJI.keys())
         _emoji_list = [f"{EMOJI[k]} {_split_key(k)}" for k in _emoji_list if _pass_filter(k)]
-        # todo filter
+        # todo PRIO3 filter
         _emoji_matrix = MatrixList.list2matrix(_emoji_list, num_cols)
         _table = Table(show_lines=True, show_header=False)
 
         for _emoji_row in _emoji_matrix:
             _table.add_row(*_emoji_row)
         Console().print(_table)
-
-    # @staticmethod
-    # def show_unicode_emojis_old(keys: list = None, any_or_all="any", only_categories: bool = False) -> dict:
-    #     """display unicode emojis"""
-    #     meta_data = {}
-    #     _emoji_meta = EmojiUtil.read_emoji_meta()
-    #     n = 0
-    #     for _emoji_key, _emoji_info in _emoji_meta.items():
-    #         _code = _emoji_info["code"]
-    #         if " " in _code:
-    #             continue
-    #         _num = _emoji_info["num"]
-    #         _class = _emoji_info["class"]
-    #         _subclass = _emoji_info["subclass"]
-    #         _info = _emoji_info["info"]
-    #         _char = _emoji_info["char"]
-    #         _description = f"({str(_num).zfill(4)}) [{_class}:{_subclass}:{_info}]"
-    #         skip = False
-    #         if keys is not None:
-    #             skip = True
-    #             for _key in keys:
-    #                 if _key in _description:
-    #                     skip = False
-    #                     break
-    #         if skip:
-    #             continue
-
-    #         _class_dict = meta_data.get(_class)
-    #         if _class_dict is None:
-    #             _class_dict = {}
-    #             meta_data[_class] = _class_dict
-    #         _emojis = _class_dict.get(_subclass)
-    #         if _emojis is None:
-    #             if only_categories:
-    #                 _emojis = 1
-    #             else:
-    #                 _emojis = []
-    #             _class_dict[_subclass] = _emojis
-    #         if only_categories:
-    #             _emojis += 1
-    #             _class_dict[_subclass] = _emojis
-    #         else:
-    #             _emojis.append(f"{_char} {_emoji_key}")
-
-    #         # _subclass_dict = _class_dict.get(_subclass)
-    #         # if _subclass_dict is None:
-    #         #    _subclass_dict = {}
-    #         # _subclass_dict[]
-
-    #         # if not "face" in _info:
-    #         #     continue
-
-    #         print(f"{_description} {_char}")
-    #         n += 1
-    #         pass
-    #     print(f"NUM EMOJIS [{n}]")
-    #     return meta_data
 
     @staticmethod
     def download_unicode_emoji_sequences(p_emojis: str) -> str:
@@ -369,26 +372,61 @@ class EmojiIndicator:
 
     def __init__(
         self,
-        icons: List[str] = None,
+        emojis: List[str] = None,
         min_value: int | float = None,
         max_value: int | float = None,
-        reverse_icons: bool = False,
+        reverse_emojis: bool = False,
     ):
         # upper and lower bounds
         self._min_value = min_value
         self._max_value = max_value
         # reverse the color schema#
-        self._icons = icons
-        if self._icons is None:
-            self._icons = INDICATOR_EMOJIS[SQUARES]["5"]
-        if reverse_icons:
-            self._icons = list(reversed(self._icons))
-        self._num_icons = len(self._icons)
+        self._emojis = emojis
+        if self._emojis is None:
+            self._emojis = EmojiIndicator.render_list(5, "square")
+        if reverse_emojis:
+            self._emojis = list(reversed(self._emojis))
+        self._num_emojis = len(self._emojis)
+
+    @staticmethod
+    def render_list(
+        num_values: int = None,
+        emoji_type: Literal["square", "circle"] = "square",
+        rendering: Literal["spectral", "numbers_from_zero", "numbers_from_one", "percentage"] = "spectral",
+    ) -> list:
+        """returns a list of rendered emojis"""
+        # get the rendering map
+        _emoji_codes = []
+        _num_values = num_values if isinstance(num_values, int) else 99999
+        # get the list of emoji codes
+        if rendering == "spectral":
+            _num_colors = min(_num_values, len(SPECTRAL))
+            _color_list = SPECTRAL[_num_colors]
+            if emoji_type == "circle":
+                _emoji_dict = CIRCLE
+            else:
+                _emoji_dict = SQUARE
+            _emoji_codes = [_emoji_dict[_col] for _col in _color_list]
+        elif "numbers" in rendering:
+            _offset = 0  # offset when starting from 1
+            if rendering == "numbers_from_one":
+                _offset = 1
+            _num_emojis = min(_num_values, len(NUMBERS) - _offset)
+            _from = 0 + _offset
+            _to = _num_emojis + _offset
+            _emoji_codes = list(NUMBERS.values())[_from:_to]
+        elif "percentage" in rendering:
+            _percentages = [f"{EmojiUtil.int2emoji(_n, 2)}  " for _n in range(0, 100)]
+            # special rendering for 100
+            _percentages.append(f'{Emoji.replace(":ten::zero:")}  ')
+            return _percentages
+
+        return [Emoji.replace(f":{_emoji_code}:") for _emoji_code in _emoji_codes]
 
     def set_minmax_values(self, min_value: float | int = None, max_value: float | int = None):
         """set boundary numerical values for directly calculating index number"""
         self._min_value = min_value if min_value is not None else 0
-        self._max_value = max_value if max_value is not None else (self._num_icons - 1)
+        self._max_value = max_value if max_value is not None else (self._num_emojis - 1)
 
     def get_minmax_values(self) -> list:
         """return limit values"""
@@ -397,7 +435,7 @@ class EmojiIndicator:
     @property
     def num_icons(self):
         """return num of icons"""
-        return self._num_icons
+        return self._num_emojis
 
     def render(
         self,
@@ -410,14 +448,14 @@ class EmojiIndicator:
         # set min max values
         if min_value is not None and max_value is not None:
             self.set_minmax_values(min_value, max_value)
-        _num_icons = self._num_icons
+        _num_icons = self._num_emojis
         if value > self._max_value:
             value = self._max_value
         elif value < self._min_value:
             value = self._min_value
         _percentage = (value - self._min_value) / (self._max_value - self._min_value)
         _index = int(round(_percentage * (_num_icons - 1), 0))
-        _icon = self._icons[_index]
+        _icon = self._emojis[_index]
         if add_percentage:
             return [_icon, round(100 * _percentage, 0)]
         else:
@@ -448,11 +486,13 @@ if __name__ == "__main__":
     description_filter = SimpleStrFilterModel(str_filter="symb")
     metadata_list_filtered = EmojiUtil.filter_emoji_metadata(metadata, class_filter=class_filter)
     metadata_hierarchy = EmojiUtil.emoji_hierarchy(metadata_list_filtered, simple=True)
-    for _key, _info in metadata_list_filtered.items():
-        print(_info.short_txt)
+    # for _key, _info in metadata_list_filtered.items():
+    #     print(_info.short_txt)
     # for _key, _icon in EMOJI_NUMBERS.items():
     #     print(Emoji.replace(f":{_icon}:"))
-    pass
-    emoji_indicator = EmojiIndicator(min_value=0, max_value=100)
+    print(EmojiUtil.code2emoji(list(SQUARE.values())))
+    # pass
+    emoji_list = EmojiIndicator.render_list(num_values=10, rendering="percentage")
+    emoji_indicator = EmojiIndicator(min_value=0, max_value=100, emojis=emoji_list)
     for n in range(0, 101, 5):
-        print(f"VALUE {n} {emoji_indicator.render(n)}")
+        print(f"VALUE {str(n).zfill(3)} {emoji_indicator.render(n)}%")

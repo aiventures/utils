@@ -1,9 +1,5 @@
 # utils
 
-## Change Log
-* **2024/09/24** Work in Progress ...
-* **2024/09/09** Copied over [tools code base](https://github.com/aiventures/tools)
-
 ## Elevator Pitch
 
 Command Line Utils V2 as the tools project has become too bloated. To make a comofortable developer experience on the command line and not be required to memrize all command line commands this tool comes to the rescue.
@@ -73,6 +69,9 @@ Configuration should be OS independent, but only tested on Win Os.
 
 **OPEN**
 
+* `20250207` Create Emoji Indicator
+* `20250207` Emoji Tree Output Simple 
+* `20250207` Collect Min and Max Values in Tree Class
 * `20250202` Create patchwork model especially for file (display according to num of files file size, ...)
 * `20250202` Create patchwork model for graphviz
 * `20250202` Render Brewer Colors
