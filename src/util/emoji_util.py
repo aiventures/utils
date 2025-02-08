@@ -17,8 +17,10 @@ https://emojibase.dev/docs/datasets/
 """
 
 # from rich.emoji import Emoji
+import ast
 import logging
 import os
+import re
 from pathlib import Path
 from typing import List, Literal
 
@@ -40,6 +42,12 @@ logger = logging.getLogger(__name__)
 
 # get log level from environment if given
 logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+
+# capture UTF16 character sets / 4 chars not followed by another character
+# capture U+1F1F9
+REGEX_UTF16_CODE = re.compile("U\+(1[a-f0-9]{4}(?![a-f0-9]))", re.IGNORECASE)
+# capture U+F1F9
+REGEX_UTF8_CODE = re.compile("U\+([a-f0-9]{4}(?![a-f0-9]))", re.IGNORECASE)
 
 # Rich Emoji codes
 NUMBERS = {
@@ -125,7 +133,9 @@ class EmojiUtil:
 
     @staticmethod
     def int2emoji(number: int, num_digits: int = None) -> str:
-        """converting an int to an emoji"""
+        """converting an int to an emoji right now seems not to work
+        in windows termin  shells as the rendering is incorrect
+        """
         out = []
         s_int = str(number)
         if num_digits is not None:
@@ -135,7 +145,36 @@ class EmojiUtil:
         return " ".join(out)
 
     @staticmethod
-    def code2emoji(emoji_list: List[str]) -> List[str]:
+    def unicode2emoji(code: str, only_first_code: bool = False) -> str | None:
+        """parses a Unicode Code as saved in table into a unicode charater / emoji
+        optionally allows to parse only the firsst unicode code for the case rendering
+        is not supported (like in bash console, so you need to could find otu / control in script
+        whether you'd want to have multi unicode chars )
+        """
+        _codes = code.split(" ")
+        if only_first_code:
+            _codes = [_codes[0]]
+        _out = []
+        for _code in _codes:
+            for _regex in [REGEX_UTF8_CODE, REGEX_UTF16_CODE]:
+                _charcode = _regex.findall(_code)
+                if len(_charcode) >= 1:
+                    # uppercase u for Unicode32
+                    _charcode = f"U{_charcode[0].lower().zfill(8)}"
+                    # convert to unicode
+                    try:
+                        _out.append(ast.literal_eval(f'"\{_charcode}"'))
+                    except ValueError as e:
+                        logger.warning(f"[EmojiUtil] Error parsing {code} to Emoji,{e}")
+                        return None
+                    break
+                else:
+                    continue
+
+        return "".join(_out)
+
+    @staticmethod
+    def rcode2emoji(emoji_list: List[str]) -> List[str]:
         """converts rich emoji codes into list of eojis"""
         return [Emoji.replace(f":{_code}:") for _code in emoji_list]
 
@@ -276,20 +315,6 @@ class EmojiUtil:
         return "hugo"
 
     @staticmethod
-    def emoji(hex: str) -> str:
-        """creates emoji from hex number (sequence)"""
-        _hex: str = hex
-        # complex icons seems not to be worjing in shell
-        # U+1F470  => 0001F470
-        # U+2642   =>     2642
-        if _hex.startswith("U+1"):
-            _hex = f"000{_hex[2:]}"
-        elif len(_hex) == 6 and _hex.startswith("U+"):
-            _hex = f"0000{_hex[2:]}"
-        code_point = chr(int(_hex, 16))
-        return code_point
-
-    @staticmethod
     def get_emoji_metadata(skip_multi_char: bool = False) -> EmojiMetaDictType:
         """returns the emoji metadata
         parameter allows to skip multi character emojis that
@@ -345,7 +370,20 @@ class EmojiUtil:
         return out
 
     @staticmethod
-    def emoji_hierarchy(emoji_meta_data: EmojiMetaDictType, simple: bool = False, description: bool = False) -> dict:
+    def to_json(emoji_meta_data: EmojiMetaDictType) -> str:
+        """converts the Emoji Meta Dict as json, alias required to rrender the _class as class"""
+        return EmojiMetaDictAdapter.dump_json(emoji_meta_data, by_alias=True).decode(encoding="UTF-8")
+
+    @staticmethod
+    def to_dict(emoji_meta_data: EmojiMetaDictType) -> dict:
+        """converts the Emoji Meta Dict as dict, alias required to rrender the _class as class"""
+        return EmojiMetaDictAdapter.dump_python(emoji_meta_data, by_alias=True)
+
+    @staticmethod
+    def emoji_hierarchy(
+        emoji_meta_data: EmojiMetaDictType,
+        result_type: Literal["short", "description", "stats", "metadata", "unicode", "unicode_first_char"] = "metadata",
+    ) -> dict:
         """create a hierarchy dict with either object, simple or long description, or object as leaf"""
         out = {}
         for _key, _meta in emoji_meta_data.items():
@@ -359,13 +397,43 @@ class EmojiUtil:
             if _subclass_dict is None:
                 _subclass_dict = {}
                 _class_dict[_subclass] = _subclass_dict
-            if simple:
+            if result_type == "short":
                 _subclass_dict[_key] = _meta.short_txt
-            elif description:
+            elif result_type == "description":
                 _subclass_dict[_key] = _meta.description
+            elif "unicode" in result_type:
+                _code = _meta.code
+                _only_first_char = False
+                if result_type == "unicode_first_char":
+                    _only_first_char = True
+                _subclass_dict[_key] = EmojiUtil.unicode2emoji(_code, _only_first_char)
+            elif result_type == "stats":
+                _count = _subclass_dict.get("count")
+                if _count is None:
+                    _count = 1
+                else:
+                    _count += 1
+                _subclass_dict["count"] = _count
             else:
                 _subclass_dict[_key] = _meta
         return out
+
+    @staticmethod
+    def emoji_hierarchy_filtered(
+        skip_multi_char: bool = False,
+        class_filter: SimpleStrFilterModel | None = None,
+        subclass_filter: SimpleStrFilterModel | None = None,
+        key_filter: SimpleStrFilterModel | None = None,
+        description_filter: SimpleStrFilterModel | None = None,
+        result_type: Literal["short", "description", "stats", "metadata"] = "metadata",
+    ) -> dict:
+        """create filtered hierarchy"""
+        _emoji_meta_data = EmojiUtil.get_emoji_metadata(skip_multi_char)
+        _emoji_meta_data_filtered = EmojiUtil.filter_emoji_metadata(
+            _emoji_meta_data, class_filter, subclass_filter, key_filter, description_filter
+        )
+        _hierarchy = EmojiUtil.emoji_hierarchy(_emoji_meta_data, result_type)
+        return _hierarchy
 
 
 class EmojiIndicator:
@@ -418,7 +486,7 @@ class EmojiIndicator:
             _emoji_codes = list(NUMBERS.values())[_from:_to]
         elif "percentage" in rendering:
             _percentages = [f"{EmojiUtil.int2emoji(_n, 2)}  " for _n in range(0, 100)]
-            # special rendering for 100
+            # special rendering for 100 / diesn't work in Windows Terminal due to missing rendering
             _percentages.append(f"{Emoji.replace(':ten::zero:')}  ")
             return _percentages
         # TODO PRIO3 Add Level Bars
@@ -459,7 +527,7 @@ class EmojiIndicator:
         _index = int(round(_percentage * (_num_icons - 1), 0))
         _icon = self._emojis[_index]
         if add_percentage:
-            return [_icon, round(100 * _percentage, 0)]
+            return [_icon, int(round(100 * _percentage, 0))]
         else:
             return _icon
 
@@ -470,33 +538,48 @@ if __name__ == "__main__":
     # export LC_ALL=en_US.UTF-8
     # export LANG=en_US.UTF-8
     # "de_DE.UTF-8" für Deutsch mit Unicode-Zeichensatz
+    # Windows set codepage
+    # https://stackoverflow.com/questions/62738819/do-any-windows-command-prompts-support-emoji
+    # chcp 65001 utf 8
+    # chcp 1200  utf 16
     # show_rich_emoji_codes()
-    # EmojiUtil.show_emoji_table(emoji_filter=["circ", "sq"])
-    # print(EmojiUtil.emoji("U+1F233"))
-    # print(EmojiUtil.emoji("U+2640"))
-    # _emoji_dict = EmojiUtil.show_unicode_emojis()
-    # _console = Console()
+    _console = Console(emoji=True, emoji_variant="emoji")
+
     # _console.print(_emoji_dict)
     # parse emoji metadata as model and back to json
-    metadata: EmojiMetaDictType = EmojiUtil.get_emoji_metadata(skip_multi_char=True)
-    # converting it into bytes and into string
-    _json = EmojiMetaDictAdapter.dump_json(metadata).decode(encoding="UTF-8")
-    _dict = EmojiMetaDictAdapter.dump_python(metadata)
-    pass
-    # EmojiUtil.show_rich_emoji_table()
-    class_filter = SimpleStrFilterModel(str_filter="symb")
-    description_filter = SimpleStrFilterModel(str_filter="symb")
-    metadata_list_filtered = EmojiUtil.filter_emoji_metadata(metadata, class_filter=class_filter)
-    metadata_hierarchy = EmojiUtil.emoji_hierarchy(metadata_list_filtered, simple=True)
-    # for _key, _info in metadata_list_filtered.items():
-    #     print(_info.short_txt)
-    # for _key, _icon in EMOJI_NUMBERS.items():
-    #     print(Emoji.replace(f":{_icon}:"))
-    print(EmojiUtil.code2emoji(list(SQUARE.values())))
-    # pass
-    emoji_list = EmojiIndicator.render_list(num_values=10, rendering="percentage")
-    emoji_indicator = EmojiIndicator(min_value=0, max_value=100, emojis=emoji_list)
-    for n in range(0, 101, 5):
-        print(f"VALUE {str(n).zfill(3)} {emoji_indicator.render(n)}%")
+    metadata: EmojiMetaDictType = EmojiUtil.get_emoji_metadata(skip_multi_char=False)
+    class_filter = None
+    subclass_filter = None
+    key_filter = None
+    description_filter = "BLUE,RED,Black"
+    description_filter = SimpleStrFilterModel(str_filter=description_filter)
 
-    print(("🤶🏽"))
+    metadata_filtered = EmojiUtil.filter_emoji_metadata(
+        metadata, class_filter, subclass_filter, description_filter, key_filter
+    )
+    # converting it into bytes and into string / set alias to true to export class_ attribute as class
+    _dict = EmojiUtil.to_dict(metadata_filtered)
+    _json = EmojiUtil.to_json(metadata_filtered)
+
+    print("### EMOJI Hierarchy")
+    metadata_hierarchy = EmojiUtil.emoji_hierarchy(metadata_filtered, result_type="unicode_first_char")
+    _console.print(metadata_hierarchy)
+
+    print(f"### FILTERED EMOJIS [description:{description_filter}]")
+    for _key, _info in metadata_filtered.items():
+        print(f"[{_key}] [{_info.code}] [{EmojiUtil.unicode2emoji(_info.code, only_first_code=True)}]")
+
+    emoji_list = EmojiIndicator.render_list(num_values=10, rendering="spectral", emoji_type="circle")
+    print(emoji_list)
+    # get an indicator using emoji list
+    emoji_indicator = EmojiIndicator(min_value=0, max_value=100, emojis=emoji_list)
+    out = []
+    for n in range(0, 101, 5):
+        out.append(f"([{str(n).zfill(2)}] {emoji_indicator.render(n, add_percentage=False)}),")
+    print("".join(out))
+    # emoji print based on unicode
+    _emoji = EmojiUtil.unicode2emoji("U+1F9D9 U+200D U+2640 U+FE0F")
+    _emoji2 = EmojiUtil.unicode2emoji("U+1F9D9 U+200D U+2640 U+FE0F", only_first_code=True)
+    print(f"[EMOJI CODE] {_emoji} {_emoji2}")
+    print("### EMOJI CLOCK")
+    print(EmojiUtil.rcode2emoji(list(RCLOCK.values())))

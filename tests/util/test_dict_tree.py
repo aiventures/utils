@@ -5,7 +5,6 @@ import os
 import json
 import util.constants as C
 from util.tree import Tree
-from model.model_tree import TreeNodeModel
 from util.dict_tree import DictTreeNodeModel, DictTree
 
 logger = logging.getLogger(__name__)
