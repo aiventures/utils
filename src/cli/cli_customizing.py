@@ -22,7 +22,7 @@ from cli.bootstrap_env import OS_BOOTSTRAP_VARS
 # from util.persistence import Persistence
 from util import constants as C
 from util.constants import DEFAULT_COLORS as CMAP
-from util.emoji import EmojiUtil
+from util.emoji_util import EmojiUtil
 from util_cli.cli_color_mapper import ColorMapper, ThemeConsole
 
 # from util_cli import

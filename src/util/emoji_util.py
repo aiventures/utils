@@ -273,6 +273,7 @@ class EmojiUtil:
             print(f"Download of Emoji File [{_url_file}] to [{_f_emoji}]")
         else:
             print(f"Failed to download the file [{_url_file}], status [{_response.status_code}]")
+        return "hugo"
 
     @staticmethod
     def emoji(hex: str) -> str:
@@ -418,8 +419,9 @@ class EmojiIndicator:
         elif "percentage" in rendering:
             _percentages = [f"{EmojiUtil.int2emoji(_n, 2)}  " for _n in range(0, 100)]
             # special rendering for 100
-            _percentages.append(f'{Emoji.replace(":ten::zero:")}  ')
+            _percentages.append(f"{Emoji.replace(':ten::zero:')}  ")
             return _percentages
+        # TODO PRIO3 Add Level Bars
 
         return [Emoji.replace(f":{_emoji_code}:") for _emoji_code in _emoji_codes]
 
@@ -496,3 +498,5 @@ if __name__ == "__main__":
     emoji_indicator = EmojiIndicator(min_value=0, max_value=100, emojis=emoji_list)
     for n in range(0, 101, 5):
         print(f"VALUE {str(n).zfill(3)} {emoji_indicator.render(n)}%")
+
+    print(("🤶🏽"))

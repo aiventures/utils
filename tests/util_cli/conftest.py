@@ -2,7 +2,7 @@
 
 import pytest
 
-from util.calendar import Calendar
+from util.calendar_util import Calendar
 from util_cli.cli_calendar_renderer import CalendarTableRenderer
 from util_cli.cli_color_mapper import ColorMapper
 from util_cli.cli_color_schema import ColorSchema

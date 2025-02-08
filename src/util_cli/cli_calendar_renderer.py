@@ -19,7 +19,7 @@ from cli.bootstrap_config import console_maker
 from cli.bootstrap_env import LOG_LEVEL
 from model.model_calendar import CalendarColoringType, CalendarDayType, CellRenderOptionType, IndexType
 from util import constants as C
-from util.calendar import REGEX_DATE_RANGE, REGEX_YYYYMMDD, Calendar
+from util.calendar_util import REGEX_DATE_RANGE, REGEX_YYYYMMDD, Calendar
 from util.calendar_index import CalendarIndex
 from util.datetime_util import (
     MONTHS,
@@ -27,7 +27,7 @@ from util.datetime_util import (
     REGEX_TIME_RANGE,
     WEEKDAY,
 )
-from util.emoji import EmojiUtil
+from util.emoji_util import EmojiUtil
 from util.utils import Utils
 from util.calendar_filter import CalendarFilter
 
@@ -174,7 +174,7 @@ class CalendarRenderer:
         while not _finished:
             _emoji = CalendarRenderer.get_overtime_indicator(_overtime)
             _color = CalendarRenderer.get_overtime_color(_overtime)
-            _console.print(f"[{_color}]\[OVERTIME INDICATOR] {_emoji} {_color} \[{round(_overtime,1)}]")
+            _console.print(f"[{_color}]\[OVERTIME INDICATOR] {_emoji} {_color} \[{round(_overtime, 1)}]")
             _overtime += 0.1
             if _overtime > 2.5:
                 _finished = True

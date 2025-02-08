@@ -2,9 +2,7 @@
 
 from typing import List, Optional, Literal, Any, Annotated, Dict
 from datetime import datetime as DateTime
-
 from pydantic import BaseModel, field_validator
-
 
 # Constants
 # type definitions

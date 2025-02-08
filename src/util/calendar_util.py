@@ -1,4 +1,4 @@
-"""Calendar and Time Utils"""
+"""Calendar and Time Utils had to be renamed since it seemed to be clashing with some existing modules"""
 
 import logging
 import os
