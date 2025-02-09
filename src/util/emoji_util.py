@@ -21,6 +21,7 @@ import ast
 import logging
 import os
 import re
+import json
 from pathlib import Path
 from typing import List, Literal
 
@@ -30,10 +31,16 @@ from rich.console import Console
 from rich.emoji import Emoji
 from rich.table import Table
 
-from model.model_emoji import EmojiMetaDictAdapter, EmojiMetaDictType, EmojiMetaType
+from model.model_emoji import (
+    EmojiMetaDictAdapter,
+    EmojiMetaDictType,
+    EmojiMetaType,
+    EmojiMetaFieldTypeList,
+    EmojiMetaFieldType,
+)
 from model.model_filter import SimpleStrFilterModel
 from util import constants as C
-from util.constants import PATH_RESOURCE
+from util.constants import PATH_RESOURCE, PATH_TEST_OUTPUT
 from util.matrix_list import MatrixList
 from util.persistence import Persistence
 from util.utils import Utils
@@ -196,14 +203,16 @@ class EmojiUtil:
         return main_classes
 
     @staticmethod
-    def read_emoji_meta() -> dict:
+    def read_emoji_meta(key_replace_spaces: bool = False) -> dict:
         """gets the meta information from the json with emoji name as key"""
         f_emoji = PATH_RESOURCE.joinpath("emoji.json")
         _emojis = Persistence.read_json(f_emoji)
         out = {}
         for _emoji_meta in _emojis.values():
-            _key = _emoji_meta["info"].replace(" ", "_")
-            _key = _key.replace("-", "_")
+            _key = _emoji_meta["info"]
+            if key_replace_spaces:
+                _key = _emoji_meta["info"].replace(" ", "_")
+            # _key = _key.replace("-", "_")
             out[_key] = _emoji_meta
         return out
 
@@ -370,19 +379,69 @@ class EmojiUtil:
         return out
 
     @staticmethod
-    def to_json(emoji_meta_data: EmojiMetaDictType) -> str:
-        """converts the Emoji Meta Dict as json, alias required to rrender the _class as class"""
-        return EmojiMetaDictAdapter.dump_json(emoji_meta_data, by_alias=True).decode(encoding="UTF-8")
+    def _get_first_char(value: object, field: EmojiMetaFieldType):
+        """only use the first uncide char for multi char code emojis"""
+        if field == "code":
+            return value.split(" ")[0]
+        elif field == "char":
+            return value[0]
+        else:
+            return value
 
     @staticmethod
-    def to_dict(emoji_meta_data: EmojiMetaDictType) -> dict:
+    def emoji_meta_to_dict(
+        emoji_meta_data: EmojiMetaDictType,
+        fields: EmojiMetaFieldTypeList | None = None,
+        field: EmojiMetaFieldType = None,
+        only_first_char: bool = True,
+    ) -> dict:
+        """converts emoji meta to dict. if field is given, the value will be returned directly"""
+        out = {}
+        for _key, _emoji_meta in emoji_meta_data.items():
+            if field is None:
+                out[_key] = _emoji_meta.model_dump(by_alias=True, include=fields)
+            else:
+                _value = getattr(_emoji_meta, field)
+                if only_first_char:
+                    _value = EmojiUtil._get_first_char(_value, field)
+                out[_key] = _value
+        return out
+
+    @staticmethod
+    def to_json(
+        emoji_meta_data: EmojiMetaDictType,
+        fields: EmojiMetaFieldTypeList | None = None,
+        field: EmojiMetaFieldType = None,
+        only_first_char: bool = True,
+    ) -> str:
+        """converts the Emoji Meta Dict as json, alias required to render the _class as class"""
+        if fields is None and field is None:
+            return EmojiMetaDictAdapter.dump_json(emoji_meta_data, by_alias=True).decode(encoding="UTF-8")
+        else:
+            _dict = EmojiUtil.emoji_meta_to_dict(emoji_meta_data, fields, field, only_first_char)
+            return json.dumps(_dict, indent=4)
+
+    @staticmethod
+    def to_dict(
+        emoji_meta_data: EmojiMetaDictType,
+        fields: EmojiMetaFieldTypeList | None = None,
+        field: EmojiMetaFieldType = None,
+        only_first_char: bool = True,
+    ) -> dict:
         """converts the Emoji Meta Dict as dict, alias required to rrender the _class as class"""
-        return EmojiMetaDictAdapter.dump_python(emoji_meta_data, by_alias=True)
+        # emoji_meta_data["red heart"].model_dump(include=None)
+        if fields is None and field is None:
+            return EmojiMetaDictAdapter.dump_python(emoji_meta_data, by_alias=True)
+        else:
+            _dict = EmojiUtil.emoji_meta_to_dict(emoji_meta_data, fields, field, only_first_char)
+            return _dict
 
     @staticmethod
     def emoji_hierarchy(
         emoji_meta_data: EmojiMetaDictType,
-        result_type: Literal["short", "description", "stats", "metadata", "unicode", "unicode_first_char"] = "metadata",
+        result_type: Literal[
+            "short", "description", "stats", "metadata", "unicode_emoji", "unicode_emoji_first_char", "key"
+        ] = "metadata",
     ) -> dict:
         """create a hierarchy dict with either object, simple or long description, or object as leaf"""
         out = {}
@@ -401,10 +460,12 @@ class EmojiUtil:
                 _subclass_dict[_key] = _meta.short_txt
             elif result_type == "description":
                 _subclass_dict[_key] = _meta.description
-            elif "unicode" in result_type:
+            elif result_type == "key":
+                _subclass_dict[_key] = _meta.info
+            elif "unicode_emoji" in result_type:
                 _code = _meta.code
                 _only_first_char = False
-                if result_type == "unicode_first_char":
+                if result_type == "unicode_emoji_first_char":
                     _only_first_char = True
                 _subclass_dict[_key] = EmojiUtil.unicode2emoji(_code, _only_first_char)
             elif result_type == "stats":
@@ -434,6 +495,42 @@ class EmojiUtil:
         )
         _hierarchy = EmojiUtil.emoji_hierarchy(_emoji_meta_data, result_type)
         return _hierarchy
+
+    @staticmethod
+    def save_emoji_dict(
+        f: str,
+        class_filter: SimpleStrFilterModel | None = None,
+        subclass_filter: SimpleStrFilterModel | None = None,
+        key_filter: SimpleStrFilterModel | None = None,
+        description_filter: SimpleStrFilterModel | None = None,
+        fields: EmojiMetaFieldTypeList | None = None,
+        field: Literal["num", "class", "subclass", "code", "char", "info"] = "code",
+        only_first_char: bool = False,
+    ) -> None:
+        """saving the emoji dict"""
+        metadata: EmojiMetaDictType = EmojiUtil.get_emoji_metadata(skip_multi_char=False)
+        metadata_filtered = EmojiUtil.filter_emoji_metadata(
+            metadata, class_filter, subclass_filter, description_filter, key_filter
+        )
+        _meta_data_dict = EmojiUtil.to_dict(metadata_filtered, fields, field, only_first_char)
+        Persistence.save_json(f, _meta_data_dict)
+
+    @staticmethod
+    def save_emoji_hierarchy(
+        f: str,
+        skip_multi_char: bool = False,
+        class_filter: SimpleStrFilterModel | None = None,
+        subclass_filter: SimpleStrFilterModel | None = None,
+        key_filter: SimpleStrFilterModel | None = None,
+        description_filter: SimpleStrFilterModel | None = None,
+        result_type: Literal["short", "description", "stats"] = "short",
+    ) -> None:
+        """save emoji hierarchy"""
+        _emoji_hierarchy = EmojiUtil.emoji_hierarchy_filtered(
+            skip_multi_char, class_filter, subclass_filter, key_filter, description_filter, result_type
+        )
+
+        Persistence.save_json(f, _emoji_hierarchy)
 
 
 class EmojiIndicator:
@@ -558,12 +655,16 @@ if __name__ == "__main__":
         metadata, class_filter, subclass_filter, description_filter, key_filter
     )
     # converting it into bytes and into string / set alias to true to export class_ attribute as class
-    _dict = EmojiUtil.to_dict(metadata_filtered)
-    _json = EmojiUtil.to_json(metadata_filtered)
+    _dict = EmojiUtil.to_dict(metadata_filtered, field="code")
+    _json = EmojiUtil.to_json(metadata_filtered, fields=["char"])
 
     print("### EMOJI Hierarchy")
-    metadata_hierarchy = EmojiUtil.emoji_hierarchy(metadata_filtered, result_type="unicode_first_char")
+    metadata_hierarchy = EmojiUtil.emoji_hierarchy(metadata_filtered, result_type="unicode_emoji")
     _console.print(metadata_hierarchy)
+    print("### Save Emoji Hierarchy")
+    EmojiUtil.save_emoji_hierarchy(os.path.join(PATH_TEST_OUTPUT, "emoji_hierarchy.json"))
+    print("### Save Emoji Dict")
+    EmojiUtil.save_emoji_dict(f=os.path.join(PATH_TEST_OUTPUT, "emoji_list.json"), field="char", only_first_char=True)
 
     print(f"### FILTERED EMOJIS [description:{description_filter}]")
     for _key, _info in metadata_filtered.items():

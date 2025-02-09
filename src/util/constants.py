@@ -42,6 +42,8 @@ ENV_FILE_SUFFIX = "env"
 # Project Paths
 PATH_ROOT = Path(__file__).parent.parent.parent.absolute()
 PATH_RESOURCE = PATH_ROOT.joinpath("resources")
+PATH_TEST_OUTPUT = PATH_ROOT.joinpath("test_data", "test_output")
+
 PATH_HOME = Path.home().joinpath(".cli_client")
 # default location of config file in home
 FILE_CONFIGFILE_HOME = str(PATH_HOME.joinpath("cli_config.json"))

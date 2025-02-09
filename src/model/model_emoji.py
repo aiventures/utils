@@ -9,7 +9,7 @@ https://github.com/milesj/emojibase/blob/master/packages/data/meta/groups.json
 _file = "emoji-sequences.txt"
 """
 
-from typing import Optional, Dict, List, Annotated
+from typing import Optional, Dict, List, Annotated, Literal, TypeAlias
 from pydantic import BaseModel, Field, TypeAdapter
 
 
@@ -34,6 +34,10 @@ class EmojiMetaType(EmojiRawType):
     short_txt: Optional[str] = None
     description: Optional[str] = None
 
+
+# was explicitly done to allow for static type checking
+EmojiMetaFieldType = Literal["num", "class", "subclass", "code", "char", "info"]
+EmojiMetaFieldTypeList = List[EmojiMetaFieldType]
 
 # derived models
 EmojiMetaDictModel = Dict[str, EmojiMetaType]
