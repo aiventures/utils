@@ -11,10 +11,11 @@ from model.model_code_artifacts import CodeArtifactEnum as ARTIFACT
 from util import constants as C
 from util.code_artifacts import CodeArtifacts, CodeMetaDict, GitArtifact, VenvArtifact, VsCodeArtifact
 from util.persistence import Persistence
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def test_git_artifact(fixture_path_testdata):
@@ -88,6 +89,6 @@ def test_code_artifacts(fixture_path_testdata):
     Persistence.save_txt_file(_f_model_json, _code_meta.model_dump_json(indent=4))
     # retrieve the model from json again
     _json_dict = Persistence.read_json(_f_model_json)
-    _loaded_artifact = CodeMetaDict.parse_obj(_json_dict)
+    _loaded_artifact = CodeMetaDict.model_validate(_json_dict)
     assert isinstance(_loaded_artifact, CodeMetaDict)
     pass

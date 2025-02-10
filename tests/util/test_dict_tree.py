@@ -6,10 +6,11 @@ import json
 import util.constants as C
 from util.tree import Tree
 from util.dict_tree import DictTreeNodeModel, DictTree
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def test_dict_tree(fixture_test_dict: dict):

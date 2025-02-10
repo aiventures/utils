@@ -16,7 +16,7 @@ from typing_extensions import Annotated
 
 # from util.config_env import ConfigEnv
 from cli.bootstrap_config import config_env, console_maker
-from cli.bootstrap_env import OS_BOOTSTRAP_VARS
+from cli.bootstrap_env import CLI_LOG_LEVEL, OS_BOOTSTRAP_VARS
 
 # from pathlib import Path
 # from util.persistence import Persistence
@@ -29,7 +29,7 @@ from util_cli.cli_color_mapper import ColorMapper, ThemeConsole
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 app = typer.Typer(
     name="cli_config_client",

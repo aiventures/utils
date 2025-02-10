@@ -10,6 +10,7 @@ import sys
 # TODO REPLACE BY UNIT TESTS
 # when doing tests add this to reference python path
 # sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from cli.bootstrap_env import FILE_CONFIGFILE_HOME, PATH_HOME, PATH_RESOURCES, PATH_ROOT
 from copy import deepcopy
 from datetime import datetime as DateTime
 from functools import wraps
@@ -27,10 +28,12 @@ from util.colors import col
 from util.constants import DEFAULT_COLORS as CMAP
 from util.persistence import Persistence
 from util.utils import Utils
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def config_key(func):
@@ -77,6 +80,9 @@ class ConfigEnv:
         self._f_config_dict = None
         self._bootstrap_path(f_config)
         self._config = Persistence.read_json(self._f_config)
+        if self._config is None:
+            logger.error(f"[ConfigEnv] There is no config file here: [{self._f_config}]")
+            return
         self._config_keys = list(self._config.keys())
         self._wrong_rule_keys = {}
         if not self._config:
@@ -946,7 +952,7 @@ class ConfigEnv:
         print_json(json.dumps(self._config))
         rprint(f"[{CMAP['out_title']}]### CONFIG FILES FOUND IN BOOTSTRAPPING")
         print_json(json.dumps(self._f_config_dict))
-        rprint(f"[{CMAP['out_title']}]### CONFIG FILE USED\n    [{CMAP['out_path']}]\[{self._f_config }]")
+        rprint(f"[{CMAP['out_title']}]### CONFIG FILE USED\n    [{CMAP['out_path']}]\[{self._f_config}]")
 
     def show(self) -> None:
         """displays the config"""
@@ -956,7 +962,7 @@ class ConfigEnv:
         for key, config in self._config.items():
             _num = col(f"[{str(n).zfill(3)}] ", "C_LN")
             _key = col(f"{key:<20} ", "C_KY")
-            _description = col(f"[{config.get(C.ConfigAttribute.DESCRIPTION.value,'NO DESCRIPTION')}]", "C_TX")
+            _description = col(f"[{config.get(C.ConfigAttribute.DESCRIPTION.value, 'NO DESCRIPTION')}]", "C_TX")
             _description = f"{_description:<60}"
 
             _ref = config.get(C.ConfigAttribute.REFERENCE.value)
@@ -994,8 +1000,7 @@ class ConfigEnv:
             C.ConfigBootstrap.CLI_CONFIG_HOME.name,
         ]
         _config_files = [
-            f if f is not None and os.path.isfile(f) else None
-            for f in [_f_demo, _f_ext, _f_env, C.FILE_CONFIGFILE_HOME]
+            f if f is not None and os.path.isfile(f) else None for f in [_f_demo, _f_ext, _f_env, FILE_CONFIGFILE_HOME]
         ]
         # the first in line is the config file
         _config_dict = dict(zip(_config_names, _config_files))
@@ -1206,7 +1211,7 @@ class Environment:
             bat_env_dict = {}
 
         if f_out is None:
-            f_out = str(C.PATH_HOME.joinpath(C.F_BAT_SET_VARS))
+            f_out = str(PATH_HOME.joinpath(C.F_BAT_SET_VARS))
         else:
             if not isinstance(f_out, str):
                 f_out = str(f_out)
@@ -1215,7 +1220,7 @@ class Environment:
             _msg = f"[ENV] Couldn't resolve a valid path for [{f_out}], check entry"
             logger.warning(_msg)
             return None
-        _bat_template = Persistence.read_txt_file(C.PATH_RESOURCE.joinpath("bat", C.F_BAT_SET_VARS_TEMPLATE))
+        _bat_template = Persistence.read_txt_file(PATH_RESOURCES.joinpath("bat", C.F_BAT_SET_VARS_TEMPLATE))
 
         _bat_keys = self.get_envs_by_type(C.EnvType.BAT)
         _bat_set = []
@@ -1499,7 +1504,7 @@ if __name__ == "__main__":
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    f = C.PATH_ROOT.joinpath("test_data", "test_config", "config_env_sample.json")
+    f = PATH_ROOT.joinpath("test_data", "test_config", "config_env_sample.json")
     config = ConfigEnv(f)
     # config.show()
     config.show_json()

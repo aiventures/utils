@@ -10,7 +10,6 @@ from rich.table import Table
 
 
 from cli.bootstrap_config import console_maker
-from cli.bootstrap_env import LOG_LEVEL
 from util import constants as C
 from model.model_visualizer import (
     ColorSchemaKey,
@@ -19,10 +18,11 @@ from model.model_visualizer import (
     ColorSchemaDataDict,
 )
 from util_cli.cli_color_schema import ColorSchema
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 class ColorSchemaRenderer:
@@ -144,7 +144,7 @@ def main() -> None:
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
-        level=LOG_LEVEL,
+        level=CLI_LOG_LEVEL,
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[RichHandler(rich_tracebacks=True)],
     )

@@ -4,11 +4,12 @@ from enum import Enum
 from typing import Any
 import logging
 import os
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get("CLI_LOG_LEVEL", logging.INFO)))
-
+logger.setLevel(CLI_LOG_LEVEL)
 
 class AbstractEnum(Enum):
     """Abstract Enum To Provide some helper methods"""

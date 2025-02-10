@@ -9,9 +9,11 @@ from copy import deepcopy
 from pathlib import Path
 
 from util import constants as C
+
 # from util.colors import col
 from util.persistence import Persistence
 from util.string_matcher import FileMatcher, StringMatcher
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 # from util.constants import APPLY_ALL
 # from datetime import datetime as DateTime
@@ -24,7 +26,7 @@ if __name__ == "__main__":
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 class FileSysObjectInfo:
@@ -64,7 +66,7 @@ class FileSysObjectInfo:
                 self._files[subpath] = {C.FILES_ABSOLUTE: _files_absolute, C.FILES: files}
                 _paths.append(subpath)
             self._paths[_root_path] = _paths
-        logger.debug(f"[FileInfo] Read [{self._files}] Files, [{self._paths }] Paths")
+        logger.debug(f"[FileInfo] Read [{self._files}] Files, [{self._paths}] Paths")
 
     @property
     def path_dict(self) -> dict:

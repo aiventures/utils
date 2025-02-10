@@ -16,9 +16,8 @@ from rich.table import Table
 from rich.tree import Tree
 
 from cli.bootstrap_config import console_maker
-from cli.bootstrap_env import LOG_LEVEL
+from cli.bootstrap_env import CLI_LOG_LEVEL
 from model.model_calendar import CalendarColoringType, CalendarDayType, CellRenderOptionType, IndexType
-from util import constants as C
 from util.calendar_util import REGEX_DATE_RANGE, REGEX_YYYYMMDD, Calendar
 from util.calendar_index import CalendarIndex
 from util.datetime_util import (
@@ -30,6 +29,7 @@ from util.datetime_util import (
 from util.emoji_util import EmojiUtil
 from util.utils import Utils
 from util.calendar_filter import CalendarFilter
+
 
 REGEX_ICON_STR = ":[a-zA-Z0-9_]+:"  # alphanum chars embraced in colons
 EMOJI_INFO = ":pencil:"
@@ -116,7 +116,7 @@ class DAYTYPE_COLORS(StrEnum):
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 class CalendarRenderer:
@@ -590,7 +590,7 @@ class CalendarTreeRenderer(CalendarRenderer):
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
-        level=LOG_LEVEL,
+        level=CLI_LOG_LEVEL,
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[RichHandler(rich_tracebacks=True)],
     )

@@ -3,15 +3,15 @@
 import logging
 import os
 from datetime import datetime as DateTime
-from pathlib import Path
 
 from app.share_parser import ShareParser
 from util import constants as C
 from util.persistence import Persistence
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def test_create_csv(fixture_sample_config_json, fixture_config_testpath):

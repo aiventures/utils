@@ -28,10 +28,12 @@ from model.model_code_artifacts import (
 from util import constants as C
 from util.persistence import Persistence
 from util.utils import Utils
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 if __name__ == "__main__":
     loglevel = logging.INFO

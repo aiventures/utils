@@ -16,14 +16,17 @@ from util import constants as C
 from util.config_env import Environment
 from util.persistence import Persistence
 from util_cli.cli_color_mapper import ESC_MAP, RichStyle, ThemeConsole
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 class BatHelper:
-    """ Commands for handling Bat Files """
+    """Commands for handling Bat Files"""
+
     def __init__(self, f_environment: str = None) -> None:
         """Constructor"""
         self._f_environment = f_environment
@@ -170,7 +173,7 @@ class BatHelper:
 
 
 if __name__ == "__main__":
-    loglevel = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.name, C.ConfigBootstrap.CLI_CONFIG_LOG_LEVEL.value)
+    loglevel = CLI_LOG_LEVEL
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
         level=loglevel,

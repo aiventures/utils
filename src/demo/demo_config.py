@@ -9,14 +9,17 @@ from rich.prompt import Confirm
 from util import constants as C
 from util.persistence import Persistence
 
+from cli.bootstrap_env import CLI_LOG_LEVEL, PATH_ROOT, FILE_CONFIGFILE_HOME
+
+
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def create_demo_config() -> str:
     """creates a demo config if not created yet and returns file path"""
-    p_testpath = C.PATH_ROOT.joinpath("test_data", "test_config")
+    p_testpath = PATH_ROOT.joinpath("test_data", "test_config")
     f_testconfig_template = str(p_testpath.joinpath("config_env_template.json"))
     _sample_config_json = str(os.path.join(p_testpath, "config_env_sample.json"))
     if os.path.isfile(_sample_config_json):
@@ -36,9 +39,9 @@ def create_demo_config() -> str:
 
 def create_config_home() -> None:
     """creates a sample configuration in home, if not already there"""
-    _p_home = str(Path(C.FILE_CONFIGFILE_HOME).parent)
-    if os.path.isfile(C.FILE_CONFIGFILE_HOME):
-        print(f"Nothing to do, there is already a file here: [{C.FILE_CONFIGFILE_HOME}]")
+    _p_home = str(Path(FILE_CONFIGFILE_HOME).parent)
+    if os.path.isfile(FILE_CONFIGFILE_HOME):
+        print(f"Nothing to do, there is already a file here: [{FILE_CONFIGFILE_HOME}]")
         return
     try:
         os.makedirs(str(_p_home))
@@ -46,8 +49,8 @@ def create_config_home() -> None:
         pass
     # get the demo file
     _f_demo = create_demo_config()
-    copy2(_f_demo, C.FILE_CONFIGFILE_HOME)
-    print(f"Created a sample file: [{C.FILE_CONFIGFILE_HOME}]")
+    copy2(_f_demo, FILE_CONFIGFILE_HOME)
+    print(f"Created a sample file: [{FILE_CONFIGFILE_HOME}]")
 
 
 if __name__ == "__main__":
@@ -58,7 +61,7 @@ if __name__ == "__main__":
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    _create_config = Confirm.ask(f"Do you want to create a sample config file [{C.FILE_CONFIGFILE_HOME}]?")
+    _create_config = Confirm.ask(f"Do you want to create a sample config file [{FILE_CONFIGFILE_HOME}]?")
     if _create_config:
         create_config_home()
     else:

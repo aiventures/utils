@@ -18,10 +18,11 @@ from util.filter_set import FilterSet
 from util.filter import NumericalFilter, StringFilter, CalendarFilterModel, CalendarFilterWrapper, RegexFilter
 from util.calendar_filter import CalendarFilter as CalendarFilterObject
 from datetime import datetime as DateTime
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def test_filter_set_setup(

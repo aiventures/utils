@@ -17,10 +17,12 @@ from util.calendar_constants import REGEX_YYYYMMDD, WEEK_INDEX_NEXT_YEAR, WEEK_I
 from util.calendar_filter import CalendarFilter
 from util.datetime_util import DAYS_IN_MONTH, DateTimeUtil
 from util.utils import Utils
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 class CalendarIndex:

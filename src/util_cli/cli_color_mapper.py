@@ -6,19 +6,17 @@ Theme Manager https://pypi.org/project/rich-theme-manager/
 
 import logging
 import os
-from copy import deepcopy
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from rich import box
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.style import Style
 from rich.table import Table
 from rich_theme_manager import Theme, ThemeManager
 
-from cli.bootstrap_env import LOG_LEVEL
+from cli.bootstrap_env import PATH_ROOT, CLI_LOG_LEVEL
 
 # TODO MOVE THIS TO A CONFIG FILE
 from util import constants as C
@@ -83,7 +81,7 @@ ESC_MAP = {
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 # switch to 256 Colors as default
 # console = Console(color_system="256")
@@ -396,7 +394,7 @@ class ColorMapper:
 
         # set a default path
         if self._p_resources is None or not os.path.isdir(self._p_resources):
-            self._p_resources = os.path.join(str(C.PATH_ROOT), "resources")
+            self._p_resources = os.path.join(str(PATH_ROOT), "resources")
             logger.info(f"[ColorMapper] Setting resource path [{self._p_resources}]")
 
         self._f_color_themes = os.path.join(self._p_resources, F_COLOR_THEMES)
@@ -752,7 +750,7 @@ class ThemeConsole(ColorMapper):
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
-        level=LOG_LEVEL,
+        level=CLI_LOG_LEVEL,
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[RichHandler(rich_tracebacks=True)],
     )

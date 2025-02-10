@@ -28,9 +28,11 @@ import os
 import logging
 import sys
 from datetime import datetime as DateTime
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 # Design Decision: You need to manually install GRAPHVIZ into your environment
-# 
+#
 PY_GRAPHVIZ_INSTALLED = True
 try:
     from graphviz import Digraph, Graph
@@ -46,8 +48,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
-DEFAULT_LOGLEVEL = int(os.environ.get("CLI_LOG_LEVEL", logging.INFO))
-logger.setLevel(DEFAULT_LOGLEVEL)
+logger.setLevel(CLI_LOG_LEVEL)
 DATEFORMAT_JJJJMMDDHHMMSS = "%Y%m%d_%H%M%S"
 
 
@@ -208,7 +209,9 @@ class AstVisualizer:
         _format_dict = FORMAT_NODES.get(_label, FORMAT_DEFAULT)
         _original_s = str(ast.unparse(node))
         if isinstance(self._max_chars, int) and len(_original_s) > self._max_chars:
-            _original_s = _original_s[: self._max_chars] + f"\n ... [{len(_original_s)-self._max_chars}] dropped chars "
+            _original_s = (
+                _original_s[: self._max_chars] + f"\n ... [{len(_original_s) - self._max_chars}] dropped chars "
+            )
         out[AstNodeInfo.NAME.value] = _name
         if self._show_code:
             _label += "\n" + _original_s
@@ -464,10 +467,9 @@ _sample_dict = {"a": 2, "b": {2: "4"}}
 SAMPLE_CODE = _sample_imports
 
 if __name__ == "__main__":
-    loglevel = DEFAULT_LOGLEVEL
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
-        level=loglevel,
+        level=CLI_LOG_LEVEL,
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )

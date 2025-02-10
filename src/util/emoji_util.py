@@ -39,8 +39,9 @@ from model.model_emoji import (
     EmojiMetaFieldType,
 )
 from model.model_filter import SimpleStrFilterModel
-from util import constants as C
-from util.constants import PATH_RESOURCE, PATH_TEST_OUTPUT
+
+# from util import constants as C
+from cli.bootstrap_env import PATH_RESOURCES, PATH_TEST_OUTPUT, CLI_LOG_LEVEL
 from util.matrix_list import MatrixList
 from util.persistence import Persistence
 from util.utils import Utils
@@ -48,7 +49,7 @@ from util.utils import Utils
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 # capture UTF16 character sets / 4 chars not followed by another character
 # capture U+1F1F9
@@ -205,7 +206,7 @@ class EmojiUtil:
     @staticmethod
     def read_emoji_meta(key_replace_spaces: bool = False) -> dict:
         """gets the meta information from the json with emoji name as key"""
-        f_emoji = PATH_RESOURCE.joinpath("emoji.json")
+        f_emoji = PATH_RESOURCES.joinpath("emoji.json")
         _emojis = Persistence.read_json(f_emoji)
         out = {}
         for _emoji_meta in _emojis.values():

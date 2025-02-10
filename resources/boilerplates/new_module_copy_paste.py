@@ -2,13 +2,16 @@
 import os
 import logging
 import sys
+
 # import typer
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
-DEFAULT_LOGLEVEL = int(os.environ.get("CLI_LOG_LEVEL", logging.INFO))
-logger.setLevel(DEFAULT_LOGLEVEL)
+logger.setLevel(CLI_LOG_LEVEL)
+
 
 def main():
     """do something"""
@@ -16,7 +19,7 @@ def main():
 
 
 if __name__ == "__main__":
-    loglevel = DEFAULT_LOGLEVEL
+    loglevel = CLI_LOG_LEVEL
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
         level=loglevel,

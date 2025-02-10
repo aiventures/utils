@@ -6,6 +6,15 @@ from logging import ERROR as LOG_ERROR
 from pathlib import Path
 
 # from typing import Any
+# from cli.bootstrap_env import (
+#     OS_BOOTSTRAP_VARS,
+#     PATH_ROOT,
+#     PATH_TEST_OUTPUT,
+#     PATH_RESOURCES,
+#     PATH_HOME,
+#     FILE_CONFIGFILE_HOME,
+# )
+
 from util.abstract_enum import AbstractEnum
 
 # TODO SWITCH TO PYDANTIC IN FUTURE
@@ -33,20 +42,9 @@ F_BAT_SET_VARS = "bat_set_vars.bat"
 F_BAT_SET_VARS_TEMPLATE = "bat_set_vars_template.bat"
 CLI_LOG_LEVEL = "CLI_LOG_LEVEL"
 
-# sdasving environment to files
+# saving environment to files
 KEY_FILE_SUFFIX = "key"
 ENV_FILE_SUFFIX = "env"
-
-## PATHS and FILES
-
-# Project Paths
-PATH_ROOT = Path(__file__).parent.parent.parent.absolute()
-PATH_RESOURCE = PATH_ROOT.joinpath("resources")
-PATH_TEST_OUTPUT = PATH_ROOT.joinpath("test_data", "test_output")
-
-PATH_HOME = Path.home().joinpath(".cli_client")
-# default location of config file in home
-FILE_CONFIGFILE_HOME = str(PATH_HOME.joinpath("cli_config.json"))
 
 
 # bootstrap File Name

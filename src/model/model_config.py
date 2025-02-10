@@ -5,12 +5,14 @@ import os
 from enum import StrEnum
 from typing import Annotated, Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Discriminator, RootModel, Tag, TypeAdapter, ValidationError
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 from util import constants as C
 from util.constants import ConfigStatus, DataType, EnvType, RuleFileAttribute
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 # TAXONOMY
 # ALL:      d, k et

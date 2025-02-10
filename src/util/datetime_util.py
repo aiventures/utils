@@ -13,6 +13,8 @@ import pytz
 from dateutil.parser import parse
 from dateutil.tz import tzoffset, tzutc
 
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 from model.model_calendar import (
     CalendarIndexType,
 )
@@ -23,7 +25,7 @@ from util import constants as C
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 DAYS_IN_MONTH = {1: 31, 2: 28, 3: 31, 4: 30, 5: 31, 6: 30, 7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
 WEEKDAY = {1: "Mo", 2: "Di", 3: "Mi", 4: "Do", 5: "Fr", 6: "Sa", 7: "So"}
@@ -254,7 +256,7 @@ class DateTimeUtil:
         delta_time = ts_gps - ts_cam
 
         logger.debug(
-            f"[DateTimeUtil] GPS:{time_gps} - Camera:{time_device} = Time Offset:{(delta_time//timedelta(seconds=1))}"
+            f"[DateTimeUtil] GPS:{time_gps} - Camera:{time_device} = Time Offset:{(delta_time // timedelta(seconds=1))}"
         )
 
         return delta_time

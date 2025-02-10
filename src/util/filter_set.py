@@ -10,10 +10,13 @@ from model.model_filter import FilterSetModel, AtomicFilterResult, FilterSetResu
 from util import constants as C
 from util.filter import AbstractAtomicFilter
 from util.utils import Utils
+from cli.bootstrap_env import CLI_LOG_LEVEL
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 PLAIN_OBJECT = "[plain_object]"
 
@@ -74,7 +77,7 @@ class FilterSet(AbstractAtomicFilter):
                     _filters_by_attribute = self._filter_attribute_dict.get(_attribute, [])
                     _filters_by_attribute.append(_attribute)
                     self._filter_attribute_dict[_attribute] = _filters_by_attribute
-                    
+
         pass
 
     @property

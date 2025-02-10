@@ -12,11 +12,13 @@ from util import constants as C
 from util.persistence import Persistence
 from util.tree import Tree
 from util.utils import FILES, IS_FILE, PARENT, PATHS, ROOT, SIZE, TOTAL_SIZE, VALUE, Utils
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 # TODO PRIO3 Add Progress Bar Indicator
 
@@ -155,7 +157,7 @@ class FileTree:
         """return the tree and create if needed"""
         if self._tree is None:
             self._tree = Tree()
-            _ = self._tree.create_tree(self._tree_dict, name_field="value", parent_field="parent")
+            self._tree.create_tree(self._tree_dict, name_field="value", parent_field="parent")
         return self._tree
 
     @property

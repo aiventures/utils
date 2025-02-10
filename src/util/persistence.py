@@ -28,10 +28,11 @@ if __name__ == "__main__":
 # from yaml import CLoader
 # from yaml.composer import Composer
 # from yaml.constructor import Constructor
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 # byte order mark indicates non standard UTF-8
@@ -758,6 +759,10 @@ class Persistence:
     def read_json(filepath: str) -> dict:
         """Reads JSON file"""
         data = None
+
+        if filepath is None:
+            logger.warning(f"[Persistence] File path is None. Exiting...")
+            return None
 
         if not os.path.isfile(filepath):
             logger.warning(f"[Persistence] File path {filepath} does not exist. Exiting...")

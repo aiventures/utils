@@ -14,10 +14,12 @@ from util import constants as C
 from util.config_env import ConfigEnv
 from util.config_env import logger as util_logger
 from util.utils import Utils
+from cli.bootstrap_env import PATH_ROOT
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def test_config_create_and_setup(fixture_sample_config_json):
@@ -121,8 +123,8 @@ def create_testcases_get_fileref() -> list:
     """returns a list of pytest params as input for the test_get_ref unit test"""
     out = []
     # get valid refs to real paths
-    _p_testdata = Path(C.PATH_ROOT.joinpath("test_data", "test_path"))
-    _p_testdata_space = Path(C.PATH_ROOT.joinpath("test_data", "test_path", "path with space"))
+    _p_testdata = Path(PATH_ROOT.joinpath("test_data", "test_path"))
+    _p_testdata_space = Path(PATH_ROOT.joinpath("test_data", "test_path", "path with space"))
     _f_testfile_without_space = str(_p_testdata.joinpath("lorem_doc_root.md"))
     _f_testfile_with_space = str(_p_testdata.joinpath("test with space.txt"))
     _f_testfile_with_spacepath = str(_p_testdata_space.joinpath("test.txt"))

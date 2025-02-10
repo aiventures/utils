@@ -13,18 +13,18 @@ from rich.markup import escape
 from rich.text import Text
 from rich.tree import Tree as RichTree
 
-from cli.bootstrap_env import LOG_LEVEL
 from model.model_tree import FileTreeNodeRenderModel
 from model.model_persistence import ParamsFind
 from util import constants as C
 from util.file_tree import ParamsFileTreeModel
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 from util.file_tree import FileTree
 from util.utils import PARENT, ROOT, SIZE, TOTAL_SIZE, VALUE, IS_FILE, CHDATE, PERMISSION_CHMOD, Utils, is_win
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 DEFAULT = "default"
 COLOR = "color"
@@ -269,8 +269,8 @@ class FileTreeRenderer:
         _lines = [
             _paths_sorted_by,
             _files_sorted_by,
-            f'Only Root Path [{_params.get("root_path_only","NA")}], Add Empty Paths [{_params.get("add_empty_paths","NA")}]',
-            f'Match All [{_params.get("match_all","NA")}], Ignore Case [{_params.get("ignore_case","NA")}]',
+            f"Only Root Path [{_params.get('root_path_only', 'NA')}], Add Empty Paths [{_params.get('add_empty_paths', 'NA')}]",
+            f"Match All [{_params.get('match_all', 'NA')}], Ignore Case [{_params.get('ignore_case', 'NA')}]",
         ]
         _keys = [
             "include_abspaths",
@@ -365,7 +365,7 @@ class FileTreeRenderer:
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
-        level=LOG_LEVEL,
+        level=CLI_LOG_LEVEL,
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[RichHandler(rich_tracebacks=True)],
     )

@@ -10,12 +10,12 @@ from typing import List
 import typer
 from rich import print as rprint
 from rich.console import Console
-from rich.progress import BarColumn, DownloadColumn, Progress, SpinnerColumn, TextColumn, track
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, track
 from rich.prompt import Prompt
 from typing_extensions import Annotated, Optional
 
 # from util.const_local import LOG_LEVEL
-from cli.bootstrap_env import LOG_LEVEL
+from cli.bootstrap_env import PATH_ROOT, CLI_LOG_LEVEL
 from util import constants as C
 from util.persistence import Persistence
 
@@ -38,7 +38,7 @@ from util.persistence import Persistence
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 app = typer.Typer(name="cli_demo_client", add_completion=False, help="Demo Parser (show casing typer)")
 
@@ -82,7 +82,6 @@ def demo_demo1(param_str: str, param_out: str = "Test"):
     """
     print(f"Hello Share Parser CLI {param_str} param_opt {param_out}")
     return None
-    pass
 
 
 @app.command("demo2")
@@ -167,7 +166,7 @@ def demo_progress2():
 @app.command("progress_sample")
 def demo_progress_sample():
     """progress from test data sample"""
-    p = os.path.join(C.PATH_ROOT, "test_data")
+    p = os.path.join(PATH_ROOT, "test_data")
     # display the file search
     _file_objects = Persistence.find(p, show_progress=True)
 
@@ -180,7 +179,8 @@ def demo_progress_nested():
     # COlor Table https://rich.readthedocs.io/en/latest/appendix/colors.html
 
     class MyProgress(Progress):
-        """ Progress Bar Demo """
+        """Progress Bar Demo"""
+
         def get_renderables(self):
             for task in self.tasks:
                 if task.fields.get("progress_type") == "mygreenbar":
@@ -247,7 +247,7 @@ def demo_open_file():
     print(f"OPENING EXPLORER USING FILENAME [{_file}]")
     typer.launch(_file, locate=True)
     typer.launch(_file, locate=False)
-    _file = os.path.join(C.PATH_ROOT, "test_data", "test_path", "testfile_for_table.txt")
+    _file = os.path.join(PATH_ROOT, "test_data", "test_path", "testfile_for_table.txt")
     print(f"OPENING FILE [{_file}]")
     typer.launch(_file, locate=False)
     print(f"OPENING FILE LOCATION [{_file}]")
@@ -284,7 +284,7 @@ def demo_cmd1():
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
-        level=LOG_LEVEL,
+        level=CLI_LOG_LEVEL,
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )

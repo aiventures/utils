@@ -12,11 +12,14 @@ from typing import List, Union, Dict
 # using the tree util to create a tree
 from model.model_tree import PARENT_ID, ROOT, DictTreeNodeModel, NodeType, OUTPUT
 from util.tree import Tree
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
 # logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def valid_node_id(func):
@@ -77,7 +80,7 @@ class DictTree:
         # TODO optionally offer wrapping of object
         _obj = str(dict_tree_node.obj)
         if len(_obj) > self._max_output_length:
-            _obj = f"{_obj[:self._max_output_length]}..]\n({len(_obj)}) more "
+            _obj = f"{_obj[: self._max_output_length]}..]\n({len(_obj)}) more "
         s_out = f"{_key}{_idx} {s_out}\n{_obj}"
         dict_tree_node.output = s_out
 
@@ -357,10 +360,9 @@ class DictTree:
 
 
 if __name__ == "__main__":
-    loglevel = logging.DEBUG
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
-        level=loglevel,
+        level=CLI_LOG_LEVEL,
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )

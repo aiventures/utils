@@ -24,10 +24,11 @@ import logging
 from enum import Enum
 import os
 from util import constants as C
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 ESC = "\033"
 COL_BG = "[48;5;_NUM_m"
@@ -305,7 +306,7 @@ def print_custom_colors():
     print(col("\n### CUSTOM COLORS IN ENUM COL\n", "C_T"))
     for cust_color in COL_DESC:
         cust_col_name = cust_color.name
-        s = col(f" COLOR [{cust_col_name+'] ':<10}", cust_col_name) + f"({COL_DESC[cust_color.name].value})"
+        s = col(f" COLOR [{cust_col_name + '] ':<10}", cust_col_name) + f"({COL_DESC[cust_color.name].value})"
         print(s)
 
 
@@ -321,7 +322,7 @@ def print_color_constants():
             continue
         col_value = getattr(sys.modules[__name__], col_const)
         # get the color encoding
-        s = f"COLOR CONSTANT {'['+col_const+'] ':<20} ({str(col_value).zfill(3)})"
+        s = f"COLOR CONSTANT {'[' + col_const + '] ':<20} ({str(col_value).zfill(3)})"
         print(col(s, COL_BLACK, col_value))
 
 

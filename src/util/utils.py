@@ -19,6 +19,7 @@ from math import floor, inf, log
 from pathlib import Path
 from util import constants as C
 from model.model_filter import AnyOrAllType, StringMatch, IncludeType, SimpleStrFilterModel
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 # from util.cmd_runner import CmdRunner
 from util.persistence import Persistence
@@ -26,7 +27,7 @@ from util.persistence import Persistence
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 # get a global variable since this might be used for any file operations
 is_win = True if platform.system() == "Windows" else False

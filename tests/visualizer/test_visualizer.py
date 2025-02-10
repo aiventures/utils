@@ -7,10 +7,11 @@ from util.tree import Tree
 from util.dict_tree import DictTree
 from model.model_tree import TreeNodeModel
 from visualizer.tree_visualizer import TreeVisualizer
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 # test the tree object
 # [1] ROOT (has no parents)

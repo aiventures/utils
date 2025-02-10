@@ -11,6 +11,7 @@ from pydantic import BaseModel
 # import yaml
 import util.constants as C
 from model.model_tree import CHILDREN, LEVEL, NAME, PARENT_ID, TreeNodeModel
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 PY_YAML_INSTALLED = True
 try:
@@ -20,7 +21,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def valid_node_id(func):

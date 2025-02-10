@@ -10,10 +10,12 @@ from copy import deepcopy
 from util import constants as C
 from util.config_env import ConfigEnv
 from util.persistence import Persistence
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 class CsvParser(Persistence):

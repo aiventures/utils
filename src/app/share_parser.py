@@ -10,9 +10,9 @@ import os
 import sys
 from copy import deepcopy
 from datetime import datetime as DateTime
-from pathlib import Path
-
+from cli.bootstrap_env import PATH_ROOT, CLI_LOG_LEVEL
 import util.constants as C
+
 from util.config_env import ConfigEnv
 from util.csv_parser import CsvParser
 from util.file_analyzer import FileAnalyzer
@@ -20,7 +20,7 @@ from util.persistence import Persistence
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 # Keys refered in the Config File
 CONFIG_PATH_DEPOTHISTORIE = "P_CONFIGTEST"  # this was set by configuration json
@@ -179,7 +179,7 @@ def main():
     """main program"""
     # read configuration, parse all information and export it as csv to original path
     # read sample configuration
-    p_testconfig = C.PATH_ROOT.joinpath("test_data", "test_config")
+    p_testconfig = PATH_ROOT.joinpath("test_data", "test_config")
     # you need to run the unit tests before this
     f_config = os.path.join(p_testconfig, "config_env_sample.json")
     _date_s = DateTime.now().strftime(C.DATEFORMAT_JJJJMMDD)

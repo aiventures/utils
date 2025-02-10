@@ -6,13 +6,16 @@ from copy import deepcopy
 
 import pytest
 
+from cli.bootstrap_env import PATH_ROOT
+
 from util import constants as C
 from util.csv_parser import CsvParser
 from util.persistence import Persistence
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def test_csv_parser(fixture_sample_config_json, fixture_sample_stocks_data):
@@ -120,7 +123,7 @@ def create_testcases_find() -> list:
     #  '...\\root\\utils\\test_data\\test_path\\subpath2\\lorem_ipsum_2.md'
 
     out = []
-    _p_testpath = str(C.PATH_ROOT.joinpath("test_data", "test_path"))
+    _p_testpath = str(PATH_ROOT.joinpath("test_data", "test_path"))
 
     _kwargs = {
         "p_root_paths": _p_testpath,

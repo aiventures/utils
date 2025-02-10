@@ -11,13 +11,14 @@ import pytest
 
 import util.constants as C
 from util.emoji_util import EmojiIndicator, EmojiUtil
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 from model.model_emoji import EmojiMetaDictType
 from model.model_filter import SimpleStrFilterModel
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def test_emojiutil_metadata():
@@ -63,7 +64,7 @@ def test_emoji_indicator():
 
 
 def test_emoji_unicode():
-    # test rendering of emojis based on unicode
+    """test rendering of emojis based on unicode"""
     _emoji = EmojiUtil.unicode2emoji("U+1F9D9 U+200D U+2640 U+FE0F")
     _emoji2 = EmojiUtil.unicode2emoji("U+1F9D9 U+200D U+2640 U+FE0F", only_first_code=True)
     assert isinstance(_emoji, str)

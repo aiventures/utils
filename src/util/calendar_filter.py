@@ -16,10 +16,12 @@ from model.model_calendar import (
 # regex to extract todo_txt string matching signature @(...)
 from util import constants as C
 from util.datetime_util import WEEKDAY_NUM, WEEKDAY, DateTimeUtil
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 # list separator for a filter string
 LIST_SEP = ";"

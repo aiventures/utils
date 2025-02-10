@@ -29,6 +29,7 @@ from model.model_tree import TreeNodeModel, DICT_TREE_NODE_MODEL, DICT_PATH
 from model.model_visualizer import DotFormat
 from util.tree import Tree
 from util.utils import Utils
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 # Design Decision: You need to manually install GRAPHVIZ into your environment
 PY_GRAPHVIZ_INSTALLED = True
@@ -46,7 +47,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # get log level from environment if given
-DEFAULT_LOGLEVEL = int(os.environ.get("CLI_LOG_LEVEL", logging.INFO))
+DEFAULT_LOGLEVEL = CLI_LOG_LEVEL
 logger.setLevel(DEFAULT_LOGLEVEL)
 DATEFORMAT_JJJJMMDDHHMMSS = "%Y%m%d_%H%M%S"
 

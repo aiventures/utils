@@ -9,15 +9,14 @@ import typer
 from rich import print as rprint
 
 # different config files
-from cli.bootstrap_env import LOG_LEVEL
-from util import constants as C
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 # path to config json
 
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 app = typer.Typer(
     name="cli_share_parser_client", add_completion=False, help="Share Parser (Transforming share info to CSV)"
@@ -46,7 +45,7 @@ def main():
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(module)s:[%(name)s.%(funcName)s(%(lineno)d)]: %(message)s",
-        level=LOG_LEVEL,
+        level=CLI_LOG_LEVEL,
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )

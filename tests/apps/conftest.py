@@ -1,4 +1,5 @@
-""" setup for unit tests """
+"""setup for unit tests"""
+
 import logging
 import os
 import sys
@@ -9,6 +10,7 @@ import pytest
 
 from util import constants as C
 from util.persistence import Persistence
+from cli.bootstrap_env import PATH_ROOT
 
 ### [1] Fixtures for File Analyzer
 
@@ -16,7 +18,7 @@ from util.persistence import Persistence
 @pytest.fixture
 def fixture_config_testpath() -> Path:
     """Sample Path"""
-    p_testpath = C.PATH_ROOT.joinpath("test_data", "test_config")
+    p_testpath = PATH_ROOT.joinpath("test_data", "test_config")
     return p_testpath
 
 

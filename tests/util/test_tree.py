@@ -5,10 +5,11 @@ import os
 import util.constants as C
 from util.tree import Tree
 from model.model_tree import TreeNodeModel
+from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
-logger.setLevel(int(os.environ.get(C.CLI_LOG_LEVEL, logging.INFO)))
+logger.setLevel(CLI_LOG_LEVEL)
 
 
 def test_tree(fixture_tree: Tree):
