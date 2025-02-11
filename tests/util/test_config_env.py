@@ -191,7 +191,7 @@ def test_get_file_ref(fixture_config_env, valid_config, ref_exists, file_ref):
 def create_testcases_get_ref() -> list:
     out = []
     # cuttently not working
-    # out.append(pytest.param(True, "J_DICT_STR", id="A.01 Valid JSON string J_DICT_STR"))
+    out.append(pytest.param(True, "J_DICT_STR", id="A.01 Valid JSON string J_DICT_STR"))
     out.append(pytest.param(True, "J_DICT", id="A.02 Valid JSON dict J_DICT"))
     out.append(pytest.param(False, "J_DICT_WRONG", id="A.02 Invalid JSON dict J_DICT_WRONG"))
     return out

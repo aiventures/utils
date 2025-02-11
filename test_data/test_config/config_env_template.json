@@ -1,155 +1,352 @@
 {
-    "P_GIT":{"p":"C:\\<my_path>\\git-for-windows\\usr\\bin",
-             "d":"Binaries Path of Git Installation"},
-    "P_LAUFENDE_DOKUMENTE":{"p":"C:\\<...>\\WORK_PATH",
-                            "d":"Working Documents"},
-    "P_30_ENTWICKLUNG":    {"p":"C:\\<DEV>",
-                            "d":"Development Stuff Folder"},
-    "P_ROOT":              {"p":"C:\\<DEV>\\root",
-                            "d":"Root Folder containing dev projects"},
-    "E_SAMPLE":            {"d":"Example for a typed Environment key-value pair to be added",
-                            "k":"env_value_example",
-                            "t":"int",
-                            "v":10},
-    "E_SAMPLE_WRONG_TYPE": {"d":"Example for a typed Environment with a wrong type",
-                            "k":"env_sample_wrong_type",
-                            "t":"int",
-                            "v":"hugo"},
-    "E_SIMPLE":            {"d":"Example for minimal ENV definition, key is the main key ",
-                            "v":"env_simple_value_example"},
-    "J_DICT":              {"d":"Example for an ENV with a json config",
-                            "k":"j_dict_key",
-                            "v":{"k1j":"jv1","k2j":1}},
-    "J_DICT_WRONG":         {"d":"Example for wrong json",
-                            "k":"j_dict_key",
-                            "v":"INVALID JSON"},
-    "J_DICT_STR":          {"d":"Example for an ENV with a json config as json str",
-                            "k":"j_dict_str",
-                            "v":"{\"k1\":\"v1\",\"k2\":2}\"}"},
-    "E_SAMPLE_WHERE":        {"d": "Example for a value with a ref to a where key",
-                            "v": "[W_PYTHON]"
-                            },
-     "E_SAMPLE_REF2":       {"d": "Example for a value with a ref to another config key",
-                             "v": "[CMD_EXAMPLE1]"
-                            },
-    "E_SAMPLE_WRONGREF": {"d": "Example for a value with a wrong ref ",
-                           "v": "[WRONG_REF]"
-                          },
-    "E_SAMPLE_WITHKEY":  {"d": "Example for a value with a key",
-                          "k": "key_sample_with_key",
-                          "v": "value_sample_with_key"
-                         },
-    "E_SAMPLE_ALL_TYPES":  {"d": "Env Example for environemnt for all env types",
-                           "k": "key_sample_alltypes",
-                           "v": "value_sample_with_all_types",
-                           "et": ["internal","os_environ","env_file","key_file","bat"]
-                           },
-     "E_SAMPLE_FILEREF":  {"d": "Env Example with a file reference",
-                           "p": "[CWD]",
-                           "k": "key_sample_fileref",
-                           "v": "value_sample_with_all_types",
-                           "et": ["internal","os_environ","env_file","key_file","bat"]
-                           },
-    "W_PYTHON":            {"d":"(W)here Python, tries to get the Python command usually the VENV Python using where on OS level"},
-    "W_GIT_234":           {"d":"(W)here Git, other vars are used to store an env file in ff format. The _CWD_ is a shortcut to current path",
-                            "k":"git",
-                            "p":"[CWD]",
-                            "f":"test.env",
-                            "ff":"win"},
-     "W_NOTEPAD":           {"d":"(W)here Notepad",
-                            "k":"notepad",
-                            "p":"[CWD]",
-                            "et": ["internal","bat"],
-                            "f":"test.env",
-                            "ff":"win"},
-    "CMD_CYGPATH":         {"p":"[P_GIT]",
-                            "f":"cygpath.exe",
-                            "d":"Path Conversion utility (Part of Git)"},
-    "CMD_EXAMPLE1":         {"p":"[P_CONFIGTEST]",
-                            "f":"cmd_dummy1.txt",
-                            "d":"Command line example 1 to show how it can be called with commands",
-                            "c":{"CMD_FILE":"[CMD] -f [FILE]",
-                                 "CMD_FILE_LINE":"[CMD] -f [FILE] -l [LINE]"}
-                            },
-    "CMD_EXAMPLE2":         {"p":"[P_CONFIGTEST]",
-                            "f":"cmd_dummy2.txt",
-                            "d":"Command line example 2 to show how it can be called with commands",
-                            "c":{"CMD_FILE_LINE":{"r":"[CMD] -f [FILE] -l [LINE]",
-                                                  "d":"Command Line Option with a description"}}
-                            },
-    "CMD_EXAMPLE3":         {"p":"[P_CONFIGTEST]",
-                            "f":"cmd_dummy3.txt",
-                            "d":"Command line example 3 to show tpyed file params",
-                            "c":{"CMD_FILE":"[CMD] -f [FILE]",
-                                 "CMD_FILE_LINE":"[CMD] -f [FILE] -l [LINE]"}
-                            },
-    "CMD_EXAMPLE4":         {"p":"[P_CONFIGTEST]",
-                            "f":"cmd_dummy1.txt",
-                            "d":"Command line example 4 to show how it can be called with commands and vars can be typed (DataType)",
-                            "c":{"CMD_FILE":"[CMD] -f [FILE]",
-                                 "CMD_FILE_LINE":"[CMD] -f [FILE] -l [LINE]",
-                                 "CMD_F_CONFIGTEST1_LINE":"[CMD] -c [F_CONFIGTEST1] -l [LINE]"},
-                            "t":{"FILE":"path","LINE":"int","F_CONFIGTEST1":"config"}},
-    "CMD_EXAMPLE_PY":       {"f":"[W_PYTHON]",
-                            "d":"Command line example 1 to reference the current Python Executable defined in W_PYTHON",
-                            "c":{"W_PYTHON_VERSION":{"r":"[W_PYTHON] --version",
-                              "d":"Command Line Option with a description note there need to be identical parts"}}
-                            },
-    "CMD_EXAMPLE_WRONG":    {"p":"[P_CONFIGTEST]",
-                            "f":"cmd_dummy2.txt",
-                            "d":"Command line example 1 to show how it can be called with commands",
-                            "c":{"CMD_FILE_LINE":{"r":"[CMD] -f [WRONG] -l [LINE]",
-                                                  "d":"Command Line Option with errors"}}
-                            },
-    "P_CONFIGTEST":         {"p":"[P_CONFIGTEST]",
-                            "d":"ConfigTest - will be populated by unittest as absolute path",
-                            "g":["groupA"]},
-    "F_CONFIGTEST1":       {"f":"[PATH_TO_CONFIGTEST1]",
-                            "d":"ConfigTest1 - will be populated by unittest as absolute path"},
-    "F_CONFIGTEST2":       {"f":"file2_config.txt",
-                            "p":"[P_CONFIGTEST]",
-                            "d":"ConfigTest2 - use Symboilic Path P_CONFIGTEST",
-                            "g":["groupA"]},
-    "F_CONFIGTEST3":       {"f":"file3_config.txt",
-                            "p":"absolute path",
-                            "d":"ConfigTest1 - p will be populated by absolute paths"},
-    "F_CONFIGTEST4":       {"f":"[P_CONFIGTEST]/file3_config.txt",
-                            "d":"ConfigTest4 Symbolic Path"},
-    "R_RULETEST":           { "p":"[P_CONFIGTEST]",
-                              "d":"Sample how to define filematcher rules within env configuration",
-                              "r":[{"name":"rule_name","ignorecase":true,"is_regex":true,"rule":"sample_rule",
-                                    "regex":"rule_regex_str","apply":"any","rule_include":true,
-                                    "rule_file":"files_absolute","find_by_line":true}]},
-    "R_RULETEST_WRONG":     { "p":"[P_CONFIGTEST]",
-                              "d":"Sample for wrong rules",
-                              "r":[{"wrong_name":"rule_name","rule_file":"files_absolute","find_by_line":true}]},
-    "D_EXAMPLE":             {"d":"Example for parsing data from txt to tabular dict data ",
-                              "x":"^(\\d+\\.\\d+\\.\\d+)(\\D+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S*)",
-                              "s":"02.09.2024Kauf1,1111 Stück333,33 EUR444,44 EUR",
-                              "k":{"isin":"ISIN_NUMMER"},
-                              "dd":{"0":"DATUM","1":"UMSATZART","2":"STÜCK","3":"EINHEIT",
-                                    "4":"KAUFKURS","5":"WÄHRUNG1","6":"KURS_AKTUELL","7":"WÄHRUNG2"},
-                              "e":[{"k":"DATUM","t":"date"},"DATUM_N","ISIN_NUMMER",{"k":"KAUFKURS","t":"float"},
-                              {"k":"KURS_AKTUELL","t":"float"},{"k":"STÜCK","t":"float"}],
-                              "env":{"DEC_SEPARATOR":",","DATE_FORMAT":"%d.%m.%Y","CSV_WRAP_CHAR":"\""}
-                             },
-      "D_DEPOTHISTORIE": {
-                              "d": "Parsing Share History",
-                              "x": "^(\\d+\\.\\d+\\.\\d+)(\\D+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S*)",
-                              "s": "02.09.2024Kauf1,1111 Stück333,33 EUR444,44 EUR",
-                              "k": {"isin": "ISIN_NUMMER"},
-                              "dd": {"0": "DATUM","1": "UMSATZART","2": "STUECK","3": "EINHEIT","4": "KAUFKURS","5": "WÄHRUNG1",
-                                          "6": "KURS_AKTUELL","7": "WÄHRUNG2"},
-                              "e": [{"k": "DATUM","t": "date"},"DATUM_N","ISIN_NUMMER",{"k": "KAUFKURS","t": "float"},
-                                    {"k": "KURS_AKTUELL","t": "float"},{"k": "STUECK","t": "float"}],
-                              "env": {"DEC_SEPARATOR": ",","DATE_FORMAT": "%d.%m.%Y","CSV_WRAP_CHAR": "\""}
-                              },
-      "D_DEPOTSTAMM":         {
-                              "d": "Share Master Data",
-                              "x": "Wertpapier(.+?)ISIN(.*)\\/.+WKN(.*?)Bestand([0-9,]+)",
-                              "s": "DetailsWertpapierAIS AM ST E600 ETF AISIN AB123456 / WKN AB1234Bestand1,47851 StückAltbestand0 Stück×",
-                              "dd": {"0": "AKTIE_NAME","1": "ISIN","2": "WKN","3": "ANZAHL"},
-                              "e": ["AKTIE_NAME","ISIN","WKN",{"k":"ANZAHL","t":"float"}],
-                              "env": {"DEC_SEPARATOR": ",","DATE_FORMAT": "%d.%m.%Y","CSV_WRAP_CHAR": "\""}
-                          }
+     "P_GIT": {
+          "p": "C:\\<my_path>\\git-for-windows\\usr\\bin",
+          "d": "Binaries Path of Git Installation"
+     },
+     "P_LAUFENDE_DOKUMENTE": {
+          "p": "C:\\<...>\\WORK_PATH",
+          "d": "Working Documents"
+     },
+     "P_30_ENTWICKLUNG": {
+          "p": "C:\\<DEV>",
+          "d": "Development Stuff Folder"
+     },
+     "P_ROOT": {
+          "p": "C:\\<DEV>\\root",
+          "d": "Root Folder containing dev projects"
+     },
+     "E_SAMPLE": {
+          "d": "Example for a typed Environment key-value pair to be added",
+          "k": "env_value_example",
+          "t": "int",
+          "v": 10
+     },
+     "E_SAMPLE_WRONG_TYPE": {
+          "d": "Example for a typed Environment with a wrong type",
+          "k": "env_sample_wrong_type",
+          "t": "int",
+          "v": "hugo"
+     },
+     "E_SIMPLE": {
+          "d": "Example for minimal ENV definition, key is the main key ",
+          "v": "env_simple_value_example"
+     },
+     "J_DICT": {
+          "d": "Example for an ENV with a json config",
+          "k": "j_dict_key",
+          "v": {
+               "k1j": "jv1",
+               "k2j": 1
+          }
+     },
+     "J_DICT_WRONG": {
+          "d": "Example for wrong json",
+          "k": "j_dict_key",
+          "v": "INVALID JSON"
+     },
+     "J_DICT_STR": {
+          "d": "Example for an ENV with a json config as json str",
+          "k": "j_dict_str",
+          "v": "{\"k1\":\"v1\",\"k2\":2}"
+     },
+     "E_SAMPLE_WHERE": {
+          "d": "Example for a value with a ref to a where key",
+          "v": "[W_PYTHON]"
+     },
+     "E_SAMPLE_REF2": {
+          "d": "Example for a value with a ref to another config key",
+          "v": "[CMD_EXAMPLE1]"
+     },
+     "E_SAMPLE_WRONGREF": {
+          "d": "Example for a value with a wrong ref ",
+          "v": "[WRONG_REF]"
+     },
+     "E_SAMPLE_WITHKEY": {
+          "d": "Example for a value with a key",
+          "k": "key_sample_with_key",
+          "v": "value_sample_with_key"
+     },
+     "E_SAMPLE_ALL_TYPES": {
+          "d": "Env Example for environemnt for all env types",
+          "k": "key_sample_alltypes",
+          "v": "value_sample_with_all_types",
+          "et": [
+               "internal",
+               "os_environ",
+               "env_file",
+               "key_file",
+               "bat"
+          ]
+     },
+     "E_SAMPLE_FILEREF": {
+          "d": "Env Example with a file reference",
+          "p": "[CWD]",
+          "k": "key_sample_fileref",
+          "v": "value_sample_with_all_types",
+          "et": [
+               "internal",
+               "os_environ",
+               "env_file",
+               "key_file",
+               "bat"
+          ]
+     },
+     "W_PYTHON": {
+          "d": "(W)here Python, tries to get the Python command usually the VENV Python using where on OS level"
+     },
+     "W_GIT_234": {
+          "d": "(W)here Git, other vars are used to store an env file in ff format. The _CWD_ is a shortcut to current path",
+          "k": "git",
+          "p": "[CWD]",
+          "f": "test.env",
+          "ff": "win"
+     },
+     "W_NOTEPAD": {
+          "d": "(W)here Notepad",
+          "k": "notepad",
+          "p": "[CWD]",
+          "et": [
+               "internal",
+               "bat"
+          ],
+          "f": "test.env",
+          "ff": "win"
+     },
+     "CMD_CYGPATH": {
+          "p": "[P_GIT]",
+          "f": "cygpath.exe",
+          "d": "Path Conversion utility (Part of Git)"
+     },
+     "CMD_EXAMPLE1": {
+          "p": "[P_CONFIGTEST]",
+          "f": "cmd_dummy1.txt",
+          "d": "Command line example 1 to show how it can be called with commands",
+          "c": {
+               "CMD_FILE": "[CMD] -f [FILE]",
+               "CMD_FILE_LINE": "[CMD] -f [FILE] -l [LINE]"
+          }
+     },
+     "CMD_EXAMPLE2": {
+          "p": "[P_CONFIGTEST]",
+          "f": "cmd_dummy2.txt",
+          "d": "Command line example 2 to show how it can be called with commands",
+          "c": {
+               "CMD_FILE_LINE": {
+                    "r": "[CMD] -f [FILE] -l [LINE]",
+                    "d": "Command Line Option with a description"
+               }
+          }
+     },
+     "CMD_EXAMPLE3": {
+          "p": "[P_CONFIGTEST]",
+          "f": "cmd_dummy3.txt",
+          "d": "Command line example 3 to show tpyed file params",
+          "c": {
+               "CMD_FILE": "[CMD] -f [FILE]",
+               "CMD_FILE_LINE": "[CMD] -f [FILE] -l [LINE]"
+          }
+     },
+     "CMD_EXAMPLE4": {
+          "p": "[P_CONFIGTEST]",
+          "f": "cmd_dummy1.txt",
+          "d": "Command line example 4 to show how it can be called with commands and vars can be typed (DataType)",
+          "c": {
+               "CMD_FILE": "[CMD] -f [FILE]",
+               "CMD_FILE_LINE": "[CMD] -f [FILE] -l [LINE]",
+               "CMD_F_CONFIGTEST1_LINE": "[CMD] -c [F_CONFIGTEST1] -l [LINE]"
+          },
+          "t": {
+               "FILE": "path",
+               "LINE": "int",
+               "F_CONFIGTEST1": "config"
+          }
+     },
+     "CMD_EXAMPLE_PY": {
+          "f": "[W_PYTHON]",
+          "d": "Command line example 1 to reference the current Python Executable defined in W_PYTHON",
+          "c": {
+               "W_PYTHON_VERSION": {
+                    "r": "[W_PYTHON] --version",
+                    "d": "Command Line Option with a description note there need to be identical parts"
+               }
+          }
+     },
+     "CMD_EXAMPLE_WRONG": {
+          "p": "[P_CONFIGTEST]",
+          "f": "cmd_dummy2.txt",
+          "d": "Command line example 1 to show how it can be called with commands",
+          "c": {
+               "CMD_FILE_LINE": {
+                    "r": "[CMD] -f [WRONG] -l [LINE]",
+                    "d": "Command Line Option with errors"
+               }
+          }
+     },
+     "P_CONFIGTEST": {
+          "p": "[P_CONFIGTEST]",
+          "d": "ConfigTest - will be populated by unittest as absolute path",
+          "g": [
+               "groupA"
+          ]
+     },
+     "F_CONFIGTEST1": {
+          "f": "[PATH_TO_CONFIGTEST1]",
+          "d": "ConfigTest1 - will be populated by unittest as absolute path"
+     },
+     "F_CONFIGTEST2": {
+          "f": "file2_config.txt",
+          "p": "[P_CONFIGTEST]",
+          "d": "ConfigTest2 - use Symboilic Path P_CONFIGTEST",
+          "g": [
+               "groupA"
+          ]
+     },
+     "F_CONFIGTEST3": {
+          "f": "file3_config.txt",
+          "p": "absolute path",
+          "d": "ConfigTest1 - p will be populated by absolute paths"
+     },
+     "F_CONFIGTEST4": {
+          "f": "[P_CONFIGTEST]/file3_config.txt",
+          "d": "ConfigTest4 Symbolic Path"
+     },
+     "R_RULETEST": {
+          "p": "[P_CONFIGTEST]",
+          "d": "Sample how to define filematcher rules within env configuration",
+          "r": [
+               {
+                    "name": "rule_name",
+                    "ignorecase": true,
+                    "is_regex": true,
+                    "rule": "sample_rule",
+                    "regex": "rule_regex_str",
+                    "apply": "any",
+                    "rule_include": true,
+                    "rule_file": "files_absolute",
+                    "find_by_line": true
+               }
+          ]
+     },
+     "R_RULETEST_WRONG": {
+          "p": "[P_CONFIGTEST]",
+          "d": "Sample for wrong rules",
+          "r": [
+               {
+                    "wrong_name": "rule_name",
+                    "rule_file": "files_absolute",
+                    "find_by_line": true
+               }
+          ]
+     },
+     "D_EXAMPLE": {
+          "d": "Example for parsing data from txt to tabular dict data ",
+          "x": "^(\\d+\\.\\d+\\.\\d+)(\\D+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S*)",
+          "s": "02.09.2024Kauf1,1111 Stück333,33 EUR444,44 EUR",
+          "k": {
+               "isin": "ISIN_NUMMER"
+          },
+          "dd": {
+               "0": "DATUM",
+               "1": "UMSATZART",
+               "2": "STÜCK",
+               "3": "EINHEIT",
+               "4": "KAUFKURS",
+               "5": "WÄHRUNG1",
+               "6": "KURS_AKTUELL",
+               "7": "WÄHRUNG2"
+          },
+          "e": [
+               {
+                    "k": "DATUM",
+                    "t": "date"
+               },
+               "DATUM_N",
+               "ISIN_NUMMER",
+               {
+                    "k": "KAUFKURS",
+                    "t": "float"
+               },
+               {
+                    "k": "KURS_AKTUELL",
+                    "t": "float"
+               },
+               {
+                    "k": "STÜCK",
+                    "t": "float"
+               }
+          ],
+          "env": {
+               "DEC_SEPARATOR": ",",
+               "DATE_FORMAT": "%d.%m.%Y",
+               "CSV_WRAP_CHAR": "\""
+          }
+     },
+     "D_DEPOTHISTORIE": {
+          "d": "Parsing Share History",
+          "x": "^(\\d+\\.\\d+\\.\\d+)(\\D+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S+?)([0-9,\\s]+)(\\S*)",
+          "s": "02.09.2024Kauf1,1111 Stück333,33 EUR444,44 EUR",
+          "k": {
+               "isin": "ISIN_NUMMER"
+          },
+          "dd": {
+               "0": "DATUM",
+               "1": "UMSATZART",
+               "2": "STUECK",
+               "3": "EINHEIT",
+               "4": "KAUFKURS",
+               "5": "WÄHRUNG1",
+               "6": "KURS_AKTUELL",
+               "7": "WÄHRUNG2"
+          },
+          "e": [
+               {
+                    "k": "DATUM",
+                    "t": "date"
+               },
+               "DATUM_N",
+               "ISIN_NUMMER",
+               {
+                    "k": "KAUFKURS",
+                    "t": "float"
+               },
+               {
+                    "k": "KURS_AKTUELL",
+                    "t": "float"
+               },
+               {
+                    "k": "STUECK",
+                    "t": "float"
+               }
+          ],
+          "env": {
+               "DEC_SEPARATOR": ",",
+               "DATE_FORMAT": "%d.%m.%Y",
+               "CSV_WRAP_CHAR": "\""
+          }
+     },
+     "D_DEPOTSTAMM": {
+          "d": "Share Master Data",
+          "x": "Wertpapier(.+?)ISIN(.*)\\/.+WKN(.*?)Bestand([0-9,]+)",
+          "s": "DetailsWertpapierAIS AM ST E600 ETF AISIN AB123456 / WKN AB1234Bestand1,47851 StückAltbestand0 Stück×",
+          "dd": {
+               "0": "AKTIE_NAME",
+               "1": "ISIN",
+               "2": "WKN",
+               "3": "ANZAHL"
+          },
+          "e": [
+               "AKTIE_NAME",
+               "ISIN",
+               "WKN",
+               {
+                    "k": "ANZAHL",
+                    "t": "float"
+               }
+          ],
+          "env": {
+               "DEC_SEPARATOR": ",",
+               "DATE_FORMAT": "%d.%m.%Y",
+               "CSV_WRAP_CHAR": "\""
+          }
+     }
 }

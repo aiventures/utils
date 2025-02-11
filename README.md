@@ -41,6 +41,11 @@ A sample config showcasing the config structure is stored here
 If you run
 ```python <root>/src/demo/demo_config.py```, this sample config (with some functional configs) will be copied to path ```[home]/.cli_client/``` directory (with home path being an os dependent path)
 
+## Installation Steps
+
+* In a script, define Environment Variables, if you want to install artifatcs at different locations (ENV Vars are defined in [bootstrap_env.py](src/cli/bootstrap_env.py) ), otherwise defaults will be used 
+  * TODO Describe
+
 ## Configuration Bootstrapping Order
 
 If you do not instanciate the configuration file for yourself by directly submitting config file location, it will be attempted to bootstrap the configuration file in the following order ```<path>\utils\src\util\config_env.py > _bootstrap_path ```):
