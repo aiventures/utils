@@ -9,7 +9,7 @@ from rich.prompt import Confirm
 from util import constants as C
 from util.persistence import Persistence
 
-from cli.bootstrap_env import CLI_LOG_LEVEL, PATH_ROOT, FILE_CONFIGFILE_HOME
+from cli.bootstrap_env import CLI_LOG_LEVEL, TEST_PATH, FILE_CONFIGFILE_HOME
 
 
 logger = logging.getLogger(__name__)
@@ -19,8 +19,8 @@ logger.setLevel(CLI_LOG_LEVEL)
 
 def create_demo_config() -> str:
     """creates a demo config if not created yet and returns file path"""
-    p_testpath = PATH_ROOT.joinpath("test_data", "test_config")
-    f_testconfig_template = str(p_testpath.joinpath("config_env_template.json"))
+    p_testpath = os.path.join(TEST_PATH, "test_data", "test_config")
+    f_testconfig_template = str(Path(p_testpath).joinpath("config_env_template.json"))
     _sample_config_json = str(os.path.join(p_testpath, "config_env_sample.json"))
     if os.path.isfile(_sample_config_json):
         return _sample_config_json

@@ -16,7 +16,7 @@ from rich.style import Style
 from rich.table import Table
 from rich_theme_manager import Theme, ThemeManager
 
-from cli.bootstrap_env import PATH_ROOT, CLI_LOG_LEVEL
+from cli.bootstrap_env import CLI_LOG_LEVEL, TEST_PATH
 
 # TODO MOVE THIS TO A CONFIG FILE
 from util import constants as C
@@ -394,7 +394,7 @@ class ColorMapper:
 
         # set a default path
         if self._p_resources is None or not os.path.isdir(self._p_resources):
-            self._p_resources = os.path.join(str(PATH_ROOT), "resources")
+            self._p_resources = os.path.join(str(TEST_PATH), "resources")
             logger.info(f"[ColorMapper] Setting resource path [{self._p_resources}]")
 
         self._f_color_themes = os.path.join(self._p_resources, F_COLOR_THEMES)

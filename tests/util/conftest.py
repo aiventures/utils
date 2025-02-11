@@ -9,7 +9,7 @@ import pytest
 from demo.demo_config import create_demo_config
 from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel, FilterSetModel
 from model.model_persistence import ParamsFind
-from cli.bootstrap_env import PATH_ROOT
+from cli.bootstrap_env import TEST_PATH
 from util import constants as C
 from util.abstract_enum import AbstractEnum
 from util.bat_helper import BatHelper
@@ -27,20 +27,20 @@ from util.utils import Utils
 @pytest.fixture(scope="module")
 def fixture_testpath() -> Path:
     """Sample Path"""
-    p_testpath = str(PATH_ROOT.joinpath("test_data", "test_path"))
+    p_testpath = Path(os.path.join(TEST_PATH, "test_data", "test_path"))
     return p_testpath
 
 
 @pytest.fixture(scope="module")
-def fixture_path_testdata():
+def fixture_path_testdata() -> str:
     """path to testdata"""
-    return str(PATH_ROOT.joinpath("test_data"))
+    return os.path.join(TEST_PATH, "test_data")
 
 
 @pytest.fixture(scope="module")
 def fixture_battest_path() -> str:
     """Sample Path"""
-    p_testpath = str(PATH_ROOT.joinpath("test_data", "bat"))
+    p_testpath = os.path.join(TEST_PATH, "test_data", "bat")
     return p_testpath
 
 
@@ -56,7 +56,7 @@ def fixture_testpath_withspace(fixture_testpath) -> Path:
 def fixture_win_paths(fixture_testpath, fixture_testpath_withspace) -> list:
     """fixture contianing several path combinations for windows"""
     out = []
-    out.append(fixture_testpath)
+    out.append(str(fixture_testpath))
     out.append(os.path.join(fixture_testpath, "lorem_doc_root.md"))
     out.append(os.path.join(fixture_testpath, "file_doesnt_exist.txt"))
     out.append(fixture_testpath_withspace)
@@ -225,21 +225,21 @@ def fixture_ruledict_file_content_all_rules(fixture_ruledict_file_content):
 @pytest.fixture(scope="module")
 def fixture_set_vars_template() -> Path:
     """Sample Path to bat template"""
-    f_vars_template = PATH_ROOT.joinpath("resources", "set_vars_template.bat")
+    f_vars_template = Path(TEST_PATH).joinpath("resources", "set_vars_template.bat")
     return f_vars_template
 
 
 @pytest.fixture(scope="module")
 def fixture_set_vars() -> Path:
     """Sample Path to created path"""
-    f_vars_template = PATH_ROOT.joinpath("resources", "set_vars.bat")
+    f_vars_template = Path(TEST_PATH).joinpath("resources", "set_vars.bat")
     return f_vars_template
 
 
 @pytest.fixture(scope="module")
 def fixture_bat_testpath() -> Path:
     """Sample Path"""
-    p_bat_testpath = str(PATH_ROOT.joinpath("test_data", "bat"))
+    p_bat_testpath = Path(TEST_PATH).joinpath("test_data", "bat")
     return p_bat_testpath
 
 
@@ -249,7 +249,7 @@ def fixture_bat_testpath() -> Path:
 @pytest.fixture
 def fixture_config_env_testpath() -> Path:
     """Sample Path"""
-    p_testpath = PATH_ROOT.joinpath("test_data", "test_config")
+    p_testpath = Path(os.path.join(TEST_PATH, "test_data", "test_config"))
     return p_testpath
 
 
@@ -315,7 +315,7 @@ def fixture_config_env() -> ConfigEnv:
 @pytest.fixture(scope="module")
 def fixture_testfile_tablizer() -> str:
     """Sample Path to tablizer file"""
-    f_test_file = str(PATH_ROOT.joinpath("test_data", "test_path", "testfile_for_table.txt"))
+    f_test_file = os.path.join(TEST_PATH, "test_data", "test_path", "testfile_for_table.txt")
     return f_test_file
 
 

@@ -1,26 +1,24 @@
 """Managing Configuration for a given command line"""
 
 import json
-from json import JSONDecodeError
 import logging
 import os
 import re
 import sys
-
-# TODO REPLACE BY UNIT TESTS
-# when doing tests add this to reference python path
-# sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from cli.bootstrap_env import FILE_CONFIGFILE_HOME, PATH_HOME, PATH_RESOURCES, PATH_ROOT
 from copy import deepcopy
 from datetime import datetime as DateTime
 from functools import wraps
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Dict, List
-import json
 
 from rich import print as rprint
 from rich import print_json
 
+# TODO REPLACE BY UNIT TESTS
+# when doing tests add this to reference python path
+# sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from cli.bootstrap_env import CLI_LOG_LEVEL, FILE_CONFIGFILE_HOME, PATH_HOME, PATH_RESOURCES, TEST_PATH
 from demo.demo_config import create_demo_config
 from model.model_config import ConfigItemProcessed, SourceEnum, SourceRef
 from util import constants as C
@@ -28,8 +26,6 @@ from util.colors import col
 from util.constants import DEFAULT_COLORS as CMAP
 from util.persistence import Persistence
 from util.utils import Utils
-from cli.bootstrap_env import CLI_LOG_LEVEL
-
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -959,6 +955,9 @@ class ConfigEnv:
         print(col(f"\n###### CONFIGURATION [{self._f_config}]\n", "C_T"))
         _list = col("    *", "C_TX")
         n = 1
+        if self._config is None:
+            logger.error(f"[ConfigEnv] CONFIGURATION [{self._f_config}] was not loaded, exiting")
+            return
         for key, config in self._config.items():
             _num = col(f"[{str(n).zfill(3)}] ", "C_LN")
             _key = col(f"{key:<20} ", "C_KY")
@@ -967,7 +966,7 @@ class ConfigEnv:
 
             _ref = config.get(C.ConfigAttribute.REFERENCE.value)
             if _ref:
-                _ref = col("(" + _ref + ")", "C_F")
+                _ref = col("(" + str(_ref) + ")", "C_F")
             else:
                 _ref = col("INVALID", "C_ERR")
             print(_num + _key + _description + _ref)
@@ -1032,6 +1031,7 @@ class Environment:
         # initialize the environment
         _env_dict = {}
         _env_dict[C.EnvType.ATTRIBUTE] = []
+        _env_dict[C.EnvType.JSON] = []
         _env_dict[C.EnvType.INTERNAL] = []
         _env_dict[C.EnvType.ENV_FILE] = []
         _env_dict[C.EnvType.BAT] = []
@@ -1211,7 +1211,7 @@ class Environment:
             bat_env_dict = {}
 
         if f_out is None:
-            f_out = str(PATH_HOME.joinpath(C.F_BAT_SET_VARS))
+            f_out = str(Path(PATH_HOME).joinpath(C.F_BAT_SET_VARS))
         else:
             if not isinstance(f_out, str):
                 f_out = str(f_out)
@@ -1220,7 +1220,7 @@ class Environment:
             _msg = f"[ENV] Couldn't resolve a valid path for [{f_out}], check entry"
             logger.warning(_msg)
             return None
-        _bat_template = Persistence.read_txt_file(PATH_RESOURCES.joinpath("bat", C.F_BAT_SET_VARS_TEMPLATE))
+        _bat_template = Persistence.read_txt_file(Path(PATH_RESOURCES).joinpath("bat", C.F_BAT_SET_VARS_TEMPLATE))
 
         _bat_keys = self.get_envs_by_type(C.EnvType.BAT)
         _bat_set = []
@@ -1504,7 +1504,8 @@ if __name__ == "__main__":
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    f = PATH_ROOT.joinpath("test_data", "test_config", "config_env_sample.json")
+    f = Path(TEST_PATH).joinpath("test_data", "test_config", "config_env_sample.json")
     config = ConfigEnv(f)
     # config.show()
     config.show_json()
+    config.show()

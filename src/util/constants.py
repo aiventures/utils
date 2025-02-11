@@ -5,16 +5,6 @@ from copy import deepcopy
 from logging import ERROR as LOG_ERROR
 from pathlib import Path
 
-# from typing import Any
-# from cli.bootstrap_env import (
-#     OS_BOOTSTRAP_VARS,
-#     PATH_ROOT,
-#     PATH_TEST_OUTPUT,
-#     PATH_RESOURCES,
-#     PATH_HOME,
-#     FILE_CONFIGFILE_HOME,
-# )
-
 from util.abstract_enum import AbstractEnum
 
 # TODO SWITCH TO PYDANTIC IN FUTURE

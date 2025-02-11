@@ -15,7 +15,7 @@ from rich.prompt import Prompt
 from typing_extensions import Annotated, Optional
 
 # from util.const_local import LOG_LEVEL
-from cli.bootstrap_env import PATH_ROOT, CLI_LOG_LEVEL
+from cli.bootstrap_env import CLI_LOG_LEVEL, TEST_PATH
 from util import constants as C
 from util.persistence import Persistence
 
@@ -166,7 +166,7 @@ def demo_progress2():
 @app.command("progress_sample")
 def demo_progress_sample():
     """progress from test data sample"""
-    p = os.path.join(PATH_ROOT, "test_data")
+    p = os.path.join(TEST_PATH, "test_data")
     # display the file search
     _file_objects = Persistence.find(p, show_progress=True)
 
@@ -247,7 +247,7 @@ def demo_open_file():
     print(f"OPENING EXPLORER USING FILENAME [{_file}]")
     typer.launch(_file, locate=True)
     typer.launch(_file, locate=False)
-    _file = os.path.join(PATH_ROOT, "test_data", "test_path", "testfile_for_table.txt")
+    _file = os.path.join(TEST_PATH, "test_data", "test_path", "testfile_for_table.txt")
     print(f"OPENING FILE [{_file}]")
     typer.launch(_file, locate=False)
     print(f"OPENING FILE LOCATION [{_file}]")

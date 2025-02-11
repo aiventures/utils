@@ -10,7 +10,7 @@ import pytest
 
 from util import constants as C
 from util.persistence import Persistence
-from cli.bootstrap_env import PATH_ROOT
+from cli.bootstrap_env import TEST_PATH
 
 ### [1] Fixtures for File Analyzer
 
@@ -18,14 +18,14 @@ from cli.bootstrap_env import PATH_ROOT
 @pytest.fixture
 def fixture_config_testpath() -> Path:
     """Sample Path"""
-    p_testpath = PATH_ROOT.joinpath("test_data", "test_config")
+    p_testpath = Path(os.path.join(TEST_PATH, "test_data", "test_config"))
     return p_testpath
 
 
 @pytest.fixture
 def fixture_config_env_testconfig_template(fixture_config_testpath) -> Path:
     """Sample Path to configuration file"""
-    return str(fixture_config_testpath.joinpath("config_env_template.json"))
+    return fixture_config_testpath.joinpath("config_env_template.json")
 
 
 @pytest.fixture

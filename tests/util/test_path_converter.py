@@ -23,7 +23,7 @@ logger.setLevel(CLI_LOG_LEVEL)
 def test_resolve_paths(transform_rule, fixture_paths):
     """testing resolve path for win paths (implicitly using PathConverter)"""
     for _path in fixture_paths:
-        _resolved_path = Utils.resolve_path(_path, transform_rule=transform_rule, check_exist=False, info=True)
+        _resolved_path = Utils.resolve_path(str(_path), transform_rule=transform_rule, check_exist=False, info=True)
         # do some sanity checks
         if transform_rule == "DOS" and not Utils.is_windows():
             continue

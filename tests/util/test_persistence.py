@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import pytest
 
-from cli.bootstrap_env import PATH_ROOT
+from cli.bootstrap_env import TEST_PATH
 
 from util import constants as C
 from util.csv_parser import CsvParser
@@ -123,7 +123,7 @@ def create_testcases_find() -> list:
     #  '...\\root\\utils\\test_data\\test_path\\subpath2\\lorem_ipsum_2.md'
 
     out = []
-    _p_testpath = str(PATH_ROOT.joinpath("test_data", "test_path"))
+    _p_testpath = os.path.join(TEST_PATH, "test_data", "test_path")
 
     _kwargs = {
         "p_root_paths": _p_testpath,

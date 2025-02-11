@@ -8,7 +8,7 @@ from util.utils import CmdRunner
 def test_custom_win_split_valid(fixture_test_paths):
     """converting valid paths for windows"""
     for test_path in fixture_test_paths:
-        converted = CmdRunner.custom_win_split(test_path)
+        converted = CmdRunner.custom_win_split(str(test_path))
         assert isinstance(converted, list) and len(converted) > 0
 
 

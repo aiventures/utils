@@ -10,8 +10,9 @@ import os
 import sys
 from copy import deepcopy
 from datetime import datetime as DateTime
-from cli.bootstrap_env import PATH_ROOT, CLI_LOG_LEVEL
+from cli.bootstrap_env import TEST_PATH, CLI_LOG_LEVEL
 import util.constants as C
+from pathlib import Path
 
 from util.config_env import ConfigEnv
 from util.csv_parser import CsvParser
@@ -179,7 +180,7 @@ def main():
     """main program"""
     # read configuration, parse all information and export it as csv to original path
     # read sample configuration
-    p_testconfig = PATH_ROOT.joinpath("test_data", "test_config")
+    p_testconfig = Path(TEST_PATH).joinpath("test_data", "test_config")
     # you need to run the unit tests before this
     f_config = os.path.join(p_testconfig, "config_env_sample.json")
     _date_s = DateTime.now().strftime(C.DATEFORMAT_JJJJMMDD)

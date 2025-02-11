@@ -130,7 +130,7 @@ def test_set_environment(fixture_environment):
 def test_create_set_vars_bat(fixture_battest_path, fixture_environment):
     """check setting of environment"""
     # create a test env file
-    _f_bat_set_vars = Path(fixture_battest_path).joinpath("test_bat_set_vars.bat")
+    _f_bat_set_vars = str(Path(fixture_battest_path).joinpath("test_bat_set_vars.bat"))
     # clean up previous test file
     if os.path.isfile(_f_bat_set_vars):
         os.remove(_f_bat_set_vars)

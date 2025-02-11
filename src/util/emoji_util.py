@@ -206,7 +206,7 @@ class EmojiUtil:
     @staticmethod
     def read_emoji_meta(key_replace_spaces: bool = False) -> dict:
         """gets the meta information from the json with emoji name as key"""
-        f_emoji = PATH_RESOURCES.joinpath("emoji.json")
+        f_emoji = Path(PATH_RESOURCES).joinpath("emoji.json")
         _emojis = Persistence.read_json(f_emoji)
         out = {}
         for _emoji_meta in _emojis.values():
