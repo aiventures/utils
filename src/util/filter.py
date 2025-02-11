@@ -1,7 +1,6 @@
 """Generic Filter"""
 
 import logging
-import os
 import re
 from abc import ABC, abstractmethod
 from datetime import datetime as DateTime
@@ -18,7 +17,6 @@ from model.model_filter import (
     IncludeType,
     AnyOrAllType,
 )
-from util import constants as C
 from util.calendar_filter import CalendarFilter as CalendarFilterObject
 from cli.bootstrap_env import CLI_LOG_LEVEL
 

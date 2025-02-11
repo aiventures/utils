@@ -1,7 +1,6 @@
 """Calendar and Time Utils"""
 
 import logging
-import os
 import re
 from datetime import date, timedelta
 from datetime import datetime as DateTime
@@ -21,7 +20,6 @@ from model.model_calendar import (
 from model.model_worklog import ShortCodes
 
 # regex to extract todo_txt string matching signature @(...)
-from util import constants as C
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given

@@ -8,7 +8,6 @@ from pydantic import ConfigDict, BaseModel
 
 # from util.filter_set import ParamsFileTreeModel
 from model.model_persistence import ParamsFind
-from util import constants as C
 from util.persistence import Persistence
 from util.tree import Tree
 from util.utils import FILES, IS_FILE, PARENT, PATHS, ROOT, SIZE, TOTAL_SIZE, VALUE, Utils

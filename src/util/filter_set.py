@@ -1,15 +1,11 @@
 """Combined Atomic Filters to a filter set"""
 
 import logging
-import os
-from datetime import datetime as DateTime
 from typing import Dict, List
 
 
 from model.model_filter import FilterSetModel, AtomicFilterResult, FilterSetResult
-from util import constants as C
 from util.filter import AbstractAtomicFilter
-from util.utils import Utils
 from cli.bootstrap_env import CLI_LOG_LEVEL
 from cli.bootstrap_env import CLI_LOG_LEVEL
 
@@ -108,7 +104,6 @@ class FilterSet(AbstractAtomicFilter):
         self, obj: object, filter_key: object, attribute: str, atomic_filter: AbstractAtomicFilter
     ) -> AtomicFilterResult:
         """does the filtering using the atomic filter"""
-        out = []
         _operator = atomic_filter.operator
         _include = atomic_filter.include
         # _attributes = atomic_filter.attributes

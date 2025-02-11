@@ -1,7 +1,6 @@
 """Calendar and Time Utils"""
 
 import logging
-import os
 import re
 from datetime import datetime as DateTime
 from typing import Any, Dict, List
@@ -12,7 +11,6 @@ from model.model_calendar import (
 )
 
 # regex to extract todo_txt string matching signature @(...)
-from util import constants as C
 from util.calendar_constants import REGEX_YYYYMMDD, WEEK_INDEX_NEXT_YEAR, WEEK_INDEX_PREVIOUS_YEAR
 from util.calendar_filter import CalendarFilter
 from util.datetime_util import DAYS_IN_MONTH, DateTimeUtil

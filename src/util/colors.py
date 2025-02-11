@@ -22,8 +22,6 @@ ESC[38;5;(n)m Select foreground color ESC[48;5;(n)m Select background color wher
 import sys
 import logging
 from enum import Enum
-import os
-from util import constants as C
 from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)

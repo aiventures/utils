@@ -1,13 +1,15 @@
 """Helper class to read / write (single) file"""
 
+import io
 import json
 import logging
 import os
 import re
+import shutil
 import sys
-import io
 from datetime import datetime as DateTime
 from pathlib import Path
+from typing import Literal
 
 from rich import print as rprint
 from rich.progress import track
@@ -15,25 +17,26 @@ from rich.progress import track
 from util import constants as C
 from util.constants import ColorDefault as Color
 
+from cli.bootstrap_env import CLI_LOG_LEVEL
+
 # circular import
 # from cli.bootstrap_config import console
-
-
 # when doing tests add this to reference python path
 if __name__ == "__main__":
     sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-# exclude yaml handling here to avoid import of required libs
-# import yaml
-# from yaml import CLoader
-# from yaml.composer import Composer
-# from yaml.constructor import Constructor
-from cli.bootstrap_env import CLI_LOG_LEVEL
+# optional loading yaml
+PY_YAML_INSTALLED = True
+try:
+    import yaml
+    from yaml.composer import Composer
+    from yaml.constructor import Constructor
+except ImportError:
+    PY_YAML_INSTALLED = False
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
 logger.setLevel(CLI_LOG_LEVEL)
-
 
 # byte order mark indicates non standard UTF-8
 BOM = "\ufeff"
@@ -83,9 +86,37 @@ class Persistence:
             return None
 
     @staticmethod
+    def copy_file(
+        f_from: str, p_to: str, action: Literal["skip", "overwrite", "create_backup"] = "create_backup"
+    ) -> str:
+        """copies a file to a target path and will do the aprropriate action if a file already exists,
+        returns the path of copied file if created succesfile"""
+
+        if not os.path.isdir(p_to):
+            logger.warning(f"[Persistence] [{p_to}] is not a valid target path")
+            return
+        if not os.path.isfile(f_from):
+            logger.warning(f"[Persistence] [{f_from}] is not a valid file")
+            return
+        _file_from = Path(f_from)
+        _f_to = os.path.join(p_to, _file_from.name)
+        if os.path.isfile(_f_to):
+            if action == "skip":
+                logger.warning(f"[Persistence] [{_f_to}] already exists,skipping copy")
+                return
+            elif action == "create_backup":
+                _date_now = DateTime.now().strftime(C.DATEFORMAT_JJJJMMDDHHMMSS)
+                _filename_copy = f"{_file_from.stem}_{_date_now}{_file_from.suffix}"
+                _filename_copy = shutil.copy2(f_from, os.path.join(p_to, _filename_copy))
+                logger.info(f"[Persistence], created backup [{_filename_copy}]")
+        _f_to = shutil.copy2(f_from, _f_to)
+        logger.info(f"[Persistence], copied file from [{f_from}] to [{_f_to}]")
+        return _f_to
+
+    @staticmethod
     def istextfile(f: str, blocksize=512) -> bool:
         """checking heuristically whether a file might be a binary
-        use din favor over binaryornot module to save a depedency
+        used in favor over binaryornot module to save a depedency
         """
         with io.open(f, mode="rb") as file:
             block = file.read(blocksize)
@@ -859,6 +890,51 @@ class Persistence:
         Persistence.save_txt_file(f_save, data)
         return f_save
 
+    @staticmethod
+    def read_yaml(filepath: str, line_key: str = None) -> dict:
+        """Reads YAML file (optionally with line numbers)"""
+        # https://stackoverflow.com/questions/13319067
+        if not PY_YAML_INSTALLED:
+            logger.warning("PYYAMLI is not installed, ensure to install it in your environment")
+            return
+
+        def compose_node(parent, index):
+            # the line number where the previous token has ended (plus empty lines)
+            line = loader.line
+            node = Composer.compose_node(loader, parent, index)
+            node.__line__ = line + 1
+            return node
+
+        def construct_mapping(node, deep=False):
+            mapping = Constructor.construct_mapping(loader, node, deep=deep)
+            mapping[line_key] = str(node.__line__)
+            return mapping
+
+        if not os.path.isfile(filepath):
+            logger.warning(f"File path {filepath} does not exist. Exiting...")
+            return None
+        loader = yaml.Loader(open(filepath, encoding="utf-8").read())
+        if line_key:
+            loader.compose_node = compose_node
+            loader.construct_mapping = construct_mapping
+        data = loader.get_single_data()
+        return data
+
+    @staticmethod
+    def save_yaml(filepath, data: dict) -> None:
+        """Saves dictionary data as UTF8 yaml"""
+        # encode date time and other objects in dict see
+        if not PY_YAML_INSTALLED:
+            logger.warning("PYYAMLI is not installed, ensure to install it in your environment")
+            return
+
+        with open(filepath, "w", encoding="utf-8") as yaml_file:
+            try:
+                yaml.dump(data, yaml_file, default_flow_style=False, sort_keys=False)
+            except:
+                logger.error(f"Exception writing file {filepath}", exc_info=True)
+            return None
+
 
 if __name__ == "__main__":
     loglevel = logging.DEBUG
@@ -914,57 +990,3 @@ if __name__ == "__main__":
     #         return
     #     logger.info(f"Saved [{suffix}] data: {f_save}")
     #     return f_save
-
-    # @staticmethod
-    # def read_yaml(filepath:str,line_key:str=None)->dict:
-    #     """ Reads YAML file (optionally with line numbers)"""
-    #     # https://stackoverflow.com/questions/13319067
-
-    #     def compose_node(parent, index):
-    #         # the line number where the previous token has ended (plus empty lines)
-    #         line = loader.line
-    #         node = Composer.compose_node(loader, parent, index)
-    #         node.__line__ = line + 1
-    #         return node
-
-    #     def construct_mapping(node, deep=False):
-    #         mapping = Constructor.construct_mapping(loader, node, deep=deep)
-    #         mapping[line_key] = str(node.__line__)
-    #         return mapping
-
-    #     if not os.path.isfile(filepath):
-    #         logger.warning(f"File path {filepath} does not exist. Exiting...")
-    #         return None
-    #     loader = yaml.Loader(open(filepath,encoding='utf-8').read())
-    #     if line_key:
-    #         loader.compose_node = compose_node
-    #         loader.construct_mapping = construct_mapping
-    #     data = loader.get_single_data()
-    #     return data
-
-    # @staticmethod
-    # def read_yaml_old(filepath:str,)->dict:
-    #     """ Reads YAML file """
-
-    #     if not os.path.isfile(filepath):
-    #         logger.warning(f"File path {filepath} does not exist. Exiting...")
-    #         return None
-    #     data = None
-    #     try:
-    #         with open(filepath, encoding='utf-8',mode='r') as stream:
-    #             data = yaml.load(stream,Loader=CLoader)
-    #     except:
-    #         logger.error(f"Error opening {filepath} ****",exc_info=True)
-    #     return data
-
-    # @staticmethod
-    # def save_yaml(filepath,data:dict)->None:
-    #     """ Saves dictionary data as UTF8 yaml"""
-    #     # encode date time and other objects in dict see
-
-    #     with open(filepath, 'w', encoding='utf-8') as yaml_file:
-    #         try:
-    #             yaml.dump(data,yaml_file,default_flow_style=False,sort_keys=False)
-    #         except:
-    #             logger.error(f"Exception writing file {filepath}",exc_info=True)
-    #         return None

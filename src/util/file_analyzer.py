@@ -90,7 +90,7 @@ class FileSysObjectInfo:
     def files(self) -> list:
         """returns absolute Paths of all files found"""
         _file_list = []
-        for p, p_info in self._files.items():
+        for _, p_info in self._files.items():
             _files = p_info.get(C.FILES_ABSOLUTE, [])
             _ = [_file_list.append(str(f)) for f in _files]
         logger.debug(f"[FileInfo] Returning [{len(_file_list)}] Files")

@@ -6,30 +6,20 @@ import re
 import sys
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List
 
 # from typer import progressbar as t_progressbar
 from rich.progress import Progress, TaskID
 
 from cli.bootstrap_config import config_env, console
-from model.model_code_artifacts import (
-    ArtifactMeta,
-    CodeMeta,
-    CodeMetaDict,
-    GitMeta,
-    VenvMeta,
-    VsCodeMeta,
-)
-from model.model_code_artifacts import (
-    CodeArtifactEnum as ARTIFACT,
-)
+from cli.bootstrap_env import CLI_LOG_LEVEL
+from model.model_code_artifacts import ArtifactMeta
+from model.model_code_artifacts import CodeArtifactEnum as ARTIFACT
+from model.model_code_artifacts import CodeMeta, CodeMetaDict, GitMeta, VenvMeta, VsCodeMeta
 from util import constants as C
 from util.persistence import Persistence
 from util.utils import Utils
-from cli.bootstrap_env import CLI_LOG_LEVEL
-
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given

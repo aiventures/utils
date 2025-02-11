@@ -15,9 +15,8 @@ from datetime import datetime as DateTime
 from util import constants as C
 from util.config_env import Environment
 from util.persistence import Persistence
-from util_cli.cli_color_mapper import ESC_MAP, RichStyle, ThemeConsole
+from util_cli.cli_color_mapper import ThemeConsole
 from cli.bootstrap_env import CLI_LOG_LEVEL
-
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given

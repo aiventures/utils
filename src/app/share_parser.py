@@ -10,10 +10,10 @@ import os
 import sys
 from copy import deepcopy
 from datetime import datetime as DateTime
-from cli.bootstrap_env import TEST_PATH, CLI_LOG_LEVEL
-import util.constants as C
 from pathlib import Path
 
+import util.constants as C
+from cli.bootstrap_env import CLI_LOG_LEVEL, TEST_PATH
 from util.config_env import ConfigEnv
 from util.csv_parser import CsvParser
 from util.file_analyzer import FileAnalyzer

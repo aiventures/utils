@@ -3,7 +3,6 @@
 from enum import Enum
 from typing import Any
 import logging
-import os
 from cli.bootstrap_env import CLI_LOG_LEVEL
 
 

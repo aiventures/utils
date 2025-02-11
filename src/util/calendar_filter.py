@@ -1,12 +1,10 @@
 """Filtering Date Strings and Getting Time Intervals"""
 
 import logging
-import os
 import re
 from datetime import datetime as DateTime
 from datetime import timedelta
 from typing import List
-from pydantic import ConfigDict
 from model.model_calendar import (
     CalendarRegex,
     CalendarParseInfo,

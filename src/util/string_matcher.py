@@ -6,7 +6,6 @@ import re
 import sys
 import uuid
 from copy import deepcopy
-from pathlib import Path
 
 from util import constants as C
 from cli.bootstrap_env import CLI_LOG_LEVEL

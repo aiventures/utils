@@ -1,7 +1,6 @@
 """Calendar and Time Utils had to be renamed since it seemed to be clashing with some existing modules"""
 
 import logging
-import os
 import re
 from copy import deepcopy
 from datetime import datetime as DateTime
@@ -9,21 +8,23 @@ from datetime import timedelta
 from enum import EnumMeta
 from typing import Dict, List
 
+from cli.bootstrap_env import CLI_LOG_LEVEL
 from model.model_calendar import (
     CalendarBuffer,
     CalendarDayDictType,
     CalendarDayType,
     DayTypeDictType,
     DayTypeEnum,
+    IndexType,
     MonthModelType,
     YearModelType,
 )
 from model.model_worklog import ShortCodes
 
 # regex to extract todo_txt string matching signature @(...)
-from util import constants as C
 from util.calendar_constants import (
     REGEX_DATE_RANGE,
+    REGEX_REGULAR_WORKTIME,
     REGEX_TAGS,
     REGEX_TODO_TXT,
     REGEX_TODO_TXT_REPLACE,
@@ -31,15 +32,11 @@ from util.calendar_constants import (
     REGEX_TOTAL_WORK_REPLACE,
     REGEX_WEEKDAY,
     REGEX_YYYYMMDD,
-    WORKDAYS,
-    REGEX_REGULAR_WORKTIME,
     TAG_REGULAR_WORKTIME,
+    WORKDAYS,
 )
-from util.datetime_util import DAYS_IN_MONTH, REGEX_TIME_RANGE, WEEKDAY, DateTimeUtil
 from util.calendar_index import CalendarIndex
-from model.model_calendar import IndexType
-from cli.bootstrap_env import CLI_LOG_LEVEL
-
+from util.datetime_util import DAYS_IN_MONTH, REGEX_TIME_RANGE, WEEKDAY, DateTimeUtil
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
