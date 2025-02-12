@@ -3,7 +3,7 @@
 import os
 from copy import deepcopy
 from logging import ERROR as LOG_ERROR
-
+from enum import StrEnum
 from util.abstract_enum import AbstractEnum
 
 # TODO SWITCH TO PYDANTIC IN FUTURE
@@ -34,6 +34,23 @@ CLI_LOG_LEVEL = "CLI_LOG_LEVEL"
 # saving environment to files
 KEY_FILE_SUFFIX = "key"
 ENV_FILE_SUFFIX = "env"
+
+
+# color = Color.GREEN
+# if color == "green":
+#     print("The color is green")
+class CellType(StrEnum):
+    """Enum Type for analysing data type"""
+
+    BASE_MODEL = "base_model"
+    ROOT_MODEL = "root_model"
+    DICT = "dict"
+    NUMERICAL = "numerical"
+    FLOAT = "float"
+    INT = "int"
+    STRING = "string"
+    OBJECT = "object"
+    BOOL = "bool"
 
 
 # bootstrap File Name
