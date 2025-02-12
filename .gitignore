@@ -183,3 +183,5 @@ cython_debug/
 #.idea/
 graphviz
 graphviz.svg
+resources/emoji-test.txt
+resources/emoji.json

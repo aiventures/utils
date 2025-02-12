@@ -1,15 +1,9 @@
 """Unit Tests for the Constants Class"""
 
 import logging
-import os
 import json
-from copy import deepcopy
-from enum import Enum
-from unittest.mock import MagicMock
 
-import pytest
 
-import util.constants as C
 from util.emoji_util import EmojiIndicator, EmojiUtil
 from cli.bootstrap_env import CLI_LOG_LEVEL
 
@@ -49,7 +43,7 @@ def test_emojiutil_metadata():
 
     for _, _info in metadata_filtered.items():
         # check conversion
-        assert isinstance(EmojiUtil.unicode2emoji(_info.code, only_first_code=True), str)
+        assert isinstance(EmojiUtil.code2emoji(_info.code, only_first_code=True), str)
 
 
 def test_emoji_indicator():
@@ -65,8 +59,8 @@ def test_emoji_indicator():
 
 def test_emoji_unicode():
     """test rendering of emojis based on unicode"""
-    _emoji = EmojiUtil.unicode2emoji("U+1F9D9 U+200D U+2640 U+FE0F")
-    _emoji2 = EmojiUtil.unicode2emoji("U+1F9D9 U+200D U+2640 U+FE0F", only_first_code=True)
+    _emoji = EmojiUtil.code2emoji("U+1F9D9 U+200D U+2640 U+FE0F")
+    _emoji2 = EmojiUtil.code2emoji("U+1F9D9 U+200D U+2640 U+FE0F", only_first_code=True)
     assert isinstance(_emoji, str)
     assert isinstance(_emoji2, str)
     assert _emoji != _emoji2

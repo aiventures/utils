@@ -81,11 +81,6 @@ def setup(exist_ok: bool = True, copy_resources: bool = True) -> None:
     if not copy_resources:
         return
 
-    # _f_config_template_from = os.path.join(PATH_ROOT, "test_data", "test_config", "config_env_template.json")
-    # _f_config_template_to = os.path.join(PATH_HOME, "config_env_template.json")
-    # _ = shutil.copy2(_f_config_template_from, _f_config_template_to)
-    # print(f"    [BOOTSTRAP_ENV] Copy Config Template to [{_f_config_template_to}]")
-
     try:
         _ = shutil.copytree(PATH_RESOURCES, PATH_HOME_RESOURCES, dirs_exist_ok=exist_ok)
         print(f"    [BOOTSTRAP_ENV] Created Resources [{PATH_HOME_RESOURCES}]")

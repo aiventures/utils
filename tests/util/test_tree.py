@@ -79,7 +79,7 @@ def test_tree_min_max_dict(fixture_tree: Tree):
                    +---[9]
     """
 
-    _tree = {
+    _tree_dict = {
         1: {"parent": None, "value": 1, "object": "OBJ1"},
         2: {"parent": 1, "value": 2, "object": "OBJ2"},
         4: {"parent": 2, "value": 3, "object": "OBJ4"},
@@ -98,4 +98,4 @@ def test_tree_min_max_dict(fixture_tree: Tree):
     # use name to get a different field
     # my_tree.create_tree(tree,name_field="value")
     # _tree.create_tree(_tree_dict)
-    _tree.create_tree(_tree)
+    _tree.create_tree(_tree_dict, calc_min_max_fields=False)

@@ -1,19 +1,29 @@
 """emoji handling, rich already provides codes
 SOURCES
-https://unicode.org/Public/emoji/latest/
-rich._emoji_codes import EMOJI contains referenced emojis in Rich
-https://rich.readthedocs.io/en/latest/markup.html
-EMOJI COLLECTIONS
-https://gist.github.com/rxaviers/7360908
-https://github.com/datasets/emojis/blob/main/emojis.csv
-https://github.com/Fantantonio/Emoji-List-Unicode
-FILES EMOJI GROUPS
-https://github.com/milesj/emojibase
-# emoji list / with groups and subgroup ids
-https://github.com/milesj/emojibase/blob/master/packages/data/en/data.raw.json
-# group and metadata definition
-https://github.com/milesj/emojibase/blob/master/packages/data/meta/groups.json
-https://emojibase.dev/docs/datasets/
+# UNICODE OFFICIAL , the txt files can be used to parse the emojis and unicode keys
+  Terms of Use https://www.unicode.org/terms_of_use.html
+  Spec: https://unicode.org/reports/tr51/#emoji_data
+  Refer to latest Data Files here:
+  https://unicode.org/Public/emoji/latest/
+  https://law.stackexchange.com/questions/105836/can-i-use-unicode-symbols-freely-or-are-they-subject-to-copyright
+
+# RICH EMOJI Note the rich._emoji_codes import EMOJI contains referenced emojis in Rich
+  https://rich.readthedocs.io/en/latest/markup.html
+
+# OTHER EMOJI COLLECTIONS
+  - EMOJI CODES https://gist.github.com/rxaviers/7360908
+  - EMOJIS WIth CODES AS CSV https://github.com/datasets/emojis/blob/main/emojis.csv
+  - WITH NUMBER CODE CLDR as MD File https://github.com/Fantantonio/Emoji-List-Unicode
+    ALSO AS JSON https://github.com/Fantantonio/Emoji-List-Unicode/blob/master/json/full-emoji-modifiers.json
+
+# FILES EMOJI GROUPS  emojibase
+  - https://github.com/milesj/emojibase
+    Terms Of Use MIT License https://github.com/milesj/emojibase/blob/master/LICENSE
+    # emoji list / with groups and subgroup ids
+    https://github.com/milesj/emojibase/blob/master/packages/data/en/data.raw.json
+    # group and metadata definition
+    https://github.com/milesj/emojibase/blob/master/packages/data/meta/groups.json
+    https://emojibase.dev/docs/datasets/
 """
 
 # from rich.emoji import Emoji
@@ -41,7 +51,7 @@ from model.model_emoji import (
 from model.model_filter import SimpleStrFilterModel
 
 # from util import constants as C
-from cli.bootstrap_env import PATH_RESOURCES, PATH_TEST_OUTPUT, CLI_LOG_LEVEL
+from cli.bootstrap_env import PATH_RESOURCES, CLI_LOG_LEVEL, PATH_TEST_OUTPUT
 from util.matrix_list import MatrixList
 from util.persistence import Persistence
 from util.utils import Utils
@@ -153,7 +163,7 @@ class EmojiUtil:
         return " ".join(out)
 
     @staticmethod
-    def unicode2emoji(code: str, only_first_code: bool = False) -> str | None:
+    def code2emoji(code: str, only_first_code: bool = False) -> str | None:
         """parses a Unicode Code as saved in table into a unicode charater / emoji
         optionally allows to parse only the firsst unicode code for the case rendering
         is not supported (like in bash console, so you need to could find otu / control in script
@@ -304,15 +314,18 @@ class EmojiUtil:
         Console().print(_table)
 
     @staticmethod
-    def download_unicode_emoji_sequences(p_emojis: str) -> str:
+    def download_emoji_sequences(p_emojis: str = None) -> None:
         """retrieves the unicode emoji sequence file"""
+
+        if p_emojis is None:
+            p_emojis = PATH_RESOURCES
 
         _p = Path(p_emojis)
         if not _p.is_dir():
             print(f"Path for downloading file [{p_emojis}] has invalid path")
             return
         _url = "https://unicode.org/Public/emoji/latest/"
-        _file = "emoji-sequences.txt"
+        _file = "emoji-test.txt"
         _f_emoji = str(_p.joinpath(_file))
         _url_file = _url + _file
         _response = requests.get(_url_file, timeout=120)
@@ -322,7 +335,59 @@ class EmojiUtil:
             print(f"Download of Emoji File [{_url_file}] to [{_f_emoji}]")
         else:
             print(f"Failed to download the file [{_url_file}], status [{_response.status_code}]")
-        return "hugo"
+
+    @staticmethod
+    def parse_emoji_sequences_to_dict(f_emojis: str = None, save: bool = True) -> dict:
+        """parsing emoji sueqences as json and optionally saves it as emoji.json in Resources folder"""
+        out = {}
+        REGEX_INFO = re.compile(r"\sE\d+.\d+\s(.+)", re.IGNORECASE)
+        _num = 1
+        # points to the emoji-test.txt
+        if f_emojis is None:
+            f_emojis = os.path.join(PATH_RESOURCES, "emoji-test.txt")
+        _lines = Persistence.read_txt_file(f_emojis, comment_marker=None)
+        _class = None
+        _subclass = None
+        for _line in _lines:
+            _emoji_meta_dict = {}
+            # skip skin tones for now
+            if "skin tone" in _line:
+                continue
+            elif "subgroup:" in _line:
+                _subclass = _line.split(":")[1].strip()
+                continue
+            elif "group:" in _line:
+                _class = _line.split(":")[1].strip()
+                continue
+            elif _line.startswith("#"):
+                continue
+            # skip unqualified icons
+            _emoji_meta = _line.split(";")
+            if "E0.6 keycap: #" in _line:  # special case contain #
+                _info = _emoji_meta[1].split("#")[2] + "#"
+            else:
+                _info = _emoji_meta[1].split("#")[1]
+
+            _info = REGEX_INFO.findall(_info)[0].strip()
+            _code = _emoji_meta[0].strip().split(" ")
+            # adding U+ for rendering the emoji
+            _code = [f"U+{_u.upper()}" for _u in _code]
+            _code = " ".join(_code)
+            _emoji_meta_dict["num"] = _num
+            _emoji_meta_dict["class"] = _class
+            _emoji_meta_dict["subclass"] = _subclass
+            _emoji_meta_dict["code"] = _code
+            _emoji_meta_dict["char"] = EmojiUtil.code2emoji(_code)
+            _emoji_meta_dict["info"] = _info
+            out[_code] = _emoji_meta_dict
+            _num += 1
+        print(f"### Processed [{_num}] Emojis")
+        if save:
+            _f_emoji = os.path.join(PATH_RESOURCES, "emoji.json")
+            Persistence.save_json(_f_emoji, out)
+            print(f"### Saved to [{_f_emoji}]")
+
+        return out
 
     @staticmethod
     def get_emoji_metadata(skip_multi_char: bool = False) -> EmojiMetaDictType:
@@ -468,7 +533,7 @@ class EmojiUtil:
                 _only_first_char = False
                 if result_type == "unicode_emoji_first_char":
                     _only_first_char = True
-                _subclass_dict[_key] = EmojiUtil.unicode2emoji(_code, _only_first_char)
+                _subclass_dict[_key] = EmojiUtil.code2emoji(_code, _only_first_char)
             elif result_type == "stats":
                 _count = _subclass_dict.get("count")
                 if _count is None:
@@ -643,7 +708,15 @@ if __name__ == "__main__":
     # show_rich_emoji_codes()
     _console = Console(emoji=True, emoji_variant="emoji")
 
-    # _console.print(_emoji_dict)
+    # download emojis file
+    if False:
+        EmojiUtil.download_emoji_sequences()
+    if False:
+        emoji_dict = EmojiUtil.parse_emoji_sequences_to_dict(save=True)
+        pass
+
+    _emoji_dict = EmojiUtil.read_emoji_meta()
+    _console.print(_emoji_dict)
     # parse emoji metadata as model and back to json
     metadata: EmojiMetaDictType = EmojiUtil.get_emoji_metadata(skip_multi_char=False)
     class_filter = None
@@ -669,7 +742,7 @@ if __name__ == "__main__":
 
     print(f"### FILTERED EMOJIS [description:{description_filter}]")
     for _key, _info in metadata_filtered.items():
-        print(f"[{_key}] [{_info.code}] [{EmojiUtil.unicode2emoji(_info.code, only_first_code=True)}]")
+        print(f"[{_key}] [{_info.code}] [{EmojiUtil.code2emoji(_info.code, only_first_code=True)}]")
 
     emoji_list = EmojiIndicator.render_list(num_values=10, rendering="spectral", emoji_type="circle")
     print(emoji_list)
@@ -680,8 +753,8 @@ if __name__ == "__main__":
         out.append(f"([{str(n).zfill(2)}] {emoji_indicator.render(n, add_percentage=False)}),")
     print("".join(out))
     # emoji print based on unicode
-    _emoji = EmojiUtil.unicode2emoji("U+1F9D9 U+200D U+2640 U+FE0F")
-    _emoji2 = EmojiUtil.unicode2emoji("U+1F9D9 U+200D U+2640 U+FE0F", only_first_code=True)
+    _emoji = EmojiUtil.code2emoji("U+1F9D9 U+200D U+2640 U+FE0F")
+    _emoji2 = EmojiUtil.code2emoji("U+1F9D9 U+200D U+2640 U+FE0F", only_first_code=True)
     print(f"[EMOJI CODE] {_emoji} {_emoji2}")
     print("### EMOJI CLOCK")
     print(EmojiUtil.rcode2emoji(list(RCLOCK.values())))
