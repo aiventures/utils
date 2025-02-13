@@ -385,7 +385,7 @@ class EmojiUtil:
         if save:
             _f_emoji = os.path.join(PATH_RESOURCES, "emoji.json")
             Persistence.save_json(_f_emoji, out)
-            print(f"### Saved to [{_f_emoji}]")
+            print(f"### Saved emoji metadata to [{_f_emoji}]")
 
         return out
 

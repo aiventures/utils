@@ -6,7 +6,7 @@ from datetime import datetime as DateTime
 from pathlib import Path
 import pytest
 
-from demo.demo_config import create_demo_config
+from setup_utils.demo_config import create_demo_config
 from model.model_filter import NumericalFilterModel, RegexFilterModel, StringFilterModel, FilterSetModel
 from model.model_persistence import ParamsFind
 from cli.bootstrap_env import TEST_PATH

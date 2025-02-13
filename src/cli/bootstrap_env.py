@@ -58,7 +58,8 @@ OS_BOOTSTRAP_VARS["CLI_FILE_CONFIGFILE_HOME"] = FILE_CONFIGFILE_HOME
 # also be sure to create the sample config file
 # using /demo/demo_config.py
 TEST_PATH = PATH_HOME
-
+# SAMPLE CONFIG PATH
+TEST_CONFIG = os.path.join(TEST_PATH, "config_env_sample.json")
 
 def show_bootstrap_config():
     """display the bootstrapping config"""

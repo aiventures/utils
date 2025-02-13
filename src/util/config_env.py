@@ -18,8 +18,8 @@ from rich import print_json
 # TODO REPLACE BY UNIT TESTS
 # when doing tests add this to reference python path
 # sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from cli.bootstrap_env import CLI_LOG_LEVEL, FILE_CONFIGFILE_HOME, PATH_HOME, PATH_RESOURCES, TEST_PATH
-from demo.demo_config import create_demo_config
+from cli.bootstrap_env import CLI_LOG_LEVEL, FILE_CONFIGFILE_HOME, PATH_HOME, PATH_RESOURCES, TEST_PATH, TEST_CONFIG
+from setup_utils.demo_config import create_demo_config
 from model.model_config import ConfigItemProcessed, SourceEnum, SourceRef
 from util import constants as C
 from util.colors import col
@@ -980,26 +980,22 @@ class ConfigEnv:
         """
         # choose one of the following paths for config in order
 
-        # 1. demo config will be used first if set in VENV
-        _f_demo = None
-        if os.environ.get(C.ConfigBootstrap.CLI_CONFIG_DEMO.name) is not None:
-            # create a demo config if not already there
-            _f_demo = create_demo_config()
-        # 2. external set path is next
+        # 1. external set path is next
         _f_ext = str(f_ext)
-        # 3. path from environment
+        # 2. path from environment
         _f_env = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_ENV.name)
-        # 4. home path HOME/cli_client/cli_config.json (set in Constants)
+        # 3./4. Set Config File or Sample Config file directly
 
         # parse for valid paths
         _config_names = [
-            C.ConfigBootstrap.CLI_CONFIG_DEMO.name,
             C.ConfigBootstrap.CLI_CONFIG_EXTERNAL.name,
             C.ConfigBootstrap.CLI_CONFIG_ENV.name,
             C.ConfigBootstrap.CLI_CONFIG_HOME.name,
+            C.ConfigBootstrap.CLI_CONFIG_DEMO.name,
         ]
         _config_files = [
-            f if f is not None and os.path.isfile(f) else None for f in [_f_demo, _f_ext, _f_env, FILE_CONFIGFILE_HOME]
+            f if f is not None and os.path.isfile(f) else None
+            for f in [_f_ext, _f_env, FILE_CONFIGFILE_HOME, TEST_CONFIG]
         ]
         # the first in line is the config file
         _config_dict = dict(zip(_config_names, _config_files))
@@ -1504,7 +1500,7 @@ if __name__ == "__main__":
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    f = Path(TEST_PATH).joinpath("test_data", "test_config", "config_env_sample.json")
+    f = TEST_CONFIG
     config = ConfigEnv(f)
     # config.show()
     config.show_json()

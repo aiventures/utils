@@ -2,13 +2,16 @@
 
 from typer.testing import CliRunner
 from cli.cli_customizing import app as cli_config
+from unittest.mock import patch
+
 
 runner = CliRunner()
 
 
-def test_cli_config_show():
+def test_cli_config_show(monkeypatch):
     """Testing the config show variant"""
-    result = runner.invoke(cli_config, ["show"])
+    # mocking the env with a DEMO, so that demo configuration will be used
+    result = runner.invoke(cli_config, ["show"], env={"DEMO": "DEMO"})
     assert result.exit_code == 0
 
 
