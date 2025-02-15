@@ -52,6 +52,10 @@ OS_BOOTSTRAP_VARS["CLI_PATH_TEST_OUTPUT"] = PATH_TEST_OUTPUT
 FILE_CONFIGFILE_HOME = os.path.join(PATH_HOME, "cli_config.json")
 OS_BOOTSTRAP_VARS["CLI_FILE_CONFIGFILE_HOME"] = FILE_CONFIGFILE_HOME
 
+# configuration file from environment
+FILE_CONFIGFILE_ENV = os.environ.get("CLI_CONFIG_ENV")
+OS_BOOTSTRAP_VARS["CLI_FILE_CONFIGFILE_ENV"] = FILE_CONFIGFILE_ENV
+
 # TEST PATH is used for all unit tests
 # artifact files for tests can also be copied
 # using /cli/bootstrap_env.py setup()
@@ -59,7 +63,28 @@ OS_BOOTSTRAP_VARS["CLI_FILE_CONFIGFILE_HOME"] = FILE_CONFIGFILE_HOME
 # using /demo/demo_config.py
 TEST_PATH = PATH_HOME
 # SAMPLE CONFIG PATH
-TEST_CONFIG = os.path.join(TEST_PATH, "config_env_sample.json")
+FILE_TEST_CONFIG = os.path.join(TEST_PATH, "config_env_sample.json")
+OS_BOOTSTRAP_VARS["CLI_FILE_TEST_CONFIG"] = FILE_TEST_CONFIG
+
+# bootstrap order for configuration
+ENV_BOOTSTRAP_ORDER = os.environ.get("CLI_BOOTSTRAP_ORDER")
+OS_BOOTSTRAP_VARS["ENV_BOOTSTRAP_ORDER"] = ENV_BOOTSTRAP_ORDER
+# default order to get the configuration file
+
+# 1. direct file path
+# 2. environment variable ("config_env")
+# 3. file env CLI_PATH_HOME/cli_config.json or HOME/cli_config.json (see above)
+# 4. test path, right now set to CLI_PATH_HOME/cli_config_env_sample.json
+#    or HOME/cli_config_env_sample.json
+#  ConfigBootstrap: CLI_CONFIG_EXTERNAL, CLI_CONFIG_ENV,CLI_CONFIG_HOME, CLI_CONFIG_DEMO
+CLI_BOOTSTRAP_ORDER = (
+    "config_external,config_env,config_home,demo" if ENV_BOOTSTRAP_ORDER is None else ENV_BOOTSTRAP_ORDER
+)
+OS_BOOTSTRAP_VARS["CLI_BOOTSTRAP_ORDER"] = CLI_BOOTSTRAP_ORDER
+
+OS_BOOTSTRAP_VARS["ENV_THEME"] = ENV_THEME
+OS_BOOTSTRAP_VARS["CLI_THEME"] = CLI_THEME
+
 
 def show_bootstrap_config():
     """display the bootstrapping config"""

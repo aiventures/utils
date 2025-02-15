@@ -54,14 +54,14 @@ class CellType(StrEnum):
 
 
 # bootstrap File Name
-class ConfigBootstrap(AbstractEnum):
+class ConfigBootstrap(StrEnum):
     """bootstrap origins"""
 
     CLI_CONFIG_ENV = "config_env"
     CLI_CONFIG_EXTERNAL = "config_external"
     CLI_CONFIG_HOME = "config_home"
-    CLI_CONFIG_LOG_LEVEL = LOG_ERROR
-    CLI_CONFIG_DEMO = "DEMO"
+    CLI_CONFIG_LOG_LEVEL = str(LOG_ERROR)
+    CLI_CONFIG_DEMO = "demo"
     CLI_DEFAULT_THEME = "ubuntu"
     CLI_THEME = "cli_theme"
 

@@ -18,12 +18,22 @@ from rich import print_json
 # TODO REPLACE BY UNIT TESTS
 # when doing tests add this to reference python path
 # sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from cli.bootstrap_env import CLI_LOG_LEVEL, FILE_CONFIGFILE_HOME, PATH_HOME, PATH_RESOURCES, TEST_PATH, TEST_CONFIG
-from setup_utils.demo_config import create_demo_config
+
+from cli.bootstrap_env import (
+    CLI_LOG_LEVEL,
+    FILE_CONFIGFILE_HOME,
+    FILE_CONFIGFILE_ENV,
+    PATH_HOME,
+    PATH_RESOURCES,
+    FILE_TEST_CONFIG,
+    CLI_BOOTSTRAP_ORDER,
+)
+
 from model.model_config import ConfigItemProcessed, SourceEnum, SourceRef
 from util import constants as C
 from util.colors import col
 from util.constants import DEFAULT_COLORS as CMAP
+from util.constants import ConfigBootstrap
 from util.persistence import Persistence
 from util.utils import Utils
 
@@ -980,31 +990,36 @@ class ConfigEnv:
         """
         # choose one of the following paths for config in order
 
-        # 1. external set path is next
-        _f_ext = str(f_ext)
-        # 2. path from environment
-        _f_env = os.environ.get(C.ConfigBootstrap.CLI_CONFIG_ENV.name)
-        # 3./4. Set Config File or Sample Config file directly
+        _f_ext = None
+        if f_ext is not None:
+            _f_ext = str(f_ext)
+
+        #  ConfigBootstrap: CLI_CONFIG_EXTERNAL, CLI_CONFIG_ENV,CLI_CONFIG_HOME, CLI_CONFIG_DEMO
+        # references
+        _f_bootstrap_files = {
+            ConfigBootstrap.CLI_CONFIG_EXTERNAL: _f_ext,
+            ConfigBootstrap.CLI_CONFIG_ENV: FILE_CONFIGFILE_ENV,
+            ConfigBootstrap.CLI_CONFIG_HOME: FILE_CONFIGFILE_HOME,
+            ConfigBootstrap.CLI_CONFIG_DEMO: FILE_TEST_CONFIG,
+        }
 
         # parse for valid paths
-        _config_names = [
-            C.ConfigBootstrap.CLI_CONFIG_EXTERNAL.name,
-            C.ConfigBootstrap.CLI_CONFIG_ENV.name,
-            C.ConfigBootstrap.CLI_CONFIG_HOME.name,
-            C.ConfigBootstrap.CLI_CONFIG_DEMO.name,
-        ]
-        _config_files = [
-            f if f is not None and os.path.isfile(f) else None
-            for f in [_f_ext, _f_env, FILE_CONFIGFILE_HOME, TEST_CONFIG]
-        ]
-        # the first in line is the config file
-        _config_dict = dict(zip(_config_names, _config_files))
-        for _name in _config_names:
-            _f_config = _config_dict[_name]
-            if _f_config is not None:
-                self._f_config = _f_config
-                break
+        _bootstrap_sources = Utils.parse_str_to_list(CLI_BOOTSTRAP_ORDER)
+
+        _f_config = None
+        _config_dict = {}
+        for _config in _bootstrap_sources:
+            try:
+                _f_bootstrap = _f_bootstrap_files[_config]
+                _config_dict[_config] = _f_bootstrap
+                if _f_bootstrap is not None:
+                    if os.path.isfile(_f_bootstrap) and _f_config is None:
+                        _f_config = _f_bootstrap
+            except KeyError:
+                logger.error(f"[CONFIG] Bootsrap Order, key [{_config}] is invalid")
+                continue
         self._f_config_dict = _config_dict
+        self._f_config = _f_config
 
 
 class Environment:
@@ -1394,7 +1409,7 @@ class Environment:
         as_value: bool = False,
         as_sourceref: bool = False,
         strict: bool = False,
-        origin_list: List[str] = C.BOOTSTRAP_VARS_ORDER,
+        origin_list: List[str] = None,
     ) -> Dict[SourceEnum, SourceRef] | str | None:
         """try to bootstrap a given reference in given order from various sources
         Default sequence:
@@ -1408,6 +1423,8 @@ class Environment:
              get a file from current work directory
              strict = found file needs to be a valid file object not just a value
         """
+        if origin_list is None:
+            origin_list = C.BOOTSTRAP_VARS_ORDER
 
         if ref is None:
             return None
@@ -1500,7 +1517,7 @@ if __name__ == "__main__":
         stream=sys.stdout,
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    f = TEST_CONFIG
+    f = FILE_TEST_CONFIG
     config = ConfigEnv(f)
     # config.show()
     config.show_json()

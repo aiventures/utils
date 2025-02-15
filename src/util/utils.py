@@ -62,6 +62,16 @@ class Utils:
     """util collection"""
 
     @staticmethod
+    def parse_str_to_list(s: list | str, sep=",") -> list:
+        """simple parsing of string to list"""
+        _out = []
+        # already a list
+        if isinstance(s, list):
+            return s
+        _out = s.split(sep)
+        return [_s.strip() for _s in _out]
+
+    @staticmethod
     def simple_str_filter(s: str, str_filter: SimpleStrFilterModel) -> bool:
         """simple filter a string to filter against a list of strings"""
         # turn filter into a list

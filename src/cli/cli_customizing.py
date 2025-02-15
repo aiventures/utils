@@ -12,7 +12,6 @@ from rich import print_json
 
 # from rich.markup import escape as esc
 from rich.logging import RichHandler
-from typing_extensions import Annotated
 
 # from util.config_env import ConfigEnv
 from cli.bootstrap_config import config_env, console_maker
@@ -25,7 +24,6 @@ from util.constants import DEFAULT_COLORS as CMAP
 from util.emoji_util import EmojiUtil
 from util_cli.cli_color_mapper import ColorMapper, ThemeConsole
 
-# from util_cli import
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given

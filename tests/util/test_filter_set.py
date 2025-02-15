@@ -16,7 +16,6 @@ from model.model_filter import (
 from copy import deepcopy
 from util.filter_set import FilterSet
 from util.filter import NumericalFilter, StringFilter, CalendarFilterModel, CalendarFilterWrapper, RegexFilter
-from util.calendar_filter import CalendarFilter as CalendarFilterObject
 from datetime import datetime as DateTime
 from cli.bootstrap_env import CLI_LOG_LEVEL
 
