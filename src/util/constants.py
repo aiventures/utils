@@ -35,24 +35,6 @@ CLI_LOG_LEVEL = "CLI_LOG_LEVEL"
 KEY_FILE_SUFFIX = "key"
 ENV_FILE_SUFFIX = "env"
 
-
-# color = Color.GREEN
-# if color == "green":
-#     print("The color is green")
-class CellType(StrEnum):
-    """Enum Type for analysing data type"""
-
-    BASE_MODEL = "base_model"
-    ROOT_MODEL = "root_model"
-    DICT = "dict"
-    NUMERICAL = "numerical"
-    FLOAT = "float"
-    INT = "int"
-    STRING = "string"
-    OBJECT = "object"
-    BOOL = "bool"
-
-
 # bootstrap File Name
 class ConfigBootstrap(StrEnum):
     """bootstrap origins"""

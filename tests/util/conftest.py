@@ -608,6 +608,18 @@ def fixture_test_dict() -> dict:
     return test_struc
 
 
+@pytest.fixture(scope="module")
+def fixture_celltype_dict() -> dict:
+    """tree dict"""
+
+    _celltype_dict = {
+        1: {"parent_id": None, "value": 1.3, "object": "OBJ1"},
+        2: {"parent_id": 1, "value": 2.7, "object": "OBJ2"},
+        3: {"parent_id": 2, "value": None, "object": "OBJ4"},
+    }
+    return _celltype_dict
+
+
 # https://stackoverflow.com/questions/53148623/is-there-a-way-to-nest-fixture-parametization-in-pytest
 # @pytest.fixture(params=generated_list())
 # def fn1(request):
