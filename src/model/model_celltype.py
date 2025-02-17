@@ -41,10 +41,8 @@ class CellTypeMetaStats(CellTypeMeta):
     num: Optional[int] = 0
     min_value: Optional[float] = None
     max_value: Optional[float] = None
-    num_numbers: Optional[int] = None
     key_min: Optional[str] = None
     key_max: Optional[str] = None
-
     num_none: Optional[int] = None
     num_number: Optional[int] = None
     num_str: Optional[int] = None

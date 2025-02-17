@@ -4,6 +4,8 @@ import os
 from copy import deepcopy
 from datetime import datetime as DateTime
 from pathlib import Path
+from typing import Dict, Optional
+from pydantic import BaseModel, RootModel
 import pytest
 
 from setup_utils.demo_config import create_demo_config
@@ -618,6 +620,40 @@ def fixture_celltype_dict() -> dict:
         3: {"parent_id": 2, "value": None, "object": "OBJ4"},
     }
     return _celltype_dict
+
+
+@pytest.fixture(scope="module")
+def fixture_celltype_basemodel() -> Dict[int, BaseModel]:
+    """tree dict"""
+    out = {}
+
+    class CellTypeBaseModelTest(BaseModel):
+        """sample class"""
+
+        parent_id: Optional[object] = None
+        value: Optional[object] = None
+        obj: Optional[object] = None
+
+    out[1] = CellTypeBaseModelTest(parent_id=None, value=1.3, obj="OBJ1")
+    out[2] = CellTypeBaseModelTest(parent_id=1, value=2.7, obj="OBJ2")
+    out[3] = CellTypeBaseModelTest(parent_id=2, value=None, obj="OBJ4")
+
+    return out
+
+@pytest.fixture(scope="module")
+def fixture_celltype_rootmodel() -> Dict[int, RootModel]:
+    """tree dict"""
+    out = {}
+
+    class CellTypeRootModelTest(RootModel):        
+        """sample class"""
+        root: Dict[str, object] = {}
+
+    out[1] = CellTypeRootModelTest({"parent_id": None, "value": 1.3, "object": "OBJ1"})
+    out[2] = CellTypeRootModelTest({"parent_id": 1, "value": 2.7, "object": "OBJ2"})
+    out[3] = CellTypeRootModelTest({"parent_id": 2, "value": None, "object": "OBJ4"})
+
+    return out
 
 
 # https://stackoverflow.com/questions/53148623/is-there-a-way-to-nest-fixture-parametization-in-pytest
