@@ -54,8 +54,6 @@ class Tree:
         self._analyze_fields: bool = False
         self._cell_type_analyzer: CellTypeAnalyzer = CellTypeAnalyzer()
         self._cell_type_analyzer.is_active = self._analyze_fields
-        # selecting only parts of tree can be used in subclasses
-        self._tree_selector: object = None
 
     @property
     def hierarchy(self) -> Dict[object, TreeNodeModel]:
@@ -183,30 +181,34 @@ class Tree:
         self._max_level = _level - 1
 
     @valid_node_id
-    def _get_hierarchy_info(self, node_id) -> TreeNodeModel:
+    def _get_hierarchy_info(self, node_id: object) -> TreeNodeModel:
         """gets the hierarchy information"""
         return self.hierarchy.get(node_id, {})
 
     @valid_node_id
-    def get_children(self, node_id, only_leaves=False) -> list:
+    def get_children(self, node_id: object, only_leaves: bool = False) -> list:
         """returns ids of direct children"""
         children = None
         _node = self.get_node(node_id)
+        if _node is None:
+            return None
         children = _node.children
         if only_leaves:
             children = [_c for _c in children if self.is_leaf(_c)]
         return children
 
     @valid_node_id
-    def get_all_children(self, node_id, only_leaves=False) -> list | bool:
+    def get_all_children(self, node_id: object, only_leaves: bool = False) -> list | bool:
         """gets all children nodes below node as list (option to select only leaves)
         also may check if children exist
         """
         logger.debug("[Tree] Get Children Nodes")
         children_nodes = []
         _parent_node = self.get_node(node_id)
+        if _parent_node is None:
+            return None
 
-        def _get_children_recursive(child_list):
+        def _get_children_recursive(child_list: list):
             logger.debug(f"[Tree] get children recursive {child_list}")
             _new_children = []
             if len(child_list) > 0:
@@ -230,13 +232,15 @@ class Tree:
         return children_nodes
 
     @valid_node_id
-    def has_children(self, node_id) -> bool:
+    def has_children(self, node_id: object) -> bool:
         """checks if node has children"""
         _node = self.get_node(node_id)
+        if _node is None:
+            return None
         return True if len(_node.children) > 0 else False
 
     @valid_node_id
-    def get_predecessors(self, node_id) -> list:
+    def get_predecessors(self, node_id: object) -> list:
         """gets the parent nodes in a list"""
         parents = []
         # _current_node = self.get_node(node_id)
@@ -247,7 +251,7 @@ class Tree:
             # store for later buffering
 
             _current_node = self.get_node(_current_node_id)
-            if not _current_node:
+            if _current_node is None:
                 _current_node_id = None
                 continue
 
@@ -268,24 +272,26 @@ class Tree:
         return parents
 
     @valid_node_id
-    def get_node(self, node_id) -> TreeNodeModel | None:
+    def get_node(self, node_id: object) -> TreeNodeModel | None:
         """returns the tree node for given node id
         can also be overridden in subclass
         """
         return self._hierarchy_nodes_dict.get(node_id)
 
     @valid_node_id
-    def is_node(self, node_id) -> bool:
+    def is_node(self, node_id: object) -> bool:
         """returns whether an id represents a node
         can also be used to be overridden in a subclass
         """
         return False if self.get_node(node_id) is None else True
 
     @valid_node_id
-    def is_leaf(self, node_id):
+    def is_leaf(self, node_id: object):
         """checks if node is leaf"""
         out = None
         _node_info = self.get_node(node_id)
+        if _node_info is None:
+            return None
         # use buffered leaf info or get info from other attributes
         if _node_info.is_leaf is not None:
             return _node_info.is_leaf
@@ -298,12 +304,13 @@ class Tree:
         return out
 
     @valid_node_id
-    def get_siblings(self, node_id, only_leaves=True) -> list:
+    def get_siblings(self, node_id: object, only_leaves: bool = True) -> list:
         """gets the list of siblings and only leaves"""
 
         siblings = []
         _current_node = self.get_node(node_id)
-
+        if _current_node is None:
+            return None
         # filtering already adressed if there is current node there is also a parent
         _parent_id = _current_node.parent_id
         if _parent_id is not None:
@@ -311,8 +318,9 @@ class Tree:
             siblings = _parent_node.children
             # either directly get siblings or check whether it is filtered
             siblings = [elem for elem in siblings if not elem == node_id]
-            if self._tree_selector is not None:
-                siblings = [elem for elem in siblings if self.is_node(elem)]
+            # if sublclassed by filtered trees this allows to remove any
+            # sibling ids that might be filtered
+            siblings = [elem for elem in siblings if self.is_node(elem)]
 
         if only_leaves:
             siblings = [elem for elem in siblings if self.is_leaf(elem)]
@@ -340,7 +348,7 @@ class Tree:
         leaves = []
         for _node_id in self._hierarchy_nodes_dict.keys():
             _node = self.get_node(_node_id)
-            if not _node:
+            if _node is None:
                 continue
             if len(_node.children) == 0:
                 leaves.append(_node_id)
@@ -382,7 +390,7 @@ class Tree:
             if _nested_dict:
                 for _node_id, _node_dict_info in _nested_dict.items():
                     _node: TreeNodeModel = self.get_node(_node_id)
-                    if not _node:
+                    if _node is None:
                         continue
                     _num_nodes += 1
                     _children_node_ids = _node.children
