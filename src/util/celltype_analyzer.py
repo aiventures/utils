@@ -7,7 +7,13 @@ from copy import deepcopy
 import logging
 from typing import Dict, List
 from pydantic import BaseModel, RootModel
-from model.model_celltype import CellType, CellTypeMetaStats, CellTypeMetaDictType, CellTypeMeta
+from model.model_celltype import (
+    CellType,
+    CellTypeMetaStats,
+    CellTypeMetaDictType,
+    CellTypeMeta,
+    CellTypeMetaStatsDictAdapter,
+)
 from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -51,7 +57,11 @@ class CellTypeAnalyzer:
                 self._celltype_meta[_cell_type_meta.field_name] = _cell_type_meta_copy
 
     def _calc_cell_meta_stats(
-        self, obj: object, expected_cell_type: CellTypeMetaStats, field_meta_stats: CellTypeMetaStats
+        self,
+        obj: object,
+        expected_cell_type: CellTypeMetaStats,
+        field_meta_stats: CellTypeMetaStats,
+        objkey: object = None,
     ) -> bool:
         """validates object against basic expected cell type"""
         is_valid = True
@@ -67,11 +77,16 @@ class CellTypeAnalyzer:
                 try:
                     if obj < field_meta_stats.min_value:
                         field_meta_stats.min_value = obj
+                        field_meta_stats.key_min = objkey
                     if obj > field_meta_stats.max_value:
                         field_meta_stats.max_value = obj
+                        field_meta_stats.key_max = objkey
                 except TypeError:
                     field_meta_stats.min_value = obj
                     field_meta_stats.max_value = obj
+                    field_meta_stats.key_max = objkey
+                    field_meta_stats.key_min = objkey
+
         elif expected_cell_type == CellType.STRING:
             if not isinstance(obj, str):
                 logger.info(f"[CellTypeAnalyzer] obj [{obj}] is not a string")
@@ -90,7 +105,7 @@ class CellTypeAnalyzer:
         return is_valid
 
     def _update_field_meta(
-        self, obj: object, field_meta_stats: CellTypeMetaStats, key: str = None
+        self, obj: object, field_meta_stats: CellTypeMetaStats, objkey: str = None
     ) -> CellTypeMetaStats:
         """update field metadata information with current object information"""
         # different logic if expected cell type is set in this case we do not
@@ -105,20 +120,16 @@ class CellTypeAnalyzer:
             _expected_cell_type = _last_seen_type
         else:
             _expected_cell_type = field_meta_stats.expected_cell_type
-        _validated = self._calc_cell_meta_stats(obj, _expected_cell_type, field_meta_stats)
+        _validated = self._calc_cell_meta_stats(obj, _expected_cell_type, field_meta_stats, objkey)
         if not _validated:
             logger.info(
-                f"[CellTypeAnalyzer] obj [{obj}] has not expected type of [{field_meta_stats.expected_cell_type}] (key:{key})"
+                f"[CellTypeAnalyzer] obj [{obj}] has not expected type of [{field_meta_stats.expected_cell_type}] (key:{objkey})"
             )
 
         field_meta_stats.last_seen_cell_type = _last_seen_type
 
     def _init_field_meta(
-        self,
-        obj: object,
-        field_name: str = None,
-        description: str = None,
-        key: object = None,
+        self, obj: object, field_name: str = None, description: str = None, objkey: object = None
     ) -> CellTypeMetaStats:
         """init field information alow for potentially inconsistent usage of formats in data"""
         _obj_type = CellTypeAnalyzer.get_object_type(obj)
@@ -154,8 +165,8 @@ class CellTypeAnalyzer:
         elif _obj_type in [CellType.INT, CellType.FLOAT]:
             _num_number = 1
             _cell_meta.total = obj
-            _cell_meta.key_min = key
-            _cell_meta.key_max = key
+            _cell_meta.key_min = objkey
+            _cell_meta.key_max = objkey
             _cell_meta.min_value = obj
             _cell_meta.max_value = obj
             _cell_meta.num_number = 1
@@ -169,7 +180,9 @@ class CellTypeAnalyzer:
         self._field_stats[field_name] = _cell_meta
         return _cell_meta
 
-    def _analyze_primitive(self, obj: object, field_name: str = None, description: str = None, key: str = None) -> None:
+    def _analyze_primitive(
+        self, obj: object, field_name: str = None, description: str = None, objkey: object = None
+    ) -> None:
         """Analyze primitive field"""
         # get the existiing meta data information
         _field_name = field_name
@@ -179,27 +192,27 @@ class CellTypeAnalyzer:
         _field_meta_stats = self._field_stats.get(_field_name)
         # initialize field meta data
         if _field_meta_stats is None:
-            self._init_field_meta(obj, _field_name, description, key)
+            self._init_field_meta(obj, _field_name, description, objkey)
         else:
-            self._update_field_meta(obj, _field_meta_stats, key)
+            self._update_field_meta(obj, _field_meta_stats, objkey)
 
-    def _analyze_dict(self, obj: dict) -> None:
+    def _analyze_dict(self, obj: dict, objkey: object = None) -> None:
         """analyze dict"""
         for _key, _info in obj.items():
-            self._analyze_primitive(_info, _key)
+            self._analyze_primitive(obj=_info, field_name=_key, objkey=objkey)
 
-    def _analyze_base_model(self, obj: BaseModel) -> None:
+    def _analyze_base_model(self, obj: BaseModel, objkey: object = None) -> None:
         """analyze base model"""
         # _field_names = list(obj.model_fields)
         _obj_dict = obj.model_dump()
-        self._analyze_dict(_obj_dict)
+        self._analyze_dict(_obj_dict, objkey)
 
-    def _analyze_root_model(self, obj: RootModel) -> None:
+    def _analyze_root_model(self, obj: RootModel, objkey: object = None) -> None:
         """analyze root model"""
         _obj_dict = obj.model_dump()
-        self._analyze_dict(_obj_dict)
+        self._analyze_dict(_obj_dict, objkey)
 
-    def analyze(self, obj: object = None, description: str = None) -> None:
+    def analyze(self, obj: object = None, objkey: object = None, description: str = None) -> None:
         """analyze an object, only up to root level"""
         # skip if inactive
         if not self._is_active:
@@ -211,15 +224,15 @@ class CellTypeAnalyzer:
             self._object_type = _obj_type
 
         if _obj_type == CellType.DICT:
-            self._analyze_dict(obj)
+            self._analyze_dict(obj, objkey)
         elif _obj_type == CellType.ROOT_MODEL:
-            self._analyze_root_model(obj)
+            self._analyze_root_model(obj, objkey)
         elif _obj_type == CellType.BASE_MODEL:
-            self._analyze_base_model(obj)
+            self._analyze_base_model(obj, objkey)
         # primitive types
         elif _obj_type in [CellType.STRING, CellType.INT, CellType.FLOAT, CellType.NONE, CellType.BOOL]:
             # obj_type set to None triggers analysis of object type
-            self._analyze_primitive(obj, CellType.PRIMITIVE, description)
+            self._analyze_primitive(obj, field_name=CellType.PRIMITIVE, description=description, objkey=objkey)
         else:
             logger.warning(f"[CellTypeAnalyzer] object [{obj}] is of type [{type(obj)}] and not supported")
             return
@@ -246,10 +259,15 @@ class CellTypeAnalyzer:
             object_type = CellType.OBJECT
         return object_type
 
-    @property
-    def stats(self) -> CellTypeMetaDictType:
-        """returns collected statistics"""
-        return self._field_stats
+    def get_stats(self, as_dict: bool = True) -> dict | CellTypeMetaDictType:
+        """returns collected statistics as dict or as original pydantic model"""
+        if as_dict:
+            out = {}
+            for _key, _cell_meta in self._field_stats.items():
+                out[_key] = _cell_meta.model_dump(exclude=["last_seen_cell_type", "expected_cell_type"])
+            return out
+        else:
+            return self._field_stats
 
 
 if __name__ == "__main__":

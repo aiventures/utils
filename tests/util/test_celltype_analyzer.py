@@ -14,15 +14,16 @@ def test_celltype_analyzer_testdict(fixture_celltype_dict):
     _analyzer = CellTypeAnalyzer()
     for _key, _info in fixture_celltype_dict.items():
         _analyzer.analyze(_info, _key)
-    stats_parent_id = _analyzer.stats["parent_id"]
-    stats_value = _analyzer.stats["value"]
-    stats_object = _analyzer.stats["object"]
-    assert stats_parent_id.num == 3
-    assert stats_parent_id.min_value == 1
-    assert stats_parent_id.max_value == 2
-    assert stats_parent_id.total == 3
-    assert stats_value.total == 4.0
-    assert stats_object.num_str == 3
+    _stats = _analyzer.get_stats()
+    stats_parent_id = _stats["parent_id"]
+    stats_value = _stats["value"]
+    stats_object = _stats["object"]
+    assert stats_parent_id["num"] == 3
+    assert stats_parent_id["min_value"] == 1
+    assert stats_parent_id["max_value"] == 2
+    assert stats_parent_id["total"] == 3
+    assert stats_value["total"] == 4.0
+    assert stats_object["num_str"] == 3
 
     # _analyzer.analyze()
     assert True
@@ -33,15 +34,16 @@ def test_celltype_analyzer_testbasemodel(fixture_celltype_basemodel):
     _analyzer = CellTypeAnalyzer()
     for _key, _info in fixture_celltype_basemodel.items():
         _analyzer.analyze(_info, _key)
-    stats_parent_id = _analyzer.stats["parent_id"]
-    stats_value = _analyzer.stats["value"]
-    stats_object = _analyzer.stats["obj"]
-    assert stats_parent_id.num == 3
-    assert stats_parent_id.min_value == 1
-    assert stats_parent_id.max_value == 2
-    assert stats_parent_id.total == 3
-    assert stats_value.total == 4.0
-    assert stats_object.num_str == 3
+    _stats = _analyzer.get_stats()
+    stats_parent_id = _stats["parent_id"]
+    stats_value = _stats["value"]
+    stats_object = _stats["obj"]
+    assert stats_parent_id["num"] == 3
+    assert stats_parent_id["min_value"] == 1
+    assert stats_parent_id["max_value"] == 2
+    assert stats_parent_id["total"] == 3
+    assert stats_value["total"] == 4.0
+    assert stats_object["num_str"] == 3
     # _analyzer.analyze()
     assert True
 
@@ -51,15 +53,16 @@ def test_celltype_analyzer_testrootmodel(fixture_celltype_rootmodel):
     _analyzer = CellTypeAnalyzer()
     for _key, _info in fixture_celltype_rootmodel.items():
         _analyzer.analyze(_info, _key)
-    stats_parent_id = _analyzer.stats["parent_id"]
-    stats_value = _analyzer.stats["value"]
-    stats_object = _analyzer.stats["object"]
-    assert stats_parent_id.num == 3
-    assert stats_parent_id.min_value == 1
-    assert stats_parent_id.max_value == 2
-    assert stats_parent_id.total == 3
-    assert stats_value.total == 4.0
-    assert stats_object.num_str == 3
+    _stats = _analyzer.get_stats()
+    stats_parent_id = _stats["parent_id"]
+    stats_value = _stats["value"]
+    stats_object = _stats["object"]
+    assert stats_parent_id["num"] == 3
+    assert stats_parent_id["min_value"] == 1
+    assert stats_parent_id["max_value"] == 2
+    assert stats_parent_id["total"] == 3
+    assert stats_value["total"] == 4.0
+    assert stats_object["num_str"] == 3
     # _analyzer.analyze()
     assert True
 
@@ -70,7 +73,7 @@ def test_celltype_analyzer_primitive():
     _analyzer = CellTypeAnalyzer()
     for _value in test_list:
         _analyzer.analyze(_value)
-    stats = _analyzer.stats["primitive"]
+    stats = _analyzer.get_stats(as_dict=False)["primitive"]
     # check for correct stats
     assert stats.total == 10
     assert stats.num_number == 2

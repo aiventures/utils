@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from model.model_tree import NAME, PARENT_ID, TreeNodeModel
 from cli.bootstrap_env import CLI_LOG_LEVEL
+from util.celltype_analyzer import CellTypeAnalyzer
 
 PY_YAML_INSTALLED = True
 try:
@@ -50,8 +51,9 @@ class Tree:
         self._max_level: int = -1
         self._tree_level_stats = {}
         self._calc_tree_levels: bool = True
-        self._calc_min_max_fields: bool = False
-        self._min_max_values: dict = {}
+        self._analyze_fields: bool = False
+        self._cell_type_analyzer: CellTypeAnalyzer = CellTypeAnalyzer()
+        self._cell_type_analyzer.is_active = self._analyze_fields
         # selecting only parts of tree can be used in subclasses
         self._tree_selector: object = None
 
@@ -97,14 +99,16 @@ class Tree:
         return TreeNodeModel(id=key, parent_id=_parent_id, name=_name, obj=node_info, obj_type=_type)
 
     def create_tree(
-        self, nodes_dict: dict, name_field: str = None, parent_field: str = None, calc_min_max_fields: bool = False
+        self, nodes_dict: dict, name_field: str = None, parent_field: str = None, analyze_fields: bool = False
     ) -> None:
         """creates the tree hierarchy / also calculate min max values"""
         self._hierarchy_nodes_dict = {}
         logger.debug("[Tree] Create Tree")
         _root_node = None
 
-        self._calc_min_max_fields = calc_min_max_fields
+        self._analyze_fields = analyze_fields
+        # TODO PRIO3 add celltype meta for tree
+        self._cell_type_analyzer.is_active = analyze_fields
 
         if name_field:
             self._name_field = name_field
@@ -113,6 +117,9 @@ class Tree:
             self._parent_field = parent_field
 
         for _node_id, _node_info in nodes_dict.items():
+            # calculate min and max values for numerical values
+            self._cell_type_analyzer.analyze(obj=_node_info, objkey=_node_id)
+
             # it was created before as parent node
             _node_obj = self._hierarchy_nodes_dict.get(_node_id)
             if not _node_obj:
@@ -138,6 +145,7 @@ class Tree:
                     self._hierarchy_nodes_dict[_parent_id] = _parent_node
                 else:
                     continue
+
             _parent_node.children.append(_node_id)
 
         if _root_node is not None:
@@ -151,19 +159,10 @@ class Tree:
 
         logger.debug(f"[Tree] Created [{self._num_nodes}] nodes in Tree")
 
-    def _calc_min_max(self, _node_id: object, _node_info: object) -> None:
-        """get min and max values from all objects"""
-        # TODO PRIO1 Implement / optimize
-        if isinstance(_node_info, (int, float)):
-            pass
-        elif isinstance(_node_info, dict):
-            pass
-        elif isinstance(_node_id, BaseModel):
-            pass
-        elif isinstance(_node_info, object):
-            pass
-
-        pass
+    @property
+    def stats(self) -> dict:
+        """returns the value stats of tree when activated"""
+        return self._cell_type_analyzer.get_stats(as_dict=True)
 
     def set_tree_levels(self) -> None:
         """setting the tree levels. mus be a separate step since we do not assume the input dict as being in order"""
@@ -174,9 +173,6 @@ class Tree:
             self._tree_level_stats[_level] = 0
             for _node_id in _current_node_ids:
                 _node = self.get_node(_node_id)
-                # TODO CALC MIN MAX VALUES
-                if self._calc_min_max_fields:
-                    self._calc_min_max(_node_id, _node.obj)
                 if _node is None:
                     continue
                 _node.level = _level
@@ -494,7 +490,7 @@ if __name__ == "__main__":
     my_tree = Tree()
     # use name to get a different field
     # defining fields where parent and values (for display) are stored
-    my_tree.create_tree(tree, name_field="value", parent_field="parent", calc_min_max_fields=True)
+    my_tree.create_tree(tree, name_field="value", parent_field="parent", analyze_fields=True)
     my_root = my_tree.root_id
     my_hierarchy = my_tree.hierarchy
     my_levels = my_tree.max_level

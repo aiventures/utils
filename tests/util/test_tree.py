@@ -64,7 +64,7 @@ def test_tree(fixture_tree: Tree):
     assert fixture_tree.is_node(9)
 
 
-def test_tree_min_max_dict(fixture_tree: Tree):
+def test_tree_stats_dict():
     """test the tree object
     [1] ROOT (has no parents)
          +---[2]
@@ -98,4 +98,7 @@ def test_tree_min_max_dict(fixture_tree: Tree):
     # use name to get a different field
     # my_tree.create_tree(tree,name_field="value")
     # _tree.create_tree(_tree_dict)
-    _tree.create_tree(_tree_dict, calc_min_max_fields=False)
+    _tree.create_tree(_tree_dict, analyze_fields=True, parent_field="parent")
+    _stats = _tree.stats
+    assert isinstance(_stats, dict) and len(_stats) > 0, "field stats of tree doesn't have entries"
+    pass
