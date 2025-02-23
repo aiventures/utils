@@ -206,7 +206,7 @@ class FileTreeRenderer:
             out = {"label": _label}
         # path
         else:
-            # todo change color depending on level depth
+            # TODO PRIO change color depending on level depth
             out = GUIDE_STYLE_BY_LEVEL.get(_level_depth, GUIDE_STYLE_DEFAULT)
             _path_is_empty = not self._file_tree.tree.has_children(_node_id)
             _style = "dim" if (_name.startswith("__") or _name.startswith(".")) else ""

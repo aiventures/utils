@@ -2,6 +2,7 @@
 
 import logging
 from util.tree import Tree
+from util.tree_filtered import TreeFiltered
 from model.model_tree import TreeNodeModel
 from cli.bootstrap_env import CLI_LOG_LEVEL
 
@@ -64,7 +65,7 @@ def test_tree(fixture_tree: Tree):
     assert fixture_tree.is_node(9)
 
 
-def test_tree_stats_dict():
+def test_tree_stats_dict(fixture_test_tree):
     """test the tree object
     [1] ROOT (has no parents)
          +---[2]
@@ -78,27 +79,28 @@ def test_tree_stats_dict():
                         +---[11]
                    +---[9]
     """
-
-    _tree_dict = {
-        1: {"parent": None, "value": 1, "object": "OBJ1"},
-        2: {"parent": 1, "value": 2, "object": "OBJ2"},
-        4: {"parent": 2, "value": 3, "object": "OBJ4"},
-        5: {"parent": 2, "value": 5, "object": "OBJ5"},
-        3: {"parent": 1, "value": 5, "object": "OBJ3"},
-        6: {"parent": 3, "value": 6, "object": "OBJ6"},
-        7: {"parent": 6, "value": 7, "object": "OBJ7"},
-        8: {"parent": 6, "value": 8, "object": "OBJ8"},
-        9: {"parent": 6, "value": 9, "object": "OBJ9"},
-        10: {"parent": 8, "value": 10, "object": "OBJ10"},
-        11: {"parent": 8, "value": 11, "object": "OBJ11"},
-    }
-
     _tree = Tree()
-
     # use name to get a different field
     # my_tree.create_tree(tree,name_field="value")
     # _tree.create_tree(_tree_dict)
-    _tree.create_tree(_tree_dict, analyze_fields=True, parent_field="parent")
+    _tree.create_tree(fixture_test_tree, analyze_fields=True, parent_field="parent")
     _stats = _tree.stats
     assert isinstance(_stats, dict) and len(_stats) > 0, "field stats of tree doesn't have entries"
     pass
+
+
+def test_filtered_tree(fixture_test_tree):
+    """testing filtering a tree"""
+    _filtered_tree = TreeFiltered()
+    _filtered_tree.create_tree(fixture_test_tree, analyze_fields=True, parent_field="parent")
+    # adding filter set
+    _filtered_tree.add_filter(3)
+    _node_filtered = _filtered_tree.get_node(8)
+    assert _node_filtered is None, "Node should be filtered out"
+    _node_filtered = _filtered_tree.get_node(3)
+    assert _node_filtered is None, "Node mentioned in filter should be filtered out"
+    _filtered_tree.is_active = False
+    _node_filtered = _filtered_tree.get_node(8)
+    assert _node_filtered is not None, "Node should be found as filter is switched off"
+    _node_filtered = _filtered_tree.get_node(3)
+    assert _node_filtered is not None, "Node should be found as filter is switched off"

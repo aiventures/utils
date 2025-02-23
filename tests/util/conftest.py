@@ -640,13 +640,15 @@ def fixture_celltype_basemodel() -> Dict[int, BaseModel]:
 
     return out
 
+
 @pytest.fixture(scope="module")
 def fixture_celltype_rootmodel() -> Dict[int, RootModel]:
     """tree dict"""
     out = {}
 
-    class CellTypeRootModelTest(RootModel):        
+    class CellTypeRootModelTest(RootModel):
         """sample class"""
+
         root: Dict[str, object] = {}
 
     out[1] = CellTypeRootModelTest({"parent_id": None, "value": 1.3, "object": "OBJ1"})
@@ -654,6 +656,38 @@ def fixture_celltype_rootmodel() -> Dict[int, RootModel]:
     out[3] = CellTypeRootModelTest({"parent_id": 2, "value": None, "object": "OBJ4"})
 
     return out
+
+
+@pytest.fixture(scope="module")
+def fixture_test_tree() -> Dict[int, dict]:
+    """test tree
+    [1] ROOT (has no parents)
+         +---[2]
+              +---[4]
+              +---[5]
+         +---[3]
+              +---[6]
+                   +---[7]
+                   +---[8]
+                        +---[10]
+                        +---[11]
+                   +---[9]
+    """
+
+    _tree_dict = {
+        1: {"parent": None, "value": 1, "object": "OBJ1"},
+        2: {"parent": 1, "value": 2, "object": "OBJ2"},
+        4: {"parent": 2, "value": 3, "object": "OBJ4"},
+        5: {"parent": 2, "value": 5, "object": "OBJ5"},
+        3: {"parent": 1, "value": 5, "object": "OBJ3"},
+        6: {"parent": 3, "value": 6, "object": "OBJ6"},
+        7: {"parent": 6, "value": 7, "object": "OBJ7"},
+        8: {"parent": 6, "value": 8, "object": "OBJ8"},
+        9: {"parent": 6, "value": 9, "object": "OBJ9"},
+        10: {"parent": 8, "value": 10, "object": "OBJ10"},
+        11: {"parent": 8, "value": 11, "object": "OBJ11"},
+    }
+    return _tree_dict
 
 
 # https://stackoverflow.com/questions/53148623/is-there-a-way-to-nest-fixture-parametization-in-pytest
