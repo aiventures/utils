@@ -5,7 +5,6 @@ import logging
 import sys
 from functools import wraps
 from typing import Dict
-from pydantic import BaseModel
 
 from model.model_tree import NAME, PARENT_ID, TreeNodeModel
 from cli.bootstrap_env import CLI_LOG_LEVEL
@@ -68,7 +67,7 @@ class Tree:
 
     @property
     def root_id(self):
-        """nodes"""
+        """root node id"""
         return self._root
 
     def _create_node(self, node_info: dict, key: object) -> TreeNodeModel:
@@ -188,14 +187,17 @@ class Tree:
     @valid_node_id
     def get_children(self, node_id: object, only_leaves: bool = False) -> list:
         """returns ids of direct children"""
-        children = None
+        children_nodes = []
         _node = self.get_node(node_id)
         if _node is None:
             return None
-        children = _node.children
+        children_nodes = _node.children
         if only_leaves:
-            children = [_c for _c in children if self.is_leaf(_c)]
-        return children
+            children_nodes = [_c for _c in children_nodes if self.is_leaf(_c)]
+
+        # if classs is subclassed and nodes are filtered filter them
+        children_nodes = [_c for _c in children_nodes if self.is_node(_c)]
+        return children_nodes
 
     @valid_node_id
     def get_all_children(self, node_id: object, only_leaves: bool = False) -> list | bool:
@@ -228,6 +230,9 @@ class Tree:
 
         if only_leaves:
             children_nodes = [_c for _c in children_nodes if self.is_leaf(_c)]
+
+        # if classs is subclassed and nodes are filtered filter them
+        children_nodes = [_c for _c in children_nodes if self.is_node(_c)]
 
         return children_nodes
 

@@ -28,7 +28,7 @@ class TreeFiltered(Tree):
         a child of
         """
         # skip empty filter
-        if len(self._filtered_nodes):
+        if len(self._filtered_nodes) == 0:
             return False
 
         # check if this is in keys already
@@ -64,8 +64,7 @@ class TreeFiltered(Tree):
         _old_active = self.is_active
         self.is_active = False
         _children_ids = self.get_all_children(node_id)
-        if isinstance(_children_ids, list) and len(_children_ids) > 0:
-            self._filtered_nodes[node_id] = set(_children_ids)
+        self._filtered_nodes[node_id] = set(_children_ids)
         self.is_active = _old_active
 
     @valid_node_id

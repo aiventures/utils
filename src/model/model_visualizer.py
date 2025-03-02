@@ -184,30 +184,60 @@ GraphVizDotRankdir = Literal["TB", "LR", "BT", "RL"]
 GraphVizDotRankdirType = Annotated[GraphVizDotRankdir, "rankdir"]
 
 
-class DotFormat(BaseModel):
-    """Attributes for Graphviz Rendering"""
+class NodeFormat(BaseModel):
+    """Joint Model attirbutes for rendering node in both graphviz and rich"""
 
-    # create a default for node and edge
-    # attributes valid for both edges and nodes
-    # https://graphviz.org/docs/attrs/id/
     # internal name
     name: Optional[str] = None
     # object identifier, usually name is copied
     id: Optional[str] = None
     # local files also are working using
     # "file://C:\\Program Files (x86)"
-    URL: Optional[str] = None
-    # should be "_top"
-    target: Optional[str] = None
+    # link
+    # displayed text
+    displayed_text: Optional[str] = None
+    # url / Link
+    # local files also are working using
+    # "file://C:\\Program Files (x86)"
+    link: Optional[str] = None
     # tooltip
     tooltip: Optional[str] = None
+    # text is inverted (= text color becomes background color)
+    text_with_background_color: Optional[bool] = None
+    # text color
+    textcolor: Optional[str] = None
+    # invert text for texts with background
+    text_invert_font_color: Optional[bool] = None
+
+
+class RichNodeDisplayInfo(NodeFormat):
+    """enhancements for Rich"""
+
+    # formatting, defined as rich Style
+    style: Optional[object] = None
+    # styleguide color
+    guidecolor: Optional[str] = None
+    # background color
+    bgcolor: Optional[str] = None
+    # Emoji to be prepended
+    emoji: Optional[str] = None
+
+
+class DotFormat(NodeFormat):
+    """Attributes for Graphviz Rendering"""
+
+    # create a default for node and edge
+    # attributes valid for both edges and nodes
+    # https://graphviz.org/docs/attrs/id/
+
+    # html should be "_top"
+    target: Optional[str] = None
     # text to be displayed on Node in Graphviz
     label: Optional[str] = "Node"
     style: Optional[str] = "filled"
     # color of shape / frame
     color: Optional[str] = "black"
     fillcolor: Optional[str] = "white"
-    fontcolor: Optional[str] = "black"
     fontsize: Optional[str] = "14"
     shape: Optional[GraphVizShapeType] = "box"
     penwidth: Optional[str] = None

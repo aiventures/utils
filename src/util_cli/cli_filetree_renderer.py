@@ -1,7 +1,6 @@
 """Rendering the File Tree"""
 
 import logging
-import os
 from pathlib import Path
 from typing import Dict, Literal, List
 
@@ -20,7 +19,7 @@ from util.file_tree import ParamsFileTreeModel
 from cli.bootstrap_env import CLI_LOG_LEVEL
 
 from util.file_tree import FileTree
-from util.utils import PARENT, ROOT, SIZE, TOTAL_SIZE, VALUE, IS_FILE, CHDATE, PERMISSION_CHMOD, Utils, is_win
+from util.utils import ROOT, SIZE, TOTAL_SIZE, VALUE, IS_FILE, CHDATE, PERMISSION_CHMOD, Utils
 
 logger = logging.getLogger(__name__)
 # get log level from environment if given
@@ -198,7 +197,7 @@ class FileTreeRenderer:
                 _icon = self._default_icon
             _text_chdate = Text(f"{_chdate_s}", _color)
             _text_filename = Text(f"{_name}", _color)
-            # TODO PRIO3 ADD HIGHLIGHTS DEOPENDING ON SEARCh ITEMS WHEN SEARCHING
+            # TODO PRIO3 ADD HIGHLIGHTS DEPENDING ON SEARCh ITEMS WHEN SEARCHING
             # text_filename.highlight_regex(r"\..*$", "bold bright_blue")
             _text_filename.stylize(f"link {_link_path}")
             _text_filename.append(f" ({decimal(_size)})", _color)
@@ -373,7 +372,7 @@ if __name__ == "__main__":
     p = str(Path(__file__).parents[2].joinpath("test_data", "test_path"))
     show_progress = True
     add_filesize = True
-    file_filter = ParamsFind(p_root_paths=p, show_progress=show_progress)
+    file_filter = ParamsFind(p_root_paths=p, show_progress=show_progress, include_files=".*")
     add_metadata = True
     params_file_tree = ParamsFileTreeModel(
         file_filter_params=file_filter, add_metadata=add_metadata, add_filesize=add_filesize

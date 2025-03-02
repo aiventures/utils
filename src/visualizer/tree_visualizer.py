@@ -15,21 +15,21 @@ Troubleshooting:
 * Updated PATH IN VSCODE might not be found, check your Application Path (echo $PATH or set PATH)
 """
 
-import subprocess
-from pathlib import Path
-from typing import Optional, Dict
-from enum import StrEnum
 import json
-import os
 import logging
+import os
+import subprocess
 import sys
 from datetime import datetime as DateTime
-from util.constants import DATEFORMAT_JJJJMMDDHHMMSS, DEFAULT_COLORS
-from model.model_tree import TreeNodeModel, DICT_TREE_NODE_MODEL, DICT_PATH
+from pathlib import Path
+from typing import Dict
+
+from cli.bootstrap_env import CLI_LOG_LEVEL
+from model.model_tree import DICT_PATH, DICT_TREE_NODE_MODEL, TreeNodeModel
 from model.model_visualizer import DotFormat
+from util.constants import DATEFORMAT_JJJJMMDDHHMMSS
 from util.tree import Tree
 from util.utils import Utils
-from cli.bootstrap_env import CLI_LOG_LEVEL
 
 # Design Decision: You need to manually install GRAPHVIZ into your environment
 PY_GRAPHVIZ_INSTALLED = True
