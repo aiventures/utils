@@ -3,12 +3,16 @@
 from typing import Optional, Dict, Literal, Annotated, Iterable
 from pydantic import BaseModel, RootModel
 
+from model.model_colors import COLORS_GRAPHVIZ
 
 # Color Encoding
 # TODO PRIO4 adapt cli_color_mapper
 # - code ANSI Code Number
 # - rgb  RGB tuple
 # - hex  HEX code string
+# https://graphviz.org/docs/attr-types/color/
+# color names
+# https://graphviz.org/doc/info/colors.html
 ColorEncoding = Literal["code", "rgb", "hex"]
 ColorEncodingType = Annotated[ColorEncoding, "color_encoding"]
 
@@ -18,6 +22,16 @@ ColorEncodingType = Annotated[ColorEncoding, "color_encoding"]
 # https://graphviz.org/docs/layouts/
 GraphVizEngine = Literal["dot", "neato", "fdp", "sfdp", "circo", "twopi", "nop", "nop2", "osage", "patchwork"]
 GraphVizEngineType = Annotated[GraphVizEngine, "engine"]
+# https://graphviz.org/docs/outputs/
+GraphVizFileFormat = Literal["svg"]
+# https://graphviz.org/docs/attrs/fontname/
+GraphVizFontName = Literal["mono", "Arial", "Courier New"]
+
+# https://graphviz.org/docs/attrs/labelloc/
+GraphVizLabelLoc = Literal["t", "b", "c"]
+# https://graphviz.org/docs/attrs/labeljust/
+GraphVizLabelJust = Literal["r", "l", "c"]
+
 # TODO PRIO3 write a patchwork model using brewer colors
 
 # Color Codes https://graphviz.org/docs/attr-types/color/
@@ -46,7 +60,7 @@ ColorSchemaSetType = Annotated[ColorSchemaSet, "color_set"]
 # Brewer color sets are also used in seaborn
 # https://seaborn.pydata.org/tutorial/color_palettes.html
 # Color Codes as JSON https://github.com/uncommoncode/color_palettes_json/tree/master
-# You'll find the RGB codes in /resources/colorbrewer.json
+# You'll find the RGB codes in /resources
 # TODO PRIO3 OUTPUT COLORS
 ColorSchemaKey = Literal[
     # divergent
@@ -173,11 +187,11 @@ GraphVizShapeType = Annotated[GraphVizShape, "shape"]
 
 # splines Attribute
 # https://graphviz.org/docs/attrs/splines/
-GraphVizSplines = Literal["ortho", "polyline", "curved", "line", "none"]
-GraphVizSplinesType = Annotated[GraphVizSplines, "spline"]
+GraphVizSpline = Literal["ortho", "polyline", "curved", "line", "none"]
+GraphVizSplineType = Annotated[GraphVizSpline, "spline"]
 
-GraphVizLineStyles = Literal["solid", "dashed", "dotted", "bold", "invis", "tapered"]
-GraphVizLineStylesType = Annotated[GraphVizLineStyles, "linestyles"]
+GraphVizLineStyle = Literal["solid", "dashed", "dotted", "bold", "invis", "tapered"]
+GraphVizLineStyleType = Annotated[GraphVizLineStyle, "linestyles"]
 
 # https://graphviz.org/docs/attr-types/rankdir/
 GraphVizDotRankdir = Literal["TB", "LR", "BT", "RL"]
@@ -204,6 +218,8 @@ class NodeFormat(BaseModel):
     tooltip: Optional[str] = None
     # text is inverted (= text color becomes background color)
     text_with_background_color: Optional[bool] = None
+    # text is bold
+    bold: Optional[bool] = None
     # text color
     textcolor: Optional[str] = None
     # invert text for texts with background
@@ -241,3 +257,45 @@ class DotFormat(NodeFormat):
     fontsize: Optional[str] = "14"
     shape: Optional[GraphVizShapeType] = "box"
     penwidth: Optional[str] = None
+
+
+class DotAttributes(BaseModel):
+    """Attributes for initialization of Digraph Model
+
+    rankdir only applicable to dot engine
+    https://graphviz.org/docs/attrs/rankdir/
+    https://graphviz.org/docs/attrs/fontname/
+    https://graphviz.org/docs/attrs/labelloc/
+    https://graphviz.org/docs/attrs/labeljust/
+    https://graphviz.org/docs/outputs/
+    """
+
+    engine: Optional[GraphVizEngine] = "dot"
+    comment: Optional[str] = "Title"
+    label: Optional[str] = "Tree"
+    # "file://C:\\Program Files (x86)"
+    URL: Optional[str] = None
+    fontname: Optional[GraphVizFontName] = "mono"
+    fontsize: Optional[str] = "12"
+    rankdir: Optional[GraphVizDotRankdir] = "TB"
+    bgcolor: Optional[str] = "skyblue"
+    labelloc: Optional[GraphVizLabelLoc] = "b"
+    labeljust: Optional[GraphVizLabelJust] = "l"
+    format: Optional[GraphVizFileFormat] = "svg"
+    # unflatten tweak
+    # stagger: Stagger the minimum length of leaf edges between 1 and the specified value.
+    # fanout: Enable staggering for nodes with indegree and outdegree of 1.
+    # chain: Form disconnected nodes into chains of up to the specified length
+    # https://graphviz.org/pdf/unflatten.1.pdf
+    stagger: Optional[int] = 3
+    fanout: Optional[bool] = True
+    chain: Optional[int] = 20
+    # default node attributes
+    node_shape: Optional[GraphVizShape] = "box"
+    node_fontname: Optional[GraphVizFontName] = "mono"
+    # default edge attributes
+    edge_color: Optional[COLORS_GRAPHVIZ] = "black"
+    edge_style: Optional[GraphVizLineStyle] = "bold"
+    edge_splines: Optional[GraphVizSpline] = "curved"
+    edge_penwidth: Optional[str] = "2.0"
+    edge_fontname: Optional[GraphVizFontName] = "mono"

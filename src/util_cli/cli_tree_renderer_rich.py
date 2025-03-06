@@ -33,7 +33,7 @@ STYLE_DEFAULT = "black"
 STYLE_HEADER = "deep_sky_blue1"
 
 
-class TreeRenderer:
+class TreeRendererRich:
     """render a tree"""
 
     # TODO SAVE THE TREE as HTML File
@@ -84,7 +84,7 @@ class TreeRenderer:
             self._color_dict[_index] = {_color: _invert_font_color[_index]}
             # setting default styles
             self._color_styles[_index] = Style(color=_color, bgcolor=None, bold=False, link=None)
-        self._color_schema.colors(num_colors=self._color_schema.num_colors)
+        _ = self._color_schema.colors(num_colors=self._color_schema.num_colors)
 
     def _set_max_level(self, max_level: int = None) -> None:
         """sets the max depth level for coloring"""
@@ -106,7 +106,7 @@ class TreeRenderer:
         return self._rich_tree_dict[_root_id]
 
     def _create_rich_tree(self) -> None:
-        """also allows for sorting of files"""
+        """ creates the tree recursively"""
         self._rich_tree = self._create_rich_tree_root()
         # add the query info to the tree
         self._render_header(self._rich_tree)
@@ -155,8 +155,9 @@ class TreeRenderer:
         node_display_info.textcolor = _color
         node_display_info.text_invert_font_color = _text_invert
         node_display_info.style = self._color_styles.get(tree_node.level)
-        # style guide color (aligned with text color)
-        node_display_info.guidecolor = _color
+        # style guide color (aligned with text color) / look better if this is set to color of children
+        _guide_color = self._color_dict.get(tree_node.level + 1, self._default_color)
+        node_display_info.guidecolor = next(iter(_guide_color))
         # default: set name as default text, may be overwritten
         node_display_info.displayed_text = tree_node.name
         node_display_info.link = None
@@ -180,7 +181,7 @@ class TreeRenderer:
             _bg_color = node_formatted.textcolor
             if node_formatted.bgcolor is not None:
                 _bg_color = node_formatted.bgcolor
-        return Style(color=_color, bgcolor=_color, link=link)
+        return Style(color=_color, bgcolor=_bg_color, link=link, bold=node_formatted.bold)
 
     def _render_label(self, node_formatted: RichNodeDisplayInfo) -> Text:
         """rendering the text of displayed node, returns tuple of label as Text and style"""
@@ -224,8 +225,7 @@ class TreeRenderer:
         """renders the format into rich format"""
 
         _label = self._render_label(node_formatted)
-        _color = node_formatted.textcolor
-        _rtree_child = rich_tree_parent.add(label=_label, guide_style=_color)
+        _rtree_child = rich_tree_parent.add(label=_label, guide_style=node_formatted.guidecolor)
         self._rich_tree_dict[node_id] = _rtree_child
         pass
 
@@ -277,7 +277,9 @@ class TreeRenderer:
 def main(tree: Tree):
     """showcasing this module"""
     _headers = ["aa", "bb", "ccc"]
-    _tree_renderer = TreeRenderer(tree, header_list=_headers)
+    # _headers = None
+    # basic call: in case nothing furher is specified, name field will be rendered
+    _tree_renderer = TreeRendererRich(tree, header_list=_headers)
     _console = Console()
     _tree_renderer.show_info(_console)
     # output the dict tree
@@ -321,6 +323,5 @@ if __name__ == "__main__":
         11: {"parent": 8, "value": "value 11", "object": "OBJ11"},
     }
     my_tree = Tree()
-
     my_tree.create_tree(tree, name_field="value", parent_field="parent", analyze_fields=True)
     main(my_tree)
