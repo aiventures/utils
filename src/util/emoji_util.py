@@ -46,7 +46,7 @@ from model.model_emoji import (
     EmojiMetaDictType,
     EmojiMetaType,
     EmojiMetaFieldTypeList,
-    EmojiMetaFieldType,
+    EmojiMetaFieldLiteral,
 )
 from model.model_filter import SimpleStrFilterModel
 
@@ -445,7 +445,7 @@ class EmojiUtil:
         return out
 
     @staticmethod
-    def _get_first_char(value: object, field: EmojiMetaFieldType):
+    def _get_first_char(value: object, field: EmojiMetaFieldLiteral):
         """only use the first uncide char for multi char code emojis"""
         if field == "code":
             return value.split(" ")[0]
@@ -458,7 +458,7 @@ class EmojiUtil:
     def emoji_meta_to_dict(
         emoji_meta_data: EmojiMetaDictType,
         fields: EmojiMetaFieldTypeList | None = None,
-        field: EmojiMetaFieldType = None,
+        field: EmojiMetaFieldLiteral = None,
         only_first_char: bool = True,
     ) -> dict:
         """converts emoji meta to dict. if field is given, the value will be returned directly"""
@@ -477,7 +477,7 @@ class EmojiUtil:
     def to_json(
         emoji_meta_data: EmojiMetaDictType,
         fields: EmojiMetaFieldTypeList | None = None,
-        field: EmojiMetaFieldType = None,
+        field: EmojiMetaFieldLiteral = None,
         only_first_char: bool = True,
     ) -> str:
         """converts the Emoji Meta Dict as json, alias required to render the _class as class"""
@@ -491,7 +491,7 @@ class EmojiUtil:
     def to_dict(
         emoji_meta_data: EmojiMetaDictType,
         fields: EmojiMetaFieldTypeList | None = None,
-        field: EmojiMetaFieldType = None,
+        field: EmojiMetaFieldLiteral = None,
         only_first_char: bool = True,
     ) -> dict:
         """converts the Emoji Meta Dict as dict, alias required to rrender the _class as class"""

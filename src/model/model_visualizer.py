@@ -5,6 +5,7 @@ from pydantic import BaseModel, RootModel
 
 from model.model_colors import COLORS_GRAPHVIZ
 
+
 # Color Encoding
 # TODO PRIO4 adapt cli_color_mapper
 # - code ANSI Code Number

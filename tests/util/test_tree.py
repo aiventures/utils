@@ -91,7 +91,7 @@ def test_tree_stats_dict(fixture_test_tree):
 
 def test_filtered_tree(fixture_test_tree):
     """testing filtering a tree"""
-    _filtered_tree = TreeFiltered()
+    _filtered_tree = TreeFiltered(filter_type="exclude")
     _filtered_tree.create_tree(fixture_test_tree, analyze_fields=True, parent_field="parent")
     # adding filter set
     _filtered_tree.add_filter(3)

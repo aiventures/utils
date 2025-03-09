@@ -226,7 +226,7 @@ class TreeVisualizer:
         _dot_format.tooltip = f"{_path}OBJECT {_name}\nTYPE [{_obj_type}]\n[{_id}]"
         return _dot_format
 
-    def _render_parent_edge(self, from_node: TreeNodeModel, to_node: TreeNodeModel) -> DotFormat:
+    def _render_edge(self, from_node: TreeNodeModel, to_node: TreeNodeModel) -> DotFormat:
         """adds an edge to the Digraph"""
         # edges are specified by connecting nodes, but can have can id but not a name
         # adapt the default DotFormat / None values will be deleted later on
@@ -260,9 +260,9 @@ class TreeVisualizer:
         if _parent_node:
             _parent_graphviz_id = TreeVisualizer.graphviz_id(_parent_node)
 
-            _edge_rendering = self._render_parent_edge(from_node=_parent_node, to_node=_node)
+            _edge_rendering = self._render_edge(from_node=_parent_node, to_node=_node)
             _edge_dict = _edge_rendering.model_dump(exclude_none=True)
-            # add the edge
+            # add the edge tail = from, head = to
             self._dot.edge(tail_name=_parent_graphviz_id, head_name=_node_graphviz_id, **_edge_dict)
 
         for _child_node in _node.children:

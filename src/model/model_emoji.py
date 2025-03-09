@@ -36,8 +36,8 @@ class EmojiMetaType(EmojiRawType):
 
 
 # was explicitly done to allow for static type checking
-EmojiMetaFieldType = Literal["num", "class", "subclass", "code", "char", "info"]
-EmojiMetaFieldTypeList = List[EmojiMetaFieldType]
+EmojiMetaFieldLiteral = Literal["num", "class", "subclass", "code", "char", "info"]
+EmojiMetaFieldTypeList = List[EmojiMetaFieldLiteral]
 
 # derived models
 EmojiMetaDictModel = Dict[str, EmojiMetaType]

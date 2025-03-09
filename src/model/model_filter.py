@@ -6,7 +6,9 @@ from pydantic import BaseModel, field_validator
 
 # Constants
 # type definitions
-IncludeType = Annotated[Literal["include", "exclude"], "Filter to Include/Exclude Search Result"]
+
+IncludeLiteral = Literal["include", "exclude"]
+IncludeType = Annotated[IncludeLiteral, "Filter to Include/Exclude Search Result"]
 AnyOrAllType = Annotated[Literal["any", "all"], "Filter to Control whether ALL or ANY filters must match"]
 OperatorMin = Annotated[Literal["gt", "ge", "eq"], "Numerical Filter Lower Bound: greater than, greater equal, equal"]
 OperatorMax = Annotated[Literal["lt", "le", "eq"], "Numerical Filter Upper Bound: lower than, lower equal, equal"]
