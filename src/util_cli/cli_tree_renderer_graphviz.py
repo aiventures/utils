@@ -14,7 +14,8 @@ from rich.console import Console
 
 # import typer
 from cli.bootstrap_env import CLI_LOG_LEVEL
-from model.model_tree import TreeNodeModel, GraphDictModel, GraphEdge, GraphNode
+from model.model_tree import TreeNodeModel
+from model.model_graph import GraphDictModel, GraphEdge, GraphNode
 from model.model_visualizer import ColorSchemaType
 from model.model_visualizer import (
     DotFormat,
@@ -124,6 +125,7 @@ class TreeRendererGraphViz:
         self._create_dot()
         # creating root id and header elements
         self._add_headers()
+        # recursively create nodes
 
         # self._create_dot()
         # self._add_node(self._root_node_id)
@@ -303,14 +305,15 @@ class TreeRendererGraphViz:
         _ids = [self._add_graphviz_node(_dot_format) for _dot_format in _dot_formats]
         # formatting
 
-        _root_id = _ids[0]
+        # adding the root id
+        self._dot_root_id = _ids[0]
         _header_id = None
         _dot_edge = None
         try:
             _header_id = _ids[1]
             # add relation root to header
             _dot_edge = self._create_dot_format_edge()
-            self._add_graphviz_edge(from_node=_root_id, to_node=_header_id, dot_format=_dot_edge)
+            self._add_graphviz_edge(from_node=self._dot_root_id, to_node=_header_id, dot_format=_dot_edge)
         except IndexError:
             pass
 
@@ -320,8 +323,6 @@ class TreeRendererGraphViz:
             # add node and edge
             _id = self._add_graphviz_node(_dot_format)
             self._add_graphviz_edge(from_node=_header_id, to_node=_id, dot_format=_dot_edge)
-
-        pass
 
     def run_cmd(self, _cmd):
         """runs os command"""

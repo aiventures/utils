@@ -23,7 +23,6 @@ OUTPUT = "output"
 DICT_TREE_NODE_MODEL = "DictTreeNodeModel"
 DICT_PATH = "dict_path"
 
-GraphLiteral = Literal["edge", "node", "node_in", "node_out"]
 NodeLiteral = Literal["leaf", "node", "any"]
 NodeType = Annotated[NodeLiteral, "Node Type"]
 
@@ -83,33 +82,3 @@ class DictTreeNodeModel(TreeNodeModel):
     list_idx: Optional[int] = None
     # dictionary key path
     dict_path: Optional[list] = None
-
-
-class GraphElement(BaseModel):
-    """simple definition of a graph element"""
-
-    id: Optional[object] = None
-    graphtype: Optional[GraphLiteral] = None
-    name: Optional[str] = None
-    obj: Optional[object] = None
-
-
-class GraphNode(GraphElement):
-    """a graph node"""
-
-    # relations, list to edges
-    relations: Optional[Dict[GraphLiteral, object]] = []
-
-
-class GraphEdge(GraphElement):
-    """a graph edge"""
-
-    # edges should point to nodes ods
-    id_in: Optional[object] = None
-    id_out: Optional[object] = None
-
-
-# derived models
-GraphDictModel = Dict[object, GraphElement]
-GraphDictAdapter = TypeAdapter(GraphDictModel)
-GraphDictType = Annotated[GraphDictModel, GraphDictAdapter]
