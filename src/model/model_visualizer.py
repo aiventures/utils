@@ -58,6 +58,10 @@ ColorSchemaSet = Literal["divergent", "qualitative", "sequential", "all"]
 ColorSchemaSetType = Annotated[ColorSchemaSet, "color_set"]
 # available color schemes
 
+# default line color
+DEFAULT_LINE_COLOR = "grey40"
+DEFAULT_BACKGROUND_COLOR = "grey70"
+
 # Brewer color sets are also used in seaborn
 # https://seaborn.pydata.org/tutorial/color_palettes.html
 # Color Codes as JSON https://github.com/uncommoncode/color_palettes_json/tree/master
@@ -202,7 +206,7 @@ GraphVizDotRankdirType = Annotated[GraphVizDotRankdir, "rankdir"]
 class NodeFormat(BaseModel):
     """Joint Model attirbutes for rendering node in both graphviz and rich"""
 
-    # internal name
+    # internal name / in graphviz is used as a key
     name: Optional[str] = None
     # object identifier, usually name is copied
     id: Optional[str] = None
@@ -221,8 +225,6 @@ class NodeFormat(BaseModel):
     text_with_background_color: Optional[bool] = None
     # text is bold
     bold: Optional[bool] = None
-    # text color
-    textcolor: Optional[str] = None
     # invert text for texts with background
     text_invert_font_color: Optional[bool] = None
 
@@ -232,6 +234,8 @@ class RichNodeDisplayInfo(NodeFormat):
 
     # formatting, defined as rich Style
     style: Optional[object] = None
+    # text color
+    textcolor: Optional[str] = None
     # styleguide color
     guidecolor: Optional[str] = None
     # background color
@@ -240,7 +244,7 @@ class RichNodeDisplayInfo(NodeFormat):
     emoji: Optional[str] = None
 
 
-class DotFormat(NodeFormat):
+class GraphVizNode(NodeFormat):
     """Attributes for Graphviz Rendering"""
 
     # create a default for node and edge
@@ -250,17 +254,29 @@ class DotFormat(NodeFormat):
     # html should be "_top"
     target: Optional[str] = None
     # text to be displayed on Node in Graphviz
+    # https://graphviz.org/docs/attrs/label/
     label: Optional[str] = "Node"
+    # https://graphviz.org/docs/attrs/style/
     style: Optional[str] = "filled"
     # color of shape / frame
-    color: Optional[str] = "black"
+    # https://graphviz.org/docs/attrs/fontcolor/
+    fontcolor: Optional[str] = "black"
+    # https://graphviz.org/docs/attrs/color/
+    color: Optional[str] = DEFAULT_LINE_COLOR
+    # https://graphviz.org/docs/attrs/fillcolor/
     fillcolor: Optional[str] = "white"
+    # https://graphviz.org/docs/attrs/fontsize/
     fontsize: Optional[str] = "14"
+    # https://graphviz.org/docs/attrs/shape/
     shape: Optional[GraphVizShapeType] = "box"
-    penwidth: Optional[str] = None
+    # https://graphviz.org/docs/attrs/penwidth/
+    penwidth: Optional[str] = "2.0"
+    # https://graphviz.org/docs/attrs/arrowhead/
+    # can also be None
+    arrowhead: Optional[str] = "normal"
 
 
-class DotAttributes(BaseModel):
+class GraphVizAttributes(BaseModel):
     """Attributes for initialization of Digraph Model
 
     rankdir only applicable to dot engine
@@ -279,7 +295,8 @@ class DotAttributes(BaseModel):
     fontname: Optional[GraphVizFontName] = "mono"
     fontsize: Optional[str] = "12"
     rankdir: Optional[GraphVizDotRankdir] = "TB"
-    bgcolor: Optional[str] = "skyblue"
+    # https://graphviz.org/doc/info/colors.html
+    bgcolor: Optional[str] = DEFAULT_BACKGROUND_COLOR
     labelloc: Optional[GraphVizLabelLoc] = "b"
     labeljust: Optional[GraphVizLabelJust] = "l"
     format: Optional[GraphVizFileFormat] = "svg"
@@ -295,7 +312,7 @@ class DotAttributes(BaseModel):
     node_shape: Optional[GraphVizShape] = "box"
     node_fontname: Optional[GraphVizFontName] = "mono"
     # default edge attributes
-    edge_color: Optional[COLORS_GRAPHVIZ] = "black"
+    edge_color: Optional[COLORS_GRAPHVIZ] = "grey40"
     edge_style: Optional[GraphVizLineStyle] = "bold"
     edge_splines: Optional[GraphVizSpline] = "curved"
     edge_penwidth: Optional[str] = "2.0"

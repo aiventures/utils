@@ -1,27 +1,27 @@
 """rendering the Tree / FilteredTree as rich tree"""
 
 # from pathlib import Path
-from pathlib import Path
 import logging
 import sys
-
-from rich.tree import Tree as RichTree
-from rich.text import Text
-from rich.style import Style
-from rich.emoji import Emoji as RichEmoji
-from rich.console import Console
-from typing import List, Dict
+from pathlib import Path
+from typing import Dict, List
 from urllib.parse import quote as urlquote
+
+from rich.console import Console
+from rich.emoji import Emoji as RichEmoji
+from rich.style import Style
+from rich.text import Text
+from rich.tree import Tree as RichTree
 
 # import typer
 from cli.bootstrap_env import CLI_LOG_LEVEL
 from model.model_tree import TreeNodeModel
 from model.model_visualizer import ColorSchemaType, RichNodeDisplayInfo
-from util_cli.cli_color_schema import ColorSchema
 
 # Filtered Tree is a subclass so this should work out of the box
 from util.tree import Tree
 from util.utils import Utils
+from util_cli.cli_color_schema import ColorSchema
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class TreeRendererRich:
         return self._rich_tree_dict[_root_id]
 
     def _create_rich_tree(self) -> None:
-        """ creates the tree recursively"""
+        """creates the tree recursively"""
         self._rich_tree = self._create_rich_tree_root()
         # add the query info to the tree
         self._render_header(self._rich_tree)
@@ -134,7 +134,7 @@ class TreeRendererRich:
         for _header_item in self._header_list:
             _header_richtree_root.add(_header_item)
 
-    def post_get_tree_node_display_info(
+    def postprocess_tree_node_display_info(
         self, tree_node: TreeNodeModel, node_formatted: RichNodeDisplayInfo
     ) -> RichNodeDisplayInfo:
         """customization method to allow for alternative formatting, setting emojis etc"""
@@ -164,7 +164,7 @@ class TreeRendererRich:
         # unclear whether we have this in Rich ...
         node_display_info.tooltip = "this is a dummy tooltip"
         # allow for adjustment of rendering information
-        node_display_info = self.post_get_tree_node_display_info(tree_node, node_display_info)
+        node_display_info = self.postprocess_tree_node_display_info(tree_node, node_display_info)
 
         # tree_node.level
         return node_display_info

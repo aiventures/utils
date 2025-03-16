@@ -26,7 +26,7 @@ from typing import Dict
 
 from cli.bootstrap_env import CLI_LOG_LEVEL
 from model.model_tree import DICT_PATH, DICT_TREE_NODE_MODEL, TreeNodeModel
-from model.model_visualizer import DotFormat
+from model.model_visualizer import GraphVizNode
 from util.constants import DATEFORMAT_JJJJMMDDHHMMSS
 from util.tree import Tree
 from util.utils import Utils
@@ -158,7 +158,7 @@ class TreeVisualizer:
             _dict = json.load(f)
         return _dict
 
-    def _format_label(self, dot_format: DotFormat, bold: bool = False, underline: bool = False) -> None:
+    def _format_label(self, dot_format: GraphVizNode, bold: bool = False, underline: bool = False) -> None:
         """formats the label"""
         _label = dot_format.label
         _format = any([bold, underline])
@@ -210,14 +210,14 @@ class TreeVisualizer:
 
         return Utils.get_hash(_s)
 
-    def _render_node(self, tree_node: TreeNodeModel) -> DotFormat:
+    def _render_node(self, tree_node: TreeNodeModel) -> GraphVizNode:
         """adds a node to the Digraph"""
         _id = TreeVisualizer.graphviz_id(tree_node)
         _name = tree_node.name
         # adding bold and underline style to font
         # todo put this into a default structure
 
-        _dot_format = DotFormat(name=_id, label=_name)
+        _dot_format = GraphVizNode(name=_id, label=_name)
         # add a tooltip with navigation path
         _obj_type = tree_node.obj_type
         _path = ""
@@ -226,11 +226,11 @@ class TreeVisualizer:
         _dot_format.tooltip = f"{_path}OBJECT {_name}\nTYPE [{_obj_type}]\n[{_id}]"
         return _dot_format
 
-    def _render_edge(self, from_node: TreeNodeModel, to_node: TreeNodeModel) -> DotFormat:
+    def _render_edge(self, from_node: TreeNodeModel, to_node: TreeNodeModel) -> GraphVizNode:
         """adds an edge to the Digraph"""
         # edges are specified by connecting nodes, but can have can id but not a name
         # adapt the default DotFormat / None values will be deleted later on
-        _dot_format = DotFormat()
+        _dot_format = GraphVizNode()
         _dot_format.id = TreeVisualizer.graphviz_id(from_node, to_node)
         # todo PRIO2 put this into a default structure
         _dot_format.shape = None

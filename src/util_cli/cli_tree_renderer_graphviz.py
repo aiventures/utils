@@ -2,31 +2,34 @@
 
 # from pathlib import Path
 import json
-from pathlib import Path
 import logging
-import sys
 import os
 import subprocess
+import sys
 from datetime import datetime as DateTime
-
+from pathlib import Path
 from typing import List
+
 from rich.console import Console
 
 # import typer
 from cli.bootstrap_env import CLI_LOG_LEVEL
-from model.model_tree import TreeNodeModel
 from model.model_graph import GraphDictModel, GraphEdge, GraphNode
-from model.model_visualizer import ColorSchemaType
+from model.model_tree import TreeNodeModel
 from model.model_visualizer import (
-    DotFormat,
-    DotAttributes,
+    ColorSchemaType,
+    GraphVizAttributes,
+    GraphVizNode,
+    DEFAULT_BACKGROUND_COLOR,
+    DEFAULT_LINE_COLOR,
 )
 from util.constants import DATEFORMAT_JJJJMMDDHHMMSS
-from util.utils import Utils
-from util_cli.cli_color_schema import ColorSchema
 
 # Filtered Tree is a subclass so this should work out of the box
 from util.tree import Tree
+from util.tree_iterator import TreeIterator
+from util.utils import Utils
+from util_cli.cli_color_schema import ColorSchema
 
 # Design Decision: You need to manually install GRAPHVIZ into your environment
 PY_GRAPHVIZ_INSTALLED = True
@@ -61,6 +64,8 @@ class TreeRendererGraphViz:
     def __init__(
         self,
         tree: Tree,
+        tree_name: str = "TREE",
+        tree_info: str = "TREE INFO",
         max_level: int = None,
         color_schema: ColorSchemaType = None,
         reverse_col_schema: bool = False,
@@ -70,7 +75,7 @@ class TreeRendererGraphViz:
         path: str = None,
         view: bool = True,
         max_chars: int = None,
-        dot_attributes: DotAttributes = None,
+        graphviz_attributes: GraphVizAttributes = None,
     ):
         # graphviz needs to be in path
         self._is_executable = self._check_graphviz_executable()
@@ -85,7 +90,8 @@ class TreeRendererGraphViz:
             return
 
         self._tree: Tree = tree
-
+        self._tree_name = tree_name
+        self._tree_info = tree_info
         # save options
         # adding date to file name
         self._add_date: bool = add_date
@@ -104,10 +110,7 @@ class TreeRendererGraphViz:
         self._color_schema: ColorSchema = None
         self._color_dict: dict = {}
         self._set_color_schema(color_schema, reverse_col_schema)
-        #         self._rich_tree = None
-        #         # rich tree refs
-        #         self._rich_tree_dict: Dict[str, RichTree] = {}
-        #         self._rich_tree = None
+        self._default_color = {DEFAULT_LINE_COLOR: True}
         self._info_list = info_list
 
         # now traverse the items
@@ -116,35 +119,22 @@ class TreeRendererGraphViz:
         self._num_nodes = len(self._tree._hierarchy_nodes_dict)
 
         # setting up the DiGraph Model / with optional default
-        self._dot_attributes = dot_attributes if dot_attributes is not None else DotAttributes()
+        self._graphviz_attributes = graphviz_attributes if graphviz_attributes is not None else GraphVizAttributes()
         self._dot: Digraph = None  #
-        self._dot_root_id: str = None
-        self._graph_dict: GraphDictModel = {}
+        self._graphviz_root_id: str = None
+        self._graphviz_dict: GraphDictModel = {}
         # dictionary that hosts
         # rendering attributes
         self._create_dot()
         # creating root id and header elements
         self._add_headers()
         # recursively create nodes
-
-        # self._create_dot()
-        # self._add_node(self._root_node_id)
-
-    #         self._default_color = {"white": False}
-    #         if default_color is not None:
-    #             self._default_color = {default_color: False}
-    #         # TODO PRIO3 Replace by using style
-    #         self._default_style_color = STYLE_DEFAULT
-    #         self._default_guide_color = GUIDE_STYLE_DEFAULT
-    #         if default_guide_color is not None:
-    #             self._default_guide_color = default_guide_color
-    #         # create rich styles
-    #         self._create_rich_tree()
+        self._create_graphviz_tree()
 
     def _create_dot(self):
         """creates the Digraph model"""
         # Digraph is a directed graph
-        _attributes = self._dot_attributes
+        _attributes = self._graphviz_attributes
         self._dot = Digraph(engine=_attributes.engine, comment=_attributes.comment, format=_attributes.format)
         # global graph settings
         self._dot.attr(
@@ -176,7 +166,7 @@ class TreeRendererGraphViz:
         )
 
     @staticmethod
-    def graphviz_id(node: TreeNodeModel | str, to_node: TreeNodeModel | str = None) -> str:
+    def graphviz_id(node: TreeNodeModel | object, to_node: TreeNodeModel | str = None) -> str:
         """calculates hash from id so that you could
         get the node from the graphviz tree. Update is being done
         by creating it again
@@ -185,7 +175,11 @@ class TreeRendererGraphViz:
         # also allow strings to be used to create graphviz ids
         _node_id = None
         if isinstance(node, TreeNodeModel):
-            _node_id = str(node.id)
+            _node_id = node.id
+            if _node_id is None:
+                logger.warning(f"[TreeRendererGraphViz] no node.id for [{node}], skipping")
+                return None
+            _node_id = str(_node_id)
         else:
             _node_id = str(node)
 
@@ -201,50 +195,23 @@ class TreeRendererGraphViz:
 
         return Utils.get_hash(_s)
 
-    def _create_dot_format_edge(self) -> DotFormat:
-        """create a default edge dot_format"""
-        # right now only prvide the predefined edge, can also be changed
-        _dot_format = DotFormat()
-        _dot_format.label = None
-        _dot_format.fillcolor = "black"
-        return _dot_format
-
-    def _render_edge(self, from_node: TreeNodeModel, to_node: TreeNodeModel) -> DotFormat:
-        """adds an edge to the Digraph"""
-        # edges are specified by connecting nodes, but can have can id but not a name
-        # adapt the default DotFormat / None values will be deleted later on
-        _dot_format = DotFormat()
-        # graphviz: only nodes have an id ( hash(DotFormat.id) = GraphViz.name)
-        _dot_format.id = TreeRendererGraphViz.graphviz_id(from_node, to_node)
-        # todo PRIO2 put this into a default structure
-        _dot_format.shape = None
-        _dot_format.fillcolor = "black"
-        _dot_format.color = "black"
-        _dot_format.label = None
-        # TODO put this into a structure
-        _dot_format.fontsize = "9"
-        _tooltip = f"{from_node.name}->{to_node.name}"
-        _dot_format.tooltip = f"{_tooltip}\n[{_dot_format.id}]"
-
-        return _dot_format
-
-    def _add_graph_element(
-        self, node_id: object = None, node_to_id: object = None, dot_format: DotFormat = None
-    ) -> None:
-        """adds an element to the graph dict"""
+    def _add_to_graphviz_dict(
+        self, node_id: object = None, node_to_id: object = None, graphviz_node: GraphVizNode = None
+    ) -> object:
+        """adds an element to the graph dict returns the node id"""
         _graph_element = None
         _node_id = node_id
-        # try to get node id directly or from dot_format
+        # try to get node id directly or from graphviz_format
         if _node_id is None:
-            _node_id = dot_format.id
+            _node_id = graphviz_node.id
             if _node_id is None:
-                _name = dot_format.name
+                _name = graphviz_node.name
                 # recreate _node_id
                 if _name is not None:
                     _node_id = TreeRendererGraphViz.graphviz_id(_name)
-                    dot_format.id = _node_id
+                    graphviz_node.id = _node_id
         if _node_id is None:
-            logger.warning(f"[TreeRendererGraphViz] Object {dot_format} has no id")
+            logger.warning(f"[TreeRendererGraphViz] Object {graphviz_node} has no id")
             return
 
         if node_to_id is None:
@@ -256,73 +223,203 @@ class TreeRendererGraphViz:
             _graph_element.id_in = _node_id
             _graph_element.id_out = node_to_id
 
-        _graph_element.id = dot_format.id
-        _graph_element.name = dot_format.name
-        _graph_element.obj = dot_format.label
-        self._graph_dict[_graph_element.id] = _graph_element
+        _graph_element.id = graphviz_node.id
+        _graph_element.name = graphviz_node.name
+        _graph_element.obj = graphviz_node.label
+        self._graphviz_dict[_graph_element.id] = _graph_element
+        return _graph_element.id
 
-    def _add_graphviz_node(self, dot_format: DotFormat) -> object:
-        """adds node to Graphviz dot returns the node id"""
-        # unique id to be found in name attribute
-        _id = dot_format.id
-        if _id is None:
-            # create id from label
-            _id = TreeRendererGraphViz.graphviz_id(str(dot_format.label))
-            dot_format.id = _id
-        # name is used as id in Graphviz / label is used for display
-        dot_format.name = _id
-        _node_dict = dot_format.model_dump(exclude_none=True)
-        self._add_graph_element(dot_format=dot_format)
-        self._dot.node(**_node_dict)
-        return _id
+    def instanciate_graphviz_edge(self, arrowhead: bool = True) -> GraphVizNode:
+        """create a default edge graphviz_format, could also be overwritten in subclass"""
+        # right now only prvide the predefined edge, can also be changed
+        _graphviz_node = GraphVizNode()
+        _graphviz_node.label = None  # do not show a label
+        _graphviz_node.fillcolor = "black"
+        # drop the arrowhead
+        if arrowhead is not True:
+            _graphviz_node.arrowhead = "none"
+        return _graphviz_node
 
-    def _add_graphviz_edge(self, from_node: object, to_node: object, dot_format: DotFormat) -> None:
+    # def _create_graphviz_edge_from_tree_node_ids(self, from_node: object, to_node: object) -> GraphVizNode:
+    #     """creates the GraphViz Nodes using the ids from parent and child """
+    #     # edges are specified by connecting nodes, but can have can id but not a name
+    #     # adapt the default DotFormat / None values will be deleted later on
+    #     _graphviz_node = self.instanciate_graphviz_edge()
+    #     # graphviz: only nodes have an id ( hash(DotFormat.id) = GraphViz.name)
+    #     _graphviz_node.id = TreeRendererGraphViz.graphviz_id(from_node, to_node)
+    #     # todo PRIO2 put this into a default structure
+    #     _graphviz_node.shape = None
+    #     _graphviz_node.fillcolor = "black"
+    #     _graphviz_node.color = "black"
+    #     _graphviz_node.label = None
+    #     # TODO put this into a structure
+    #     _graphviz_node.fontsize = "9"
+    #     _tooltip = f"{from_node.name}->{to_node.name}"
+    #     _graphviz_node.tooltip = f"{_tooltip}\n[{_graphviz_node.id}]"
+    #     return _graphviz_node
+
+    def _create_graphviz_dot_edge(
+        self, from_node: object, to_node: object, graphviz_edge: GraphVizNode, arrowhead: bool = True
+    ) -> None:
         """adds edge to Graphviz Dot"""
-        if self._graph_dict.get(from_node) is None or self._graph_dict.get(to_node) is None:
+        # _graphviz_edge = self.instanciate_graphviz_edge(arrowhead)
+        if self._graphviz_dict.get(from_node) is None or self._graphviz_dict.get(to_node) is None:
             logger.warning(
                 f"[TreeRendererGraphViz] There are no nodes from_node [{from_node}] or to_node [{to_node}] to link"
             )
             return
         # create the id
         _id = TreeRendererGraphViz.graphviz_id(from_node, to_node)
-        dot_format.id = _id
-        _dot_dict = dot_format.model_dump(exclude_none=True)
-        self._add_graph_element(node_id=from_node, node_to_id=to_node, dot_format=dot_format)
+        graphviz_edge.id = _id
+        graphviz_edge.name = _id
+        _graphviz_node_dict = graphviz_edge.model_dump(exclude_none=True)
+        self._add_to_graphviz_dict(node_id=from_node, node_to_id=to_node, graphviz_node=graphviz_edge)
         try:
-            _ = _dot_dict.pop("id")
-            _ = _dot_dict.pop("name")
+            _ = _graphviz_node_dict.pop("id")
+            _ = _graphviz_node_dict.pop("name")
         except KeyError:
             pass
-        self._dot.edge(tail_name=from_node, head_name=to_node, **_dot_dict)
+        self._dot.edge(tail_name=from_node, head_name=to_node, **_graphviz_node_dict)
+
+    def instanciate_graphviz_node(self, obj_id: None | TreeNodeModel | str = None, label: str = None) -> GraphVizNode:
+        """create a default edge node for further refinement, could also be overwritten in subclass"""
+        # create id if supplied
+        _id = obj_id
+        _graphviz_node = GraphVizNode()
+        # adjust frame color
+        _graphviz_node.color = DEFAULT_LINE_COLOR
+        if _id is not None:
+            _id = self.graphviz_id(_id)
+            _graphviz_node.id = _id
+            _graphviz_node.name = _id
+        if label is None:
+            _graphviz_node.label = f"NODE (LABEL NOT SET)\nObject [{str(obj_id)[:50]}...]"
+        else:
+            _graphviz_node.label = label
+        # ... do some adjustments for a default node
+        #     for now we'll leave it as it is
+        return _graphviz_node
+
+    def postprocess_graphviz_node(self, tree_node: TreeNodeModel, graphviz_node: GraphVizNode) -> GraphVizNode:
+        """customization method to allow for alternative formatting"""
+        _graphviz_node = graphviz_node
+        # ... do adjustments in a subclass
+        return _graphviz_node
+
+    def _create_graphviz_node(self, tree_node: TreeNodeModel) -> GraphVizNode:
+        """transforms tree_node info into information to be rendered
+        use post_tree_node_display_info to modify the rendering output
+        """
+        # do a defeult implementation for rendering the node
+        _graphviz_node = self.instanciate_graphviz_node(tree_node)
+        _id = _graphviz_node.id
+        # _id = self.graphviz_id(tree_node)
+        # _graphviz_node.name = _id
+        # _graphviz_node.id = _id
+        _graphviz_node.displayed_text = tree_node.name
+        _graphviz_node.label = _graphviz_node.displayed_text
+        _tooltip = f"[{_id}]\n{_graphviz_node.displayed_text}"
+        _graphviz_node.tooltip = _tooltip
+        # do the color formatting based on depth level
+        _color = self._color_dict.get(tree_node.level, self._default_color)
+        _color, _text_invert = next(iter(_color.items()))
+        _graphviz_node.text_invert_font_color = _text_invert
+        if _text_invert is True:
+            _graphviz_node.fontcolor = "white"
+        else:
+            _graphviz_node.fontcolor = "black"
+        _graphviz_node.fillcolor = _color
+        # node_display_info.style = self._color_styles.get(tree_node.level)
+        # allow for readjustment in post processing
+        _graphviz_node = self.postprocess_graphviz_node(tree_node, _graphviz_node)
+        return _graphviz_node
+
+    def _create_graphviz_node_from_tree_node(self, node_id: object) -> None:
+        """creates the dot node element from a tree elements"""
+        _node_info = self._tree.hierarchy[node_id]
+        _parent_node_id = _node_info.parent_id
+        _parent_graphviz_id = None
+        try:
+            _parent_node_info = self._tree.hierarchy[_parent_node_id]
+            _parent_graphviz_id = self.graphviz_id(_parent_node_info.id)
+        except KeyError:
+            # add root element
+            if _parent_node_id is None:
+                _parent_graphviz_id = self._graphviz_root_id
+        # gets the node in dot format
+        _graphviz_node = self._create_graphviz_node(_node_info)
+        self._create_graphviz_dot_node(_graphviz_node)
+        # addng the node edges
+        _graphviz_edge = self.instanciate_graphviz_edge()
+        # change color of edge according to node level
+        _edge_color_dict = self._color_dict.get(_node_info.level - 1, self._default_color)
+        _edge_color = next(iter(_edge_color_dict))
+        _graphviz_edge.color = _edge_color
+        _graphviz_edge.fillcolor = _edge_color
+
+        self._create_graphviz_dot_edge(
+            from_node=_parent_graphviz_id, to_node=_graphviz_node.id, graphviz_edge=_graphviz_edge
+        )
+        # self._create_graphviz_edge_from_tree_nodes(from_node=_parent_graphviz_id, to_node=_graphviz_node.id)
+
+    def _create_graphviz_dot_node(self, graphviz_node: GraphVizNode) -> None:
+        """creates the dot node element"""
+        # adds the node to the node dict
+        self._add_to_graphviz_dict(graphviz_node=graphviz_node)
+        # some fields need to be excluded
+        _graphviz_node_dict = graphviz_node.model_dump(
+            exclude_none=True, exclude=["text_invert_font_color", "text_with_background_color"]
+        )
+        self._dot.node(**_graphviz_node_dict)
 
     def _add_headers(self) -> None:
-        """addding headers"""
-        _headers = ["ROOT"]
+        """addding headers and element for storing information"""
+        _info_list = []
+        _headers = [self._tree_name]
         if self._info_list is not None:
-            _headers.append("INFORMATION")
-        _dot_formats = [DotFormat(label=_header) for _header in _headers]
-        # TODO modify Dot Formats
-        _ids = [self._add_graphviz_node(_dot_format) for _dot_format in _dot_formats]
-        # formatting
-
-        # adding the root id
-        self._dot_root_id = _ids[0]
-        _header_id = None
-        _dot_edge = None
+            _info_list = self._info_list
+            _headers.append(self._tree_info)
+        _graphviz_nodes = []
+        for _header in _headers:
+            _graphviz_nodes = [self.instanciate_graphviz_node(obj_id=_h, label=_h) for _h in _headers]
+        _root_node = _graphviz_nodes[0]
+        _root_node.fillcolor = "slategray4"
+        _root_node.color = "slategray4"
+        _root_node.fontcolor = "white"
+        self._create_graphviz_dot_node(_root_node)
+        self._graphviz_root_id = _root_node.id
+        _info_root = None
         try:
-            _header_id = _ids[1]
-            # add relation root to header
-            _dot_edge = self._create_dot_format_edge()
-            self._add_graphviz_edge(from_node=self._dot_root_id, to_node=_header_id, dot_format=_dot_edge)
+            _info_root = _graphviz_nodes[1]
+            _info_root.fillcolor = "slategray2"
+            _info_root.color = "slategray2"
+            _info_root.fontcolor = "black"
+            self._create_graphviz_dot_node(_info_root)
+            _graphviz_edge = self.instanciate_graphviz_edge(arrowhead=False)
+            self._create_graphviz_dot_edge(from_node=_root_node.id, to_node=_info_root.id, graphviz_edge=_graphviz_edge)
+        # self._add_graphviz_edge(from_node=:)
         except IndexError:
             pass
 
-        # add supplementary information to info
-        for _info in self._info_list:
-            _dot_format = DotFormat(label=_info)
-            # add node and edge
-            _id = self._add_graphviz_node(_dot_format)
-            self._add_graphviz_edge(from_node=_header_id, to_node=_id, dot_format=_dot_edge)
+        # adding the headers
+        for _info in _info_list:
+            _info_node = self.instanciate_graphviz_node(obj_id=_info, label=_info)
+            _info_node.shape = "none"
+            _info_node.fillcolor = "none"
+            self._create_graphviz_dot_node(_info_node)
+            _graphviz_edge = self.instanciate_graphviz_edge(arrowhead=False)
+            self._create_graphviz_dot_edge(from_node=_info_root.id, to_node=_info_node.id, graphviz_edge=_graphviz_edge)
+
+    def _create_graphviz_tree(self) -> None:
+        """Creates the tree"""
+        _tree_iterator = TreeIterator(self._tree)
+        _finished = False
+        while not _finished:
+            try:
+                _node_id = next(_tree_iterator)
+                self._create_graphviz_node_from_tree_node(_node_id)
+            except StopIteration:
+                _finished = True
 
     def run_cmd(self, _cmd):
         """runs os command"""
@@ -345,30 +442,6 @@ class TreeRendererGraphViz:
             is_executable = False
         return is_executable
 
-    def _check_graphviz_executable(self) -> bool:
-        """checks if graphviz is executable"""
-        is_executable = True
-        _cmd = ["dot", "-V"]
-        # _cmd = ["which", "dot"]
-        _code, _, _info = self.run_cmd(_cmd)
-        if _code == 0:
-            logger.info(f"[AstVisualizer] GRAPHVIZ FOUND: [{_info}]")
-        else:
-            logger.warning(f"[AstVisualizer] GRAPHVIZ NOT FOUND, code [{_code}] ({_info})")
-            is_executable = False
-        return is_executable
-
-    def _set_save_path(self) -> None:
-        """setting the save path"""
-        if self._path is None or not os.path.isdir(self._path):
-            self._path = os.getcwd()
-        if self._filename is None:
-            self._filename = "graphviz"
-        if self._add_date:
-            _date_s = DateTime.now().strftime(DATEFORMAT_JJJJMMDDHHMMSS)
-            self._filename = f"{_date_s}_{self._filename}"
-        self._save_path = os.path.join(self._path, self._filename)
-
     def _load_yaml(self, f: str) -> dict:
         """loads the yaml"""
         if PY_YAML_INSTALLED is False:
@@ -384,9 +457,20 @@ class TreeRendererGraphViz:
             _dict = json.load(f)
         return _dict
 
+    def _set_save_path(self) -> None:
+        """setting the save path"""
+        if self._path is None or not os.path.isdir(self._path):
+            self._path = os.getcwd()
+        if self._filename is None:
+            self._filename = "graphviz"
+        if self._add_date:
+            _date_s = DateTime.now().strftime(DATEFORMAT_JJJJMMDDHHMMSS)
+            self._filename = f"{_date_s}_{self._filename}"
+        self._save_path = os.path.join(self._path, self._filename)
+
     def _set_color_schema(self, color_schema: ColorSchemaType = None, reverse_col_schema: bool = False):
         """setting colors and color schema"""
-        _schema: ColorSchemaType = "spectral" if color_schema is None else color_schema
+        _schema: ColorSchemaType = "pastel2" if color_schema is None else color_schema
 
         self._color_schema = ColorSchema(_schema, reverse_schema=reverse_col_schema)
         # we need to add +1 due to adding level zero to depth of tree
@@ -414,182 +498,10 @@ class TreeRendererGraphViz:
         """returns if graphs can be drawn"""
         return self._is_executable
 
-    #     def _render_root_node(self, rtree: RichTree) -> RichTree:
-    #         """renders the root node element"""
-    #         _root_id = self._tree.root_id
-    #         root_node_info = self._tree.get_node(_root_id)
-    #         _node_formatted = self._get_tree_node_display_info(root_node_info)
-    #         self._render_node(node_id=_root_id, node_formatted=_node_formatted, rich_tree_parent=rtree)
-    #         return self._rich_tree_dict[_root_id]
-
-    #     def _create_rich_tree(self) -> None:
-    #         """also allows for sorting of files"""
-    #         self._rich_tree = self._create_rich_tree_root()
-    #         # add the query info to the tree
-    #         self._render_header(self._rich_tree)
-    #         # create the root node of the tree
-    #         _rich_tree_root = self._render_root_node(self._rich_tree)
-    #         # starting with root id
-    #         # this will recursively create all nodes in the rich tree
-    #         # recursively create the file hierarchy
-    #         self._render_rtree(self._tree.root_id)
-    #         pass
-
-    #     def _create_rich_tree_root(self) -> RichTree:
-    #         """creates the richt tree node"""
-    #         return RichTree(
-    #             f"[{GUIDE_STYLE_DEFAULT}]TREE VIEW",
-    #             guide_style=GUIDE_STYLE_DEFAULT,
-    #         )
-
-    #     def _render_header(self, rich_tree_root: RichTree) -> None:
-    #         """renders header information"""
-    #         if not isinstance(self._header_list, list):
-    #             return
-    #         _header_title = RichEmoji.replace(f"[{STYLE_HEADER}]:magnifying_glass_tilted_right: TREE INFO")
-    #         _header_richtree_root = rich_tree_root.add(_header_title, guide_style=STYLE_HEADER, style=STYLE_HEADER)
-    #         for _header_item in self._header_list:
-    #             _header_richtree_root.add(_header_item)
-
-    #     def post_get_tree_node_display_info(
-    #         self, tree_node: TreeNodeModel, node_formatted: RichNodeDisplayInfo
-    #     ) -> RichNodeDisplayInfo:
-    #         """customization method to allow for alternative formatting, setting emojis etc"""
-    #         _node_formatted = node_formatted
-    #         return _node_formatted
-
-    #     def _get_tree_node_display_info(self, tree_node: TreeNodeModel) -> RichNodeDisplayInfo:
-    #         """transforms tree_node info into information to be rendered
-    #         use post_get_tree_node_display_info to modify the rendering output
-
-    #         """
-    #         node_display_info = RichNodeDisplayInfo()
-    #         node_display_info.name = tree_node.name
-    #         node_display_info.id = tree_node.id
-    #         # default text color (= mapping of tree depth)
-    #         _color = self._color_dict.get(tree_node.level, self._default_color)
-    #         _color, _text_invert = next(iter(_color.items()))
-    #         node_display_info.textcolor = _color
-    #         node_display_info.text_invert_font_color = _text_invert
-    #         node_display_info.style = self._color_styles.get(tree_node.level)
-    #         # style guide color (aligned with text color) / look better if this is set to color of children
-    #         _guide_color = self._color_dict.get(tree_node.level + 1, self._default_color)
-    #         node_display_info.guidecolor = next(iter(_guide_color))
-    #         # default: set name as default text, may be overwritten
-    #         node_display_info.displayed_text = tree_node.name
-    #         node_display_info.link = None
-    #         # unclear whether we have this in Rich ...
-    #         node_display_info.tooltip = "this is a dummy tooltip"
-    #         # allow for adjustment of rendering information
-    #         node_display_info = self.post_get_tree_node_display_info(tree_node, node_display_info)
-
-    #         # tree_node.level
-    #         return node_display_info
-
-    #     def _style_from_formatted_node(self, node_formatted: RichNodeDisplayInfo, link: str = None) -> Style:
-    #         """Returns Style from node format"""
-    #         # node_formatted.textcolor
-    #         _color = node_formatted.textcolor
-    #         _bg_color = None
-    #         if node_formatted.text_with_background_color:
-    #             _color = "white"
-    #             if node_formatted.text_invert_font_color:
-    #                 _color = "black"
-    #             _bg_color = node_formatted.textcolor
-    #             if node_formatted.bgcolor is not None:
-    #                 _bg_color = node_formatted.bgcolor
-    #         return Style(color=_color, bgcolor=_color, link=link)
-
-    #     def _render_label(self, node_formatted: RichNodeDisplayInfo) -> Text:
-    #         """rendering the text of displayed node, returns tuple of label as Text and style"""
-    #         # first, get the text
-    #         label_text = node_formatted.displayed_text
-    #         # fallback, use name as display test
-    #         if node_formatted.displayed_text is None:
-    #             label_text = node_formatted.name
-    #         # get emoji
-    #         emoji = node_formatted.emoji
-    #         if emoji:
-    #             emoji = emoji.replace(emoji) + " "
-    #         else:
-    #             emoji = ""
-
-    #         _link = node_formatted.link
-    #         # get a formatted link
-    #         if isinstance(_link, Path):
-    #             _link = str(_link)
-    #         if _link:
-    #             # try to convert into a file path
-    #             if not _link.startswith("http"):
-    #                 _link = Utils.get_unspaced_path(_link, is_link=True)
-    #             else:
-    #                 # parse spaces
-    #                 if " " in _link:
-    #                     _link = urlquote(_link)
-    #         # do the formatting
-    #         style = node_formatted.style
-    #         if style is None:
-    #             style = self._style_from_formatted_node(node_formatted, _link)
-    #         if _link:
-    #             style = style.update_link(link=_link)
-    #         label = Text(emoji) + Text(label_text, style=style)
-    #         return label
-    #     def _render_node(self, node_id: object, node_formatted: RichNodeDisplayInfo, rich_tree_parent: RichTree) -> None:
-    #         """renders the format into rich format"""
-
-    #         _label = self._render_label(node_formatted)
-    #         _rtree_child = rich_tree_parent.add(label=_label, guide_style=node_formatted.guidecolor)
-    #         self._rich_tree_dict[node_id] = _rtree_child
-    #         pass
-
-    #     def _render_rtree(self, node_id: str) -> List[str] | None:
-    #         """renders a node in the rich tree"""
-    #         # get the rich parent element so it can be assigned
-    #         _rtree_parent = self._rich_tree_dict.get(node_id)
-    #         _child_ids = self._tree.get_children(node_id)
-    #         _child_dict = {}
-
-    #         for _child_id in _child_ids:
-    #             _child_info = self._tree.get_node(_child_id)
-    #             if not _child_info:
-    #                 logger.warning(f"[TreeRenderer] Node {node_id} has no metadata")
-    #                 continue
-    #             # store this in a dict, so there's the possibility to sort it later on
-    #             # example: util_cli.cli_filetree_renderer.FileTreeRenderer _render_rtree
-    #             _child_dict[_child_id] = _child_info
-
-    #         # this is how to sort a dictionary
-    #         # _child_dict = dict(sorted(_path_dict.items(), key=lambda item: item[1][_sort_key],
-    #         # reverse=self._paths_reverse))
-    #         _children = []
-    #         for _child_id, _node_info in _child_dict.items():
-    #             _children.append(_child_id)
-    #             _node_formatted = self._get_tree_node_display_info(_node_info)
-    #             self._render_node(node_id=_child_id, node_formatted=_node_formatted, rich_tree_parent=_rtree_parent)
-
-    #         # as long as there are children this method will be called
-    #         for _child_id in _children:
-    #             self._render_rtree(_child_id)
-
     def render(self) -> None:
         """renders the graph"""
         self._dot.render(Path(self._save_path), view=self._view)
         logger.info(f"[TreeVisualizer] Saved GraphViz File, path [{self._save_path}]")
-
-    def _create_dot_tree(self) -> None:
-        """Creates the tree"""
-
-        pass
-
-        # self._rich_tree = self._create_rich_tree_root()
-        # # add the query info to the tree
-        # self._render_header(self._rich_tree)
-        # # create the root node of the tree
-        # _rich_tree_root = self._render_root_node(self._rich_tree)
-        # # starting with root id
-        # # this will recursively create all nodes in the rich tree
-        # # recursively create the file hierarchy
-        # self._render_rtree(self._tree.root_id)
 
     def show_info(self):
         """shows info on the tree"""
