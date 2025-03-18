@@ -31,7 +31,7 @@ def valid_node_id(func):
             logger.info(f"[Tree] valid_node_id decorator: node_id [{node_id}] not found")
             return None
         # there is a key, execute function
-        return func(self, node_id)
+        return func(self, node_id, *args, **kwargs)
 
     return func_wrapper
 
@@ -210,7 +210,7 @@ class Tree:
         if _parent_node is None:
             return None
 
-        def _get_children_recursive(child_list: list):
+        def _get_children_recursive(child_list: list, only_leaves: bool):
             logger.debug(f"[Tree] get children recursive {child_list}")
             _new_children = []
             if len(child_list) > 0:
@@ -221,12 +221,12 @@ class Tree:
                     if _child_node is None:
                         continue
                     _new_children.extend(_child_node.children)
-                _get_children_recursive(_new_children)
+                _get_children_recursive(_new_children, only_leaves)
             else:
                 return
 
         _parent_children = _parent_node.children
-        _get_children_recursive(_parent_children)
+        _get_children_recursive(_parent_children, only_leaves)
 
         if only_leaves:
             children_nodes = [_c for _c in children_nodes if self.is_leaf(_c)]

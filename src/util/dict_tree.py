@@ -32,7 +32,7 @@ def valid_node_id(func):
             logger.info(f"[DictTree] valid_node_id decorator: node_id [{node_id}] invalid")
             return None
         # there is a key, execute function
-        return func(self, node_id)
+        return func(self, node_id, *args, **kwargs)
 
     return func_wrapper
 
