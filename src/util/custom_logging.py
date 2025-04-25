@@ -3,14 +3,11 @@
 
 import os
 import logging
-import sys
 from enum import StrEnum
 from typing import Literal
 
 # import typer
-from cli.bootstrap_env import CLI_LOG_LEVEL
 from util.colors import COLOR
-
 
 # log message format
 # https://docs.python.org/3/library/logging.html#logrecord-attributes
