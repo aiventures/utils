@@ -74,15 +74,10 @@ Configuration should be OS independent, but only tested on Win Os.
 
 **OPEN**
 
-* `20250207` Create Emoji Indicator
-* `20250207` Emoji Tree Output Simple 
-* `20250207` Collect Min and Max Values in Tree Class
+* `20250412` Create a simple table view/edit class
 * `20250202` Create patchwork model especially for file (display according to num of files file size, ...)
 * `20250202` Create patchwork model for graphviz
-* `20250202` Render Brewer Colors
 * `20250126` Create markdown to plantuml converter
-* `20250126` Create a filter class for Tree
-* `20250126` Create Tree Visualization using GraphViz
 * `20250113` Parse Yaml + JSON Into AST Tree
 * `20250112` Adding Metrics derived from AST Trees
 * `20250112` Adding Classes to transform AST Trees into PlantUML Models
@@ -95,17 +90,24 @@ Configuration should be OS independent, but only tested on Win Os.
 * `20241216` Create a Pydantic CSV Model for several files (which ones?)
 * `20241215` Use Rich Text to highlight text searches
 * `20241215` Create Pydantic Model to render the Calendar markdown list with different options
-* `20241215` Create Icon List with search capabilities based on keywords
+* `20241215` Create Icon List with search capabilities based on keywords 20250318
 * `20241003` Set Environment from Configuration / optionally save it as well as env file / create a bat file
 * `20240929` Parsing links, add numbers and allow to launch links from CLI
 * `20240929` Create the possibility to store/load the parsed data without processing
-* `20240929` Add a logic to update a value in a configuration in any case (for example when the config is not build up from scratch )
+* `20240929` Add a logic to update a value in a configuration in any case (for example when the config is not build up from scratch ) 20250318
 * `20240923` Generate envs to export Configuration as shell / batch setup scripts
-* `20240923` Enable `Yaml`
+* `20240923` Enable `Yaml` 20250318
 * `20240923` Additional attribute to indicate file path conversions (with no info implicitly leading to no conversion)
 * `20240923` Add [todo.txt](https://github.com/todotxt/todo.txt) logic
 
 **DONE**
+* ~~`20250317` Rendering a Tree as Markup Representation (eg to be used for plantuml rendering)~~ 20250318
+* ~~`20250207` Create Emoji Indicator~~ 20250318
+* ~~`20250207` Emoji Tree Output Simple~~ 20250318
+* ~~`20250207` Collect Min and Max Values in Tree Class~~ 20250318
+* ~~`20250202` Render Color Palettes~~ 20250318 
+* ~~`20250126` Create a filter class for Tree~~  20250318
+* ~~`20250126` Create Tree Visualization using GraphViz~~ 20250318
 * ~~`20250114` Rewrite [recurse_dict.py](./src/util/recurse_dict.py)~~ 20250202
 * ~~`20250126` Refactor DictTree to Pydantic Model~~ 20250126
 * ~~`20250104` Add a generic Filter Model to parse data~~ 20250126

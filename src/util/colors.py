@@ -21,7 +21,7 @@ ESC[38;5;(n)m Select foreground color ESC[48;5;(n)m Select background color wher
 
 import sys
 import logging
-from enum import Enum
+from enum import Enum, StrEnum
 from cli.bootstrap_env import CLI_LOG_LEVEL
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,7 @@ ESC = "\033"
 COL_BG = "[48;5;_NUM_m"
 COL_FG = "[38;5;_NUM_m"
 COL_RESET = "[0m"
+COL_BOLD = "[1m"
 
 # Picked Colors
 COL_PURPLE = 99
@@ -92,6 +93,10 @@ class COLOR(Enum):
     PURPLE1 = ESC + "[1;95m"
     CYAN1 = ESC + "[1;96m"
     WHITE1 = ESC + "[1;97m"
+    # special colors
+    SKY_BLUE = ESC + f"[38;5;{COL_BLUE_SKY}m"
+    ORANGE = ESC + f"[38;5;{COL_ORANGE}m"
+    PINK = ESC + f"[38;5;{COL_PINK}m"
     # Background Colors
     RESET_BG = ESC + "[48;5;0m"
     # Background Default
@@ -110,6 +115,7 @@ class COLOR(Enum):
     PURPLE_BG1 = ESC + "[48;5;13m"
     CYAN_BG1 = ESC + "[48;5;14m"
     BLACK_BG1 = ESC + "[48;5;15m"
+    BOLD = ESC + COL_BOLD
 
 
 class COL(Enum):
