@@ -1,0 +1,106 @@
+@startuml
+'remark use together {...}
+left to right direction
+'top to bottom direction
+skinparam dpi 180
+set namespaceSeparator none
+skinparam linetype ortho
+'skinparam linetype polyline
+<style>
+.moduleclass { BackgroundColor LightBlue }
+</style>
+
+'### MODULES
+together {
+'### MODULE .module_external (6b4012ba19ba7e5e1cfc82132ea374a8)
+package ".module_external" as 6b4012ba19ba7e5e1cfc82132ea374a8 <<module>> #TECHNOLOGY {
+class ".module_external" as 51f3fa076bfa4fb9c80977b4754d28d2 << (M,APPLICATION) moduleclass >> {
+        {field} {static} +logger: Logger
+}
+' # CLASS ExternalClass (777f1cf82df3dcfc360e026dd38abb5b)
+    class "ExternalClass" as 777f1cf82df3dcfc360e026dd38abb5b {
+        {field} {static} +externalclass_class_att1: str
+        {method} +external_instance_api_method()
+        {method} +external_instance_method()
+        {method} {static} +external_class_method()
+}
+}
+51f3fa076bfa4fb9c80977b4754d28d2 +-- 777f1cf82df3dcfc360e026dd38abb5b
+
+'### MODULE .module_myclass (08bf237e6234772999acb414fd80c174)
+package ".module_myclass" as 08bf237e6234772999acb414fd80c174 <<module>> #TECHNOLOGY {
+class ".module_myclass" as 3623635dfcc992d10c1a2f626d1df4e5 << (M,APPLICATION) moduleclass >> {
+        {field} {static} +logger: Logger
+        {field} {static} +my_module_dict: dict
+        {field} {static} +my_module_var: str
+        {method} {static} +my_function(my_function_param:str): dict
+}
+' # CLASS MyClass01 (01c45c2516e05c72d9597193a74801c9)
+    class "MyClass01" as 01c45c2516e05c72d9597193a74801c9 {
+        {field} {static} +myclass_class_att1: str
+        {field} {static} +myclass_dict: dict
+        {field} {static} +myclass_ref_ext_class: ExternalClass
+        {method} #_get_external(aFormatter:BufferingFormatter): str
+        {method} +get_external_api(param:str): str
+        {method} +myclass_instance_method(avar:int): dict
+        {method} {static} +myclass_method(class_meth_param:list): str
+}
+' # CLASS MySubClass (02ec82d5ff559a424fd58180dc90d882)
+    class "MySubClass" as 02ec82d5ff559a424fd58180dc90d882 {
+        {field} {static} +myclass_class_att1: str
+        {field} {static} +myclass_dict: dict
+        {field} {static} +myclass_ref_ext_class: ExternalClass
+        {field} {static} +myclass_subclass_att1: str
+        {method} +mysubclass_instance_method()
+        {method} {static} #_get_external()
+        {method} {static} +get_external_api()
+        {method} {static} +myclass_instance_method()
+        {method} {static} +myclass_method()
+        {method} {static} +mysubclass_method(subclass_meth_param:list): str
+}
+}
+3623635dfcc992d10c1a2f626d1df4e5 +-- 01c45c2516e05c72d9597193a74801c9
+3623635dfcc992d10c1a2f626d1df4e5 +-- 02ec82d5ff559a424fd58180dc90d882
+
+'### MODULE my_subpackage.my_submodule (c5e0fc475b9dbe74b972a65df6f5d226)
+package "my_subpackage.my_submodule" as c5e0fc475b9dbe74b972a65df6f5d226 <<module>> #TECHNOLOGY {
+class "my_subpackage.my_submodule" as 722268f812954384bbded1b7222f86ed << (M,APPLICATION) moduleclass >> {
+
+}
+' # CLASS MySubModule (04f6a24226442847a32ccf3e0326bc32)
+    class "MySubModule" as 04f6a24226442847a32ccf3e0326bc32 {
+        {field} {static} +submoduleclass_class_att1: str
+        {method} +submodulemethod(s:str): str
+}
+}
+722268f812954384bbded1b7222f86ed +-- 04f6a24226442847a32ccf3e0326bc32
+
+}
+' (together ### MODULES)
+
+'### RELATED OBJECTS
+package "logging" as f1e28416100e498a3c1aeb9ed885ddd7 <<module>> {
+    class "logging" <<module>> {
+        {field} +logging_no_name
+}
+    class "BufferingFormatter" as e6551ef1aa99ef99745772285f33a086
+}
+package "my_package.module_external" as 69a1ade40fa5357b6c722c5af2e29388 <<module>> {
+    class "my_package.module_external" <<module>> {
+
+}
+    class "ExternalClass" as 2833e8af5a195cc59b300bccaacdd18e
+}
+
+'### RELATIONS
+'# RELATION (0) [module-imports-module]: .module_external - logging:logging:logging 
+6b4012ba19ba7e5e1cfc82132ea374a8 <.. f1e28416100e498a3c1aeb9ed885ddd7
+'# RELATION (4) [module-imports-module]: .module_myclass - logging:logging:logging 
+08bf237e6234772999acb414fd80c174 <.. f1e28416100e498a3c1aeb9ed885ddd7
+'# RELATION (3) [module-imports-class]: .module_myclass - my_package:my_package.module_external:ExternalClass 
+08bf237e6234772999acb414fd80c174 <.. 69a1ade40fa5357b6c722c5af2e29388
+'# RELATION (5) [None-inherits-class]: NO_ATTRIBUTE___package__:.module_myclass:MyClass01 - NO_ATTRIBUTE___package__:.module_myclass:MySubClass 
+01c45c2516e05c72d9597193a74801c9 <|-- 02ec82d5ff559a424fd58180dc90d882
+hide <<moduleclass>> stereotype
+left footer Generated with CodeInspector on (2023-09-24 10:52:10) from (C:/30_Entwicklung/WORK_JUPYTER/root/tools/code_snippets/sample_inspect/my_package)
+@enduml

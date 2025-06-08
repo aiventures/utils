@@ -19,5 +19,5 @@ from a.b import z
 from d import k,m
 from .xyz import abc
 """
-
+    print("HUGO")
     return snippet
