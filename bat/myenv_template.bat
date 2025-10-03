@@ -3,6 +3,8 @@ rem myenv.bat setting local env variables with MY_ prefix
 rem working venv with additional Libraries
 call colors.bat
 echo %COL_GREY_DARK%### RUN %~f0%C_0%
+rem Windows Desktop
+set "MY_P_DESKTOP=C:\Users\<YOUR_USER>\Desktop"
 rem working path set accordingly
 set "MY_P_WORK=C:\<Path to a working directory>"
 rem path to utils repo

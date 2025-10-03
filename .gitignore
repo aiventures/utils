@@ -187,3 +187,5 @@ resources/emoji-test.txt
 resources/emoji.json
 src/app/image_profiles.json
 src/app/out/P1_01_COPYPASTE_SAMPLE.png
+bat/myenv.bat
+src/config/myenv.py
