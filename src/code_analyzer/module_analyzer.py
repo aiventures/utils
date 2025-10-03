@@ -6,6 +6,8 @@ import logging
 import sys
 import ast
 from cli.bootstrap_env import CLI_LOG_LEVEL
+from model.model_persistence import ParamsFind
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -14,14 +16,16 @@ logger.setLevel(CLI_LOG_LEVEL)
 
 
 class ModuleAnalyzer:
-    """Module to analyse python code"""
+    """Module to analyse python code based on a root path"""
 
-    def __init__(self):
+    def __init__(self, p_root: str):
+        self._p_root = p_root
         pass
 
 
 def main():
     """do something"""
+    # ...\utils\test_data\sample_py_package
     pass
 
 
