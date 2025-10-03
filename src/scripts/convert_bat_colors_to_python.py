@@ -7,7 +7,6 @@ from datetime import datetime
 import sys
 
 
-
 def create_arg_parser():
     """Create and return the argument parser."""
     parser = argparse.ArgumentParser(
@@ -105,7 +104,7 @@ Date of generation: {ts}
     python_lines.append('\n\nif __name__ == "__main__":')
     python_lines.append('    vars_dict = {k: f"{v}{k}{C_0}" for k, v in globals().items() if k.isupper()}')
     python_lines.append("    for _,v in vars_dict.items():")
-    python_lines.append("        print(v)")
+    python_lines.append("        print(v + COL_DEFAULT)")
 
     python_code = "\n".join(python_lines)
 

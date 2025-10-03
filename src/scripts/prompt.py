@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from config.myenv import MY_F_MYENV_PROMPT
-from config.colors import C_B, C_P, C_V, C_SC, C_0, C_1
+from config.colors import C_B, C_P, C_V, C_SC0, C_SC1, C_0, C_1
 
 PROMPT_SYMBOL = "λ"
 
@@ -50,6 +50,7 @@ def get_current_venv():
 
 def create_prompt(path=".", reset: bool = False) -> str:
     """creates the prompt string"""
+    C_SC = C_SC0
     if reset:
         return f"{C_P}$P{C_SC}$G"
     input_color = f"{C_0}"
@@ -59,6 +60,7 @@ def create_prompt(path=".", reset: bool = False) -> str:
     if venv:
         prompt += f"{C_V}[{venv}] "
         input_color = f"{C_1}"
+        C_SC = C_SC1
     if branch:
         prompt += f"{C_B}({branch}) "
 
@@ -76,7 +78,7 @@ def main():
     """Main entry point"""
     # Generate prompt
     prompt = f'SET "PROMPT={create_prompt()}"'
-    # print("Generated prompt:", prompt)
+    # print("Generated prompt", prompt)
     # Save to configured file
     save_prompt(MY_F_MYENV_PROMPT, prompt)
     # print(f"Prompt saved to {MY_F_MYENV_PROMPT}")
