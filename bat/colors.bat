@@ -12,6 +12,9 @@ rem https://stackoverflow.com/questions/132799/how-can-i-echo-a-newline-in-a-bat
 rem https://stackoverflow.com/questions/4842424/list-of-ansi-color-escape-sequences
 rem 38;5;f is font color and 48;5;b background color with numbers from 16...231
 
+set NUM_ARGS=0
+for %%x in (%*) do Set /A NUM_ARGS+=1
+
 rem create an ESQ Sequence
 for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
 rem selected color palette 38 is foreground, 48 is background, use py_color_list.bat to display the python
@@ -65,6 +68,41 @@ set COL_PURPLE_WH=%ESC%[1;35;47m
 set COL_LIGHTBLUE_WH=%ESC%[1;36;47m
 set COL_BLACK_WH=%ESC%[1;30;47m
 
+rem special colors 
+set COL_RED_BRIGHT_196=%ESC%[38;5;196m
+set COL_RED_STRAWBERRY_204=%ESC%[38;5;204m
+set COL_ORANGE_RED_202=%ESC%[38;5;202m
+set COL_ORANGE_214=%ESC%[38;5;214m
+set COL_ORANGE_LIGHT_215=%ESC%[38;5;215m
+set COL_YELLOWGREEN_191=%ESC%[38;5;191m
+set COL_YELLOW_PALE_229=%ESC%[38;5;229m
+set COL_GREEN_MINT_121=%ESC%[38;5;121m
+set COL_GREEN_PALE_193=%ESC%[38;5;193m
+set COL_GREEN_LIME_154=%ESC%[38;5;154m
+set COL_GREEN_AQUA_85=%ESC%[38;5;85m
+set COL_GREEN_DARKCYAN_23=%ESC%[38;5;23m
+set COL_CYAN_PURE_50=%ESC%[38;5;50m
+set COL_CYAN_PALE_195=%ESC%[38;5;195m
+set COL_CYAN_AQUAMARING_87=%ESC%[38;5;87m
+set COL_CYAN_GRAYISH_109=%ESC%[38;5;109m
+set COL_CYAN_LIGHT_51=%ESC%[38;5;51m
+set COL_CYAN_AQUA_14=%ESC%[38;5;14m
+set COL_BLUE_SKYBLUE_45=%ESC%[38;5;45m
+set COL_BLUE_MEDIUM_20=%ESC%[38;5;20m
+set COL_BLUE_DEEPSKY_39=%ESC%[38;5;39m
+set COL_BLUE_LIGHTCOBALT_110=%ESC%[38;5;110m
+set COL_PURPLE_MAGENTA_164=%ESC%[38;5;164m
+set COL_PURPLE_MAGENTALIGHT_170=%ESC%[38;5;170m
+set COL_PURPLE_LAVENDER_141=%ESC%[38;5;141m
+set COL_PURPLE_PALEVIOLET_183=%ESC%[38;5;183m
+set COL_PINK_BRIGHT_198=%ESC%[38;5;198m
+set COL_PINK_LILAC_177=%ESC%[38;5;177m
+set COL_PINK_CANDY_218=%ESC%[38;5;218m
+set COL_WHITE_CREAM_230=%ESC%[38;5;230m
+set COL_WHITE_LIGHT_15=%ESC%[38;5;15m
+set COL_BROWN_94=%ESC%[38;5;94m
+set COL_BROWN_KHAKI_222=%ESC%[38;5;222m
+set COL_BROWN_COPPER_173=%ESC%[38;5;173m
 
 rem bright colors are 90-97 / std colors are 30-37
 set C_0=%ESC%[0m
@@ -78,16 +116,18 @@ set C_CYN=%ESC%[96m
 set C_WHT=%ESC%[97m
 rem specific colors for branch path venv
 rem prompt branch color
-set C_B=%COL_GREEN_DARK%
+set C_B=%COL_ORANGE_LIGHT_215%
 rem prompt path color
-set C_P=%COL_ORANGE%
+set C_P=%COL_GREEN_AQUA_85%
 rem prompt venv color
-set C_V=%COL_BLUE_SKY%
+set C_V=%COL_BLUE_DARK%
+rem prompt symbol color
+set C_SC=%COL_ORANGE_LIGHT_215%
 rem set output color
 set C_O=%COL_BLUE_LIGHT%
 rem different text colors when activated
 set C_0=%C_0%
-set C_1=%C_WHT%
+set C_1=%COL_CYAN_PALE_195%
 rem set colors for certain echos
 rem title
 set C_T=%COL_BLUE_SKY%
@@ -104,4 +144,5 @@ set C_PROG=%COL_PINK%
 rem ERROR
 set C_E=%COL_RED%
 
-echo %COL_GREY_DARK%### RUN %~f0%C_0%
+rem show output if called with any dummy input
+if %NUM_ARGS% gtr 0 echo %COL_GREY_DARK%### RUN %~f0%C_0%
