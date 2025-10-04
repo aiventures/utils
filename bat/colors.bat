@@ -137,9 +137,15 @@ rem set colors for certain echos
 rem title
 set C_T=%COL_BLUE_SKY%
 rem search keys
-set C_S=%COL_ORANGE%
+set C_S=%COL_BLUE_PALE_153%
+rem search hits
+set C_SH=%COL_RED_STRAWBERRY_204%
 rem file keys
 set C_F=%COL_BLUE_SKY%
+rem highlighted output 
+set C_H=%COL_WHITE_CREAM_230%
+rem index number
+set C_I=%COL_GREEN_AQUA_85%
 rem python output
 set C_PY=%COL_GREEN%
 rem question / prompt

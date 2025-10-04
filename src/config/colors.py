@@ -1,6 +1,6 @@
 """
-This file was generated from C:\\30_Entwicklung\\WORK_JUPYTER\\root\\utils\\bat\\colors.bat
-Date of generation: 2025-10-04 00:03:00
+This file was generated from \\utils\\bat\\colors.bat
+Date of generation: 2025-10-04 21:37:52
 """
 
 # Auto-generated from batch color definitions
@@ -100,8 +100,11 @@ C_O = f"{COL_BLUE_LIGHT}"
 C_0 = f"{COL_CYAN_PALE_195}"
 C_1 = f"{COL_BLUE_PALE_153}"
 C_T = f"{COL_BLUE_SKY}"
-C_S = f"{COL_ORANGE}"
+C_S = f"{COL_BLUE_PALE_153}"
+C_SH = f"{COL_RED_STRAWBERRY_204}"
 C_F = f"{COL_BLUE_SKY}"
+C_H = f"{COL_WHITE_CREAM_230}"
+C_I = f"{COL_GREEN_AQUA_85}"
 C_PY = f"{COL_GREEN}"
 C_Q = f"{C_MAG}"
 C_PROG = f"{COL_PINK}"
@@ -110,5 +113,5 @@ C_E = f"{COL_RED}"
 
 if __name__ == "__main__":
     vars_dict = {k: f"{v}{k}{C_0}" for k, v in globals().items() if k.isupper()}
-    for _,v in vars_dict.items():
+    for _, v in vars_dict.items():
         print(v + COL_DEFAULT)
