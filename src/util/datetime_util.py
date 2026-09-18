@@ -7,6 +7,7 @@ from datetime import datetime as DateTime
 from enum import StrEnum
 from math import ceil
 from typing import Dict
+from zoneinfo import ZoneInfo
 
 import pytz
 from dateutil.parser import parse
@@ -221,6 +222,126 @@ class DateTimeUtil:
         return dt
 
     @staticmethod
+    def parse_offset(offset: str) -> timedelta:
+        """
+        Parse an offset string with units:
+        +1.4h  hours
+        -4w    weeks
+        +3.2y  years (converted to days: 365 * years)
+        Helper: parse offset string like "+1.4h", "-4w", "+3.2y"
+        """
+        m = re.fullmatch(r"([+-])(\d+(?:\.\d+)?)([smhdwMy])", offset.strip())
+        if not m:
+            raise ValueError(f"Invalid offset format: {offset}")
+
+        sign, value, unit = m.groups()
+        value = float(value)
+        if sign == "-":
+            value = -value
+
+        if unit == "s":
+            return timedelta(seconds=value)
+        if unit == "m":
+            return timedelta(minutes=value)
+        if unit == "h":
+            return timedelta(hours=value)
+        if unit == "d":
+            return timedelta(days=value)
+        if unit == "w":
+            return timedelta(weeks=value)
+        if unit == "M":
+            return timedelta(days=value * 30)  # approx months
+        if unit == "y":
+            return timedelta(days=value * 365)  # approx years
+
+        raise ValueError(f"Unknown offset unit: {unit}")
+
+    @staticmethod
+    def parse_datetime(date_s: str | None, local_tz: str = "Europe/Berlin") -> DateTime:
+        """
+        Parse datetime strings with optional time and optional offset.
+        Rules:
+        - None → current localized datetime
+        - YYYY.MM.DD / YYYYMMDD / YYYY:MM:DD
+        - Optional time: HH:mm:ss(.mmm)
+        - Optional offset: (+1.4h), -4w, +3.2y
+        - Standalone offset: "+1.4h" → now + offset
+        """
+
+        tz = ZoneInfo(local_tz)
+
+        if date_s is None or date_s.strip() == "":
+            return DateTime.now(tz)
+
+        date_s = date_s.strip()
+
+        # 1) Extract offset if present
+        offset = None
+
+        # offset inside parentheses:  YYYY.MM.DD(+1.4h)
+        m = re.search(r"\(([^)]+)\)$", date_s)
+        if m:
+            offset = m.group(1).strip()
+            date_s = date_s[: m.start()].strip()
+
+        # standalone offset: "+1.4h"
+        if offset is None:
+            if re.fullmatch(r"[+-]\d+(?:\.\d+)?[smhdwMy]", date_s):
+                # pure offset → apply to now
+                return DateTime.now(tz) + DateTimeUtil.parse_offset(date_s)
+
+        # 2) Extract time portion if present
+        time_part = None
+
+        # formats: "YYYY.MM.DD HH:mm:ss(.mmm)" or "YYYY:MM:DD HH:mm:ss"
+        if " " in date_s:
+            date_part, time_part = date_s.split(" ", 1)
+        else:
+            # formats like YYYYMMDD_HHMMSSmmm
+            m = re.match(r"^(\d{8})_(\d{6})(\d{3})?$", date_s)
+            if m:
+                date_part = m.group(1)
+                hhmmss = m.group(2)
+                mmm = m.group(3)
+                time_part = f"{hhmmss[0:2]}:{hhmmss[2:4]}:{hhmmss[4:6]}"
+                if mmm:
+                    time_part += f".{mmm}"
+            else:
+                date_part = date_s
+
+        # 3) Parse date portion
+        # Normalize separators
+        date_norm = re.sub(r"[:.]", "-", date_part)
+
+        # YYYY-MM-DD or YYYYMMDD
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_norm):
+            dt = DateTime.strptime(date_norm, "%Y-%m-%d")
+        elif re.fullmatch(r"\d{8}", date_norm):
+            dt = DateTime.strptime(date_norm, "%Y%m%d")
+        else:
+            raise ValueError(f"Invalid date format: {date_part}")
+
+        # 4) Parse time portion if present
+        if time_part:
+            # HH:mm:ss(.mmm)
+            m = re.fullmatch(r"(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?", time_part)
+            if not m:
+                raise ValueError(f"Invalid time format: {time_part}")
+
+            hh, mm, ss, ms = m.groups()
+            ms = int(ms) if ms else 0
+            dt = dt.replace(hour=int(hh), minute=int(mm), second=int(ss), microsecond=ms * 1000)
+
+        # Localize
+        dt = dt.replace(tzinfo=tz)
+
+        # 5) Apply offset if present
+        if offset:
+            dt = dt + DateTimeUtil.parse_offset(offset)
+
+        return dt
+
+    @staticmethod
     def add_shortcodes(shortcode_dict: dict) -> StrEnum:
         """adding shortcodes to standard worklog enum codes"""
         # create a Dict
@@ -279,6 +400,7 @@ class DateTimeUtil:
         if dt_in is None:
             return None
 
+        # TODO refactor
         tz_utc = pytz.timezone("UTC")
         pytz_in = get_tz_info(tz_in)
         pytz_out = get_tz_info(tz_out)
